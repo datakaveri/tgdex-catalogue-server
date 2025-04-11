@@ -505,8 +505,8 @@ public class CrudAPIsIT {
             .put("adexResourceAPIs", new JsonArray().add("TEMPORAL").add("ATTR"))
             .put("location", new JsonObject().put("type", "Place").put("address", "Khammam, " +
                 "Telanagana").put("geometry", new JsonObject().put("coordinates", new JsonArray())))
-            .put("dataDescriptor", "sample descriptor")
-            .put("dataSample", "sample data")
+            .put("dataDescriptor", new JsonObject().put("SomeKey", "SomeValue"))
+            .put("dataSample", new JsonObject().put("SomeKey", "SomeValue"))
             .put("fileFormat", "xlsx");
         Response response = given()
             .contentType("application/json")
@@ -944,8 +944,8 @@ public class CrudAPIsIT {
             .put("adexResourceAPIs", new JsonArray().add("TEMPORAL").add("ATTR"))
             .put("location", new JsonObject().put("type", "Place").put("address", "Khammam, " +
                 "Telanagana").put("geometry", new JsonObject().put("coordinates", new JsonArray())))
-            .put("dataDescriptor", "sample")
-            .put("dataSample", "sample")
+            .put("dataDescriptor", new JsonObject().put("SomeKey", "SomeValue"))
+            .put("dataSample", new JsonObject().put("SomeKey", "SomeValue"))
             .put("fileFormat", "xlsx");
 
         Response response = given()
