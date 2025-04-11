@@ -213,7 +213,7 @@ public class ValidatorServiceImpl implements ValidatorService {
     } else if (itemType.equalsIgnoreCase(ITEM_TYPE_OWNER)) {
       validateOwnerItem(request, method, handler);
     } else if (itemType.equalsIgnoreCase(ITEM_TYPE_AI_MODEL)) {
-      validateAIModelItem(request, method, handler);
+      validateAiModelItem(request, method, handler);
     } else if (itemType.equalsIgnoreCase(ITEM_TYPE_APPS)) {
       validateAppsItem(request, method, handler);
     }
@@ -248,7 +248,7 @@ public class ValidatorServiceImpl implements ValidatorService {
         });
   }
 
-  private void validateAIModelItem(JsonObject request, String method,
+  private void validateAiModelItem(JsonObject request, String method,
                                    Handler<AsyncResult<JsonObject>> handler) {
     validateId(request, handler, isUacInstance);
     if (!isUacInstance && !request.containsKey(ID)) {
