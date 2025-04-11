@@ -224,6 +224,7 @@ public class Constants {
   public static final String FILTER_QUERY = "{\"bool\":{\"filter\":[$1]}}";
   public static final String MATCH_QUERY = "{\"match\":{\"$1\":\"$2\"}}";
   public static final String TERM_QUERY = "{\"term\":{\"$1\":\"$2\"}}";
+  public static final String EXISTS_QUERY = "{\"exists\":{\"field\":\"$1\"}}";
   public static final String GET_RATING_DOCS =
       "{\"query\": {\"bool\": {\"must\": [ { \"match\": {\"$1\":\"$2\" } }, "
           + "{ \"match\": { \"status\": \"approved\" } } ] } } , "

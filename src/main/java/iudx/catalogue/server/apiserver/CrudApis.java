@@ -156,7 +156,8 @@ public final class CrudApis {
               handleItemCreation(routingContext, requestBody, response, jwtAuthenticationInfo);
             } else {
               if (itemType.equalsIgnoreCase(ITEM_TYPE_COS)
-                  || itemType.equalsIgnoreCase(ITEM_TYPE_OWNER)) {
+                  || itemType.equalsIgnoreCase(ITEM_TYPE_OWNER)
+                  || itemType.equalsIgnoreCase(ITEM_TYPE_APPS)) {
                 handleItemCreation(routingContext, requestBody, response, jwtAuthenticationInfo);
               } else if (itemType.equalsIgnoreCase(ITEM_TYPE_RESOURCE_SERVER)) {
                 handleItemCreation(routingContext, requestBody, response, jwtAuthenticationInfo);
@@ -415,7 +416,8 @@ public final class CrudApis {
                 handleItemDeletion(response, jwtAuthenticationInfo, requestBody, itemId);
               } else {
                 if (itemType.equalsIgnoreCase(ITEM_TYPE_COS)
-                    || itemType.equalsIgnoreCase(ITEM_TYPE_OWNER)) {
+                    || itemType.equalsIgnoreCase(ITEM_TYPE_OWNER)
+                    || itemType.equalsIgnoreCase(ITEM_TYPE_APPS)) {
                   handleItemDeletion(response, jwtAuthenticationInfo, requestBody, itemId);
                 } else if (itemType.equalsIgnoreCase(ITEM_TYPE_RESOURCE_SERVER)) {
                   handleItemDeletion(response, jwtAuthenticationInfo, requestBody, itemId);

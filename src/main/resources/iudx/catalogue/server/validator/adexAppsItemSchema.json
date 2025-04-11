@@ -1,0 +1,137 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "http://example.com/apps-metadata.schema.json",
+  "type": "object",
+  "title": "Adex Potential Applications Metadata Schema",
+  "description": "Schema for ADeX Apps model metadata.",
+  "default": {},
+  "examples": [
+    {
+      "type": [
+        "adex:Apps"
+      ],
+      "name": "SomeName",
+      "tags": [
+        "ai", "ml", "model", "aimodel", "mlmodel",
+        "ai-model", "ml-model", "machine", "learning",
+        "machine learning", "training", "algorithm"
+      ],
+      "label": "Test-Crop Disease Detection Model",
+      "description": "An test potential application item for detecting crop disease with the help of infected leaf images.",
+      "organizationType": "Private",
+      "department": "Agriculture and Co-operation"
+    }
+  ],
+  "required": [
+    "name",
+    "type",
+    "tags",
+    "label",
+    "description",
+    "organizationType",
+    "department"
+  ],
+  "properties": {
+    "name": {
+      "$id": "#/properties/name",
+      "type": "string",
+      "title": "The name schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": ["SomePlace"],
+      "maxLength": 512,
+      "pattern": "^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$"
+    },
+    "id": {
+      "$id": "#/properties/id",
+      "type": "string",
+      "title": "The id schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "8b95ab80-2aaf-4636-a65e-7f2563d0d371"
+      ],
+      "maxLength": 36,
+      "pattern": "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
+    },
+    "type": {
+      "$id": "#/properties/type",
+      "type": "array",
+      "title": "The type schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": [],
+      "examples": [
+        [
+          "adex:Apps"
+        ]
+      ],
+      "additionalItems": true,
+      "items": {
+        "$id": "#/properties/type/items",
+        "anyOf": [
+          {
+            "$id": "#/properties/type/items/anyOf/0",
+            "type": "string",
+            "title": "The first anyOf schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+              "adex:Apps"
+            ]
+          }
+        ]
+      }
+    },
+    "tags": {
+      "$id": "#/properties/tags",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "The tags schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": ""
+    },
+    "label": {
+      "type": "string",
+      "title": "The label schema",
+      "description": "User-friendly label for the model",
+      "maxLength": 512
+    },
+    "description": {
+      "type": "string",
+      "title": "The description schema",
+      "description": "Detailed description of the model"
+    },
+    "organizationType": {
+      "type": "string",
+      "title": "The organizationType schema",
+      "description": "Type of organization providing the model",
+      "examples": ["Private", "Government"]
+    },
+    "department": {
+      "type": "string",
+      "title": "The department schema",
+      "description": "Department name"
+    },
+    "itemStatus": {
+      "type": "string",
+      "title": "The itemStatus schema",
+      "description": "Current status of the model",
+      "enum": ["ACTIVE", "INACTIVE"]
+    },
+    "itemCreatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "The itemCreatedAt schema",
+      "description": "Creation timestamp of the model item"
+    },
+    "@context": {
+      "type": "string",
+      "title": "The @context schema",
+      "description": "JSON-LD context URI",
+      "format": "uri"
+    }
+  },
+  "additionalProperties": true
+}

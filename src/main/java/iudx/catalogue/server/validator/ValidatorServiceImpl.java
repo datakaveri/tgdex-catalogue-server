@@ -43,6 +43,9 @@ public class ValidatorServiceImpl implements ValidatorService {
   private Validator resourceServerValidator;
   private Validator cosItemValidator;
   private Validator ownerItemSchema;
+  private Validator aiModelValidator;
+  private Validator dataBankResourceValidator;
+  private Validator adexAppsValidator;
   private Validator ratingValidator;
   private Validator mlayerInstanceValidator;
   private Validator mlayerDomainValidator;
@@ -74,6 +77,9 @@ public class ValidatorServiceImpl implements ValidatorService {
       providerValidator = new Validator("/providerItemSchema.json");
       cosItemValidator = new Validator("/cosItemSchema.json");
       ownerItemSchema = new Validator("/ownerItemSchema.json");
+      aiModelValidator = new Validator("/adexAiModelItemSchema.json");
+      dataBankResourceValidator = new Validator("/adexDataBankResourceItemSchema.json");
+      adexAppsValidator = new Validator("/adexAppsItemSchema.json");
       ratingValidator = new Validator("/ratingSchema.json");
       mlayerInstanceValidator = new Validator("/mlayerInstanceSchema.json");
       mlayerDomainValidator = new Validator("/mlayerDomainSchema.json");
@@ -153,6 +159,15 @@ public class ValidatorServiceImpl implements ValidatorService {
       case ITEM_TYPE_OWNER:
         isValidSchema = ownerItemSchema.validate(request.toString());
         break;
+      case ITEM_TYPE_AI_MODEL:
+        isValidSchema = aiModelValidator.validate(request.toString());
+        break;
+      case ITEM_TYPE_DATA_BANK:
+        isValidSchema = dataBankResourceValidator.validate(request.toString());
+        break;
+      case ITEM_TYPE_APPS:
+        isValidSchema = adexAppsValidator.validate(request.toString());
+        break;
       case "patch:Stack":
         isValidSchema =  stack4PatchValidator.validate(request.toString());
         break;
@@ -183,7 +198,8 @@ public class ValidatorServiceImpl implements ValidatorService {
     LOGGER.debug("Info: itemType: " + itemType);
 
     // Validate if Resource
-    if (itemType.equalsIgnoreCase(ITEM_TYPE_RESOURCE)) {
+    if (itemType.equalsIgnoreCase(ITEM_TYPE_RESOURCE)
+        || itemType.equalsIgnoreCase(ITEM_TYPE_DATA_BANK)) {
       validateResource(request, method, handler);
     } else if (itemType.equalsIgnoreCase(ITEM_TYPE_RESOURCE_SERVER)) {
       // Validate if Resource Server TODO: More checks and auth rules
@@ -196,8 +212,80 @@ public class ValidatorServiceImpl implements ValidatorService {
       validateCosItem(request, method, handler);
     } else if (itemType.equalsIgnoreCase(ITEM_TYPE_OWNER)) {
       validateOwnerItem(request, method, handler);
+    } else if (itemType.equalsIgnoreCase(ITEM_TYPE_AI_MODEL)) {
+      validateAIModelItem(request, method, handler);
+    } else if (itemType.equalsIgnoreCase(ITEM_TYPE_APPS)) {
+      validateAppsItem(request, method, handler);
     }
     return this;
+  }
+
+  private void validateAppsItem(JsonObject request, String method,
+                                    Handler<AsyncResult<JsonObject>> handler) {
+    validateId(request, handler, isUacInstance);
+    if (!isUacInstance && !request.containsKey(ID)) {
+      UUID uuid = UUID.randomUUID();
+      request.put(ID, uuid.toString());
+    }
+    request.put(ITEM_STATUS, ACTIVE).put(ITEM_CREATED_AT, getUtcDatetimeAsString());
+    String checkQuery = APPS_ITEM_EXISTS_QUERY.replace("$1", request.getString(NAME));
+    LOGGER.debug(checkQuery);
+    client.searchGetId(
+        checkQuery,
+        docIndex,
+        res -> {
+          if (res.failed()) {
+            LOGGER.debug("Fail: DB Error");
+            handler.handle(Future.failedFuture(VALIDATION_FAILURE_MSG));
+            return;
+          }
+          if (method.equalsIgnoreCase(REQUEST_POST) && res.result().getInteger(TOTAL_HITS) > 0) {
+            LOGGER.debug("adex apps item already exists with the given name");
+            handler.handle(Future.failedFuture("Fail: Apps item already exists"));
+          } else {
+            handler.handle(Future.succeededFuture(request));
+          }
+        });
+  }
+
+  private void validateAIModelItem(JsonObject request, String method,
+                                   Handler<AsyncResult<JsonObject>> handler) {
+    validateId(request, handler, isUacInstance);
+    if (!isUacInstance && !request.containsKey(ID)) {
+      UUID uuid = UUID.randomUUID();
+      request.put(ID, uuid.toString());
+    }
+
+    request.put(ITEM_STATUS, ACTIVE).put(ITEM_CREATED_AT, getUtcDatetimeAsString());
+    String provider = request.getString(PROVIDER);
+    String checkQuery =
+        ITEM_EXISTS_QUERY
+            .replace("$1", provider)
+            .replace("$2", ITEM_TYPE_AI_MODEL)
+            .replace("$3", NAME)
+            .replace("$4", request.getString(NAME));
+    client.searchAsync(
+        checkQuery,
+        docIndex,
+        res -> {
+          if (res.failed()) {
+            LOGGER.debug("Fail: DB Error");
+            handler.handle(Future.failedFuture(VALIDATION_FAILURE_MSG));
+            return;
+          }
+          String returnType = getReturnTypeForValidation(res.result());
+          LOGGER.debug(returnType);
+          if (res.result().getInteger(TOTAL_HITS) < 1 || !returnType.contains(ITEM_TYPE_PROVIDER)) {
+            LOGGER.debug("Provider does not exist");
+            handler.handle(Future.failedFuture("Fail: Provider item doesn't exist"));
+          } else if (method.equalsIgnoreCase(REQUEST_POST)
+              && returnType.contains(ITEM_TYPE_AI_MODEL)) {
+            LOGGER.debug("AI Model already exists");
+            handler.handle(Future.failedFuture("Fail: AI Model item already exists"));
+          } else {
+            handler.handle(Future.succeededFuture(request));
+          }
+        });
   }
 
   private void validateResourceGroup(

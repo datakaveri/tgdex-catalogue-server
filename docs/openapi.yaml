@@ -36,7 +36,7 @@ info:
        - <b>/internal/ui/instance</b>
        - <b>/internal/ui/domain</b>
        - <b>/internal/ui/dataset</b>
-       
+    
     Additional query parameters to be used:
       - <b>offset</b> : The from parameter defines the offset from the first result you want to fetch,  ( <i>default : 0</i> ,<i>minValue: 0</i>, <i>maxValue: 10000</i> )
       - <b>limit</b> : The size parameter allows you to configure the maximum results to be returned  ( <i>default: 10000</i> ,<i>minValue: 0</i>, <i>maxValue: 10000</i> )
@@ -628,6 +628,9 @@ paths:
                 - $ref: '#/components/schemas/exampleEntityProvider'
                 - $ref: '#/components/schemas/exampleEntityResourceGroup'
                 - $ref: '#/components/schemas/exampleEntityResource'
+                - $ref: '#/components/schemas/exampleEntityAIModel'
+                - $ref: '#/components/schemas/exampleEntityDataBank'
+                - $ref: '#/components/schemas/exampleEntityAdexApps'
       responses:
         '201':
           description: Successfully inserted
@@ -641,6 +644,9 @@ paths:
                   - $ref: '#/components/schemas/successResponseForCreateProviderEntity'
                   - $ref: '#/components/schemas/successResponseForCreateResourceGroupEntity'
                   - $ref: '#/components/schemas/successResponseForCreateResourceEntity'
+                  - $ref: '#/components/schemas/successResponseForCreateAIModelEntity'
+                  - $ref: '#/components/schemas/successResponseForCreateDataBankResourceEntity'
+                  - $ref: '#/components/schemas/successResponseForCreateAdexAppsEntity'
         '400':
           description: Invalid document
           content:
@@ -749,6 +755,9 @@ paths:
                 - $ref: '#/components/schemas/exampleEntityWIdProvider'
                 - $ref: '#/components/schemas/exampleEntityWIdResourceGroup'
                 - $ref: '#/components/schemas/exampleEntityWIdResource'
+                - $ref: '#/components/schemas/exampleEntityWIdAIModel'
+                - $ref: '#/components/schemas/exampleEntityWIdDataBankResource'
+                - $ref: '#/components/schemas/exampleEntityWIdAdexApps'
       responses:
         '200':
           description: Successfully inserted
@@ -762,6 +771,9 @@ paths:
                   - $ref: '#/components/schemas/successResponseForUpdateProviderEntity'
                   - $ref: '#/components/schemas/successResponseForUpdateResourceGroupEntity'
                   - $ref: '#/components/schemas/successResponseForUpdateResourceEntity'
+                  - $ref: '#/components/schemas/successResponseForUpdateAIModelEntity'
+                  - $ref: '#/components/schemas/successResponseForUpdateDataBankEntity'
+                  - $ref: '#/components/schemas/successResponseForUpdateAdexAppsEntity'
         '400':
           description: Bad Request
           content:
@@ -826,6 +838,9 @@ paths:
                   - $ref: '#/components/schemas/successResponseForGetProviderEntity'
                   - $ref: '#/components/schemas/successResponseForGetResourceGroupEntity'
                   - $ref: '#/components/schemas/successResponseForGetResourceEntity'
+                  - $ref: '#/components/schemas/successResponseForGetAIModelEntity'
+                  - $ref: '#/components/schemas/successResponseForGetDataBankEntity'
+                  - $ref: '#/components/schemas/successResponseForGetAdexAppsEntity'
         '400':
           description: Invalid ID.
           content:
@@ -843,7 +858,7 @@ paths:
                 title: 'error'
                 totalHits: 0
                 results:
-                  []
+                  [ ]
                 details: "doc doesn't exist"
 
       servers:
@@ -2259,104 +2274,104 @@ paths:
                     type: "urn:dx:cat:Success"
                     title: "Success"
                     results:
-                      -  accessPolicy: "OPEN"
-                         apdURL: "acl-apd.iudx.io"
-                         provider: "bbeacb12-5e54-339d-92e0-d8e063b551a8"
-                         resourceServer: "49cf5c76-09de-11ee-be56-0242ac120002"
-                         owner: "13bf961b-b1f4-3f7f-a651-b1b1965a4067"
-                         resourceGroup: "1173f774-794e-4ed0-9c41-281256d44b6a"
-                         instance: "pune"
-                         iudxResourceAPIs:
-                           - "SPATIAL"
-                           - "ATTR"
-                         _geosummary:
-                           _geocoded:
-                             results:
-                               - country: "India"
-                                 bbox: [ 76.703813, 30.665456, 76.848368, 30.795316 ]
-                                 name: "Chandigarh"
-                                 county: "Chandigarh"
-                                 locality: "Chandigarh"
-                                 region: "Chandigarh"
-                               - country: "India"
-                                 bbox: [ 76.95681, 28.07989, 76.99681, 28.11989 ]
-                                 name: "Chandigarh"
-                                 county: "Mewat"
-                                 locality: "Chandigarh"
-                                 region: "Haryana"
-                           _reverseGeocoded: { }
-                         description: "Paid parking locations in Chandigarh city."
-                         label: "Chandigarh Paid Parking Locations"
-                         type:
-                           - "iudx:Resource"
-                           - "iudx:PointOfInterest"
-                         '@context': "https://voc.iudx.org.in/"
-                         tags:
-                           - "parking"
-                           - "docking"
-                           - "leave"
-                           - "station"
-                           - "stop"
-                           - "places"
-                           - "parking lot"
-                           - "paid parking"
-                           - "vehicle"
-                           - "car"
-                           - "bike"
-                           - "scooter"
-                           - "two-wheeler"
-                           - "four-wheeler"
-                           - "vehicle wheeler"
-                         itemCreatedAt: "2023-09-15T05:59:05+0530"
-                         dataSampleFile:
-                           - relationType: "REL_FILE"
-                             hasObject: "https://fs-sample-file-bucket.s3.ap-south-1.amazonaws.com/public-access/chandigarh/chandigarh-paid-parking-locations.json"
-                             name: "Chandigarh Paid parking locations sample"
-                             description: "Sample file for Paid parking locations in Chandigarh City."
-                         itemStatus: "ACTIVE"
-                         name: "paid-parking-locations"
-                         location:
-                           address: "Chandigarh"
-                           geometry:
-                             coordinates:
-                               - [ 76.573333, 30.758358 ]
-                               - [ 76.551361, 30.637912 ]
-                               - [ 76.755981, 30.582361 ]
-                               - [ 76.929016, 30.649727 ]
-                               - [ 76.974334, 30.802012 ]
-                               - [ 76.766967, 30.872761 ]
-                               - [ 76.573333, 30.758358 ]
-                             type: "Polygon"
-                           type: "Place"
-                         id: "a347c5b6-5281-4749-9eab-89784d8f8f9a"
-                         dataSample:
-                           address: "AFEEM KOTHI CHAURAHA"
-                           name: "Paid Parking Camera- AFEEM KOTHI CHAURAHA"
-                           location:
-                             coordinates: [ 80.333972, 26.455667 ]
-                             type: "Point"
-                         dataDescriptor:
-                           address:
-                             dataSchema: "iudx:Text"
-                             description: "Name of the area or locality at which the Paid parking locations is located in Chandigarh city."
-                             type: [ "ValueDescriptor" ]
-                           name:
-                             dataSchema: "iudx:Text"
-                             description: "Name of the Paid parking locations corresponding to this observation."
-                             type: [ "ValueDescriptor" ]
-                           dataDescriptorLabel: "Data Descriptor for Paid parking locations in Chandigarh City"
-                           description: "Data attribute definitions of all Paid parking locations in Chandigarh city."
-                           location:
-                             dataSchema: "iudx:Point"
-                             description: "Physical coordinates of the Paid parking locations corresponding to this observation."
-                             type: [ "ValueDescriptor" ]
-                           type:
-                             - "iudx:DataDescriptor"
-                             - "iudx:PointOfInterest"
-                           '@context': "https://voc.iudx.org.in/"
-                         resourceType: "GSLAYER"
-                         ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
-                         cos: "637e32b6-9a6c-396f-914c-9db5d1a222b0"
+                      - accessPolicy: "OPEN"
+                        apdURL: "acl-apd.iudx.io"
+                        provider: "bbeacb12-5e54-339d-92e0-d8e063b551a8"
+                        resourceServer: "49cf5c76-09de-11ee-be56-0242ac120002"
+                        owner: "13bf961b-b1f4-3f7f-a651-b1b1965a4067"
+                        resourceGroup: "1173f774-794e-4ed0-9c41-281256d44b6a"
+                        instance: "pune"
+                        iudxResourceAPIs:
+                          - "SPATIAL"
+                          - "ATTR"
+                        _geosummary:
+                          _geocoded:
+                            results:
+                              - country: "India"
+                                bbox: [ 76.703813, 30.665456, 76.848368, 30.795316 ]
+                                name: "Chandigarh"
+                                county: "Chandigarh"
+                                locality: "Chandigarh"
+                                region: "Chandigarh"
+                              - country: "India"
+                                bbox: [ 76.95681, 28.07989, 76.99681, 28.11989 ]
+                                name: "Chandigarh"
+                                county: "Mewat"
+                                locality: "Chandigarh"
+                                region: "Haryana"
+                          _reverseGeocoded: { }
+                        description: "Paid parking locations in Chandigarh city."
+                        label: "Chandigarh Paid Parking Locations"
+                        type:
+                          - "iudx:Resource"
+                          - "iudx:PointOfInterest"
+                        '@context': "https://voc.iudx.org.in/"
+                        tags:
+                          - "parking"
+                          - "docking"
+                          - "leave"
+                          - "station"
+                          - "stop"
+                          - "places"
+                          - "parking lot"
+                          - "paid parking"
+                          - "vehicle"
+                          - "car"
+                          - "bike"
+                          - "scooter"
+                          - "two-wheeler"
+                          - "four-wheeler"
+                          - "vehicle wheeler"
+                        itemCreatedAt: "2023-09-15T05:59:05+0530"
+                        dataSampleFile:
+                          - relationType: "REL_FILE"
+                            hasObject: "https://fs-sample-file-bucket.s3.ap-south-1.amazonaws.com/public-access/chandigarh/chandigarh-paid-parking-locations.json"
+                            name: "Chandigarh Paid parking locations sample"
+                            description: "Sample file for Paid parking locations in Chandigarh City."
+                        itemStatus: "ACTIVE"
+                        name: "paid-parking-locations"
+                        location:
+                          address: "Chandigarh"
+                          geometry:
+                            coordinates:
+                              - [ 76.573333, 30.758358 ]
+                              - [ 76.551361, 30.637912 ]
+                              - [ 76.755981, 30.582361 ]
+                              - [ 76.929016, 30.649727 ]
+                              - [ 76.974334, 30.802012 ]
+                              - [ 76.766967, 30.872761 ]
+                              - [ 76.573333, 30.758358 ]
+                            type: "Polygon"
+                          type: "Place"
+                        id: "a347c5b6-5281-4749-9eab-89784d8f8f9a"
+                        dataSample:
+                          address: "AFEEM KOTHI CHAURAHA"
+                          name: "Paid Parking Camera- AFEEM KOTHI CHAURAHA"
+                          location:
+                            coordinates: [ 80.333972, 26.455667 ]
+                            type: "Point"
+                        dataDescriptor:
+                          address:
+                            dataSchema: "iudx:Text"
+                            description: "Name of the area or locality at which the Paid parking locations is located in Chandigarh city."
+                            type: [ "ValueDescriptor" ]
+                          name:
+                            dataSchema: "iudx:Text"
+                            description: "Name of the Paid parking locations corresponding to this observation."
+                            type: [ "ValueDescriptor" ]
+                          dataDescriptorLabel: "Data Descriptor for Paid parking locations in Chandigarh City"
+                          description: "Data attribute definitions of all Paid parking locations in Chandigarh city."
+                          location:
+                            dataSchema: "iudx:Point"
+                            description: "Physical coordinates of the Paid parking locations corresponding to this observation."
+                            type: [ "ValueDescriptor" ]
+                          type:
+                            - "iudx:DataDescriptor"
+                            - "iudx:PointOfInterest"
+                          '@context': "https://voc.iudx.org.in/"
+                        resourceType: "GSLAYER"
+                        ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
+                        cos: "637e32b6-9a6c-396f-914c-9db5d1a222b0"
         '404':
           description: Bad Request
           content:
@@ -4096,6 +4111,261 @@ components:
         resourceServer: '{{uuid}}'
         provider: '{uuid}}'
         resourceGroup: '{{uuid}}'
+    exampleEntityWIdAIModel:
+      type: object
+      title: AI Model entity
+      description: An example AI model entity for first-time onboarding (without system-generated fields like itemCreatedAt or itemStatus)
+      properties:
+        '@context':
+          type: string
+          format: uri
+        id:
+          type: string
+          pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
+        name:
+          type: string
+          pattern: '^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$'
+          maxLength: 512
+        type:
+          type: array
+          items:
+            type: string
+        label:
+          type: string
+          maxLength: 512
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        provider:
+          type: string
+          pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
+        accessPolicy:
+          type: string
+          pattern: '^(RESTRICTED|OPEN|PII|restricted|open|pii)$'
+        organizationType:
+          type: string
+          enum: [ 'Private', 'Government' ]
+        department:
+          type: string
+        modelType:
+          type: string
+        fileFormat:
+          type: string
+        required:
+          - type
+          - name
+          - label
+          - description
+          - tags
+          - provider
+          - accessPolicy
+          - organizationType
+          - department
+          - modelType
+          - fileFormat
+      example:
+        '@context': 'https://voc.iudx.org.in/'
+        id: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+        type:
+          - 'adex:AiModel'
+        name: 'ai-model-crop'
+        label: 'Test-Crop Disease Detection Model'
+        description: 'A test AI model for detecting crop disease with the help of infected leaf images.'
+        tags:
+          - ai
+          - ml
+          - model
+          - ai-model
+          - ml-model
+          - machine
+          - learning
+          - machine learning
+          - training
+          - algorithm
+        provider: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+        accessPolicy: 'RESTRICTED'
+        organizationType: 'Private'
+        department: 'Agriculture and Co-operation'
+        modelType: 'ImageClassifier'
+        fileFormat: 'ipynb'
+    exampleEntityWIdDataBankResource:
+      type: object
+      title: data bank resource entity
+      description: payload for update item with ID
+      properties:
+        '@context':
+          type: string
+        type:
+          type: array
+          items:
+            type: string
+        name:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        provider:
+          type: string
+          format: uuid
+        resourceGroup:
+          type: string
+          format: uuid
+        resourceServer:
+          type: string
+          format: uuid
+        tags:
+          type: array
+          items:
+            type: string
+        accessPolicy:
+          type: string
+        organizationType:
+          type: string
+        fileFormat:
+          type: string
+        dataReadiness:
+          type: string
+        department:
+          type: string
+        resourceType:
+          type: string
+        adexResourceAPIs:
+          type: array
+          items:
+            type: string
+        iudxResourceAPIs:
+          type: array
+          items:
+            type: string
+        location:
+          type: object
+          additionalProperties: true
+        dataDescriptor:
+          type: object
+          additionalProperties: true
+        dataSample:
+          type: object
+          additionalProperties: true
+      required:
+        - type
+        - name
+        - label
+        - description
+        - provider
+        - resourceGroup
+        - resourceServer
+        - tags
+        - accessPolicy
+        - organizationType
+        - fileFormat
+        - dataReadiness
+        - department
+        - resourceType
+        - adexResourceAPIs
+        - iudxResourceAPIs
+        - location
+        - dataDescriptor
+        - dataSample
+      example:
+        '@context': 'https://voc.iudx.org.in/'
+        type:
+          - 'adex:DataBank'
+        name: subdistrict-weather-info
+        label: Subdistrict Weather Info
+        description: Weather related statistics like rainfall and temperature for subdistricts.
+        provider: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+        resourceGroup: '96bc97bf-504e-4306-bb49-99d77896cf1d'
+        resourceServer: '{{UUID}}'
+        tags:
+          - environment
+          - weather
+          - rainfall
+          - temperature
+        accessPolicy: RESTRICTED
+        organizationType: Private
+        fileFormat: .xlsx
+        dataReadiness: More than 80%
+        department: Department of IT, Electronics and Communication
+        resourceType: MESSAGESTREAM
+        adexResourceAPIs:
+          - TEMPORAL
+          - ATTR
+        iudxResourceAPIs:
+          - TEMPORAL
+          - LOCATION
+        location:
+          latitude: 12.9716
+          longitude: 77.5946
+        dataDescriptor:
+          schema: Custom schema here
+        dataSample:
+          temperature: 24
+          rainfall: 5
+          observationDateTime: '2023-02-03T08:30:00+05:30'
+    exampleEntityWIdAdexApps:
+      type: object
+      title: ADeX App entity
+      description: An example ADeX potential application entity for onboarding
+      properties:
+        '@context':
+          type: string
+          format: uri
+        id:
+          type: string
+          pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
+        name:
+          type: string
+          pattern: '^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$'
+          maxLength: 512
+        type:
+          type: array
+          items:
+            type: string
+        label:
+          type: string
+          maxLength: 512
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        organizationType:
+          type: string
+          enum: [ 'Private', 'Government' ]
+        department:
+          type: string
+      required:
+        - type
+        - name
+        - label
+        - description
+        - tags
+        - organizationType
+        - department
+      example:
+        type:
+          - 'adex:Apps'
+        name: 'crop-disease-app'
+        label: 'Test-Crop Disease Detection Model'
+        description: 'A test potential application item for detecting crop disease with the help of infected leaf images.'
+        tags:
+          - ai
+          - ml
+          - model
+          - ai-model
+          - ml-model
+          - machine
+          - learning
+          - machine learning
+          - training
+          - algorithm
+        organizationType: 'Private'
+        department: 'Agriculture and Co-operation'
     updateItemResponse:
       type: object
       title: Response for update Item
@@ -4809,6 +5079,345 @@ components:
           itemStatus: "ACTIVE"
           itemCreatedAt: "2024-01-07T04:53:31+0530"
           _summary: "iudxResourceItemPM item for test only swachhata complaints construction material requests resource item for the postman collection"
+    successResponseForCreateAIModelEntity:
+      type: object
+      title: AI Model Entity
+      description: An AI Model item is successfully created
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have been triggered
+        title:
+          type: string
+          description: A human-readable title for the message response
+        detail:
+          type: string
+          description: Detailed description of the type or response
+        results:
+          type: object
+          properties:
+            '@context':
+              type: string
+              format: uri
+              description: JSON-LD context URI
+            id:
+              type: string
+              pattern: "^[a-zA-Z0-9\\-]{36}$"
+              description: Unique identifier of the model item
+            type:
+              type: array
+              items:
+                type: string
+              description: Type tags from the ADeX vocabulary
+            name:
+              type: string
+              maxLength: 512
+              pattern: "^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$"
+              description: Name of the AI Model item
+            provider:
+              type: string
+              format: uuid
+              maxLength: 36
+              description: Provider id of the AI Model item
+            tags:
+              type: array
+              items:
+                type: string
+              description: Tags associated with the AI Model item
+            accessPolicy:
+              type: string
+              pattern: "^(RESTRICTED|OPEN|PII|restricted|open|pii)$"
+              description: Access policy for the model
+            label:
+              type: string
+              maxLength: 512
+              description: User-friendly label for the model
+            description:
+              type: string
+              description: Detailed description of the model
+            organizationType:
+              type: string
+              description: Type of organization providing the model
+            department:
+              type: string
+              description: Department name
+            modelType:
+              type: string
+              description: Type of model (e.g., ImageClassifier, TimeSeriesPredictor)
+            fileFormat:
+              type: string
+              description: File format of the model
+            itemStatus:
+              type: string
+              enum: [ "ACTIVE", "INACTIVE" ]
+              description: Current status of the model
+            itemCreatedAt:
+              type: string
+              format: date-time
+              description: Creation timestamp of the model item
+          required:
+            - '@context'
+            - id
+            - type
+            - name
+            - provider
+            - tags
+            - accessPolicy
+            - label
+            - description
+            - organizationType
+            - department
+            - modelType
+            - fileFormat
+            - itemStatus
+            - itemCreatedAt
+      example:
+        type: 'urn:dx:cat:Success'
+        title: 'Success'
+        detail: 'Success: Item created'
+        results:
+          '@context': "https://voc.iudx.org.in/"
+          id: "bc87aba4-0dcf-4c07-b9e4-55bdf683ae2a"
+          type:
+            - "adex:AiModel"
+          name: "ai-model-crop"
+          provider: "8fe8d1dd-ae51-4ff8-b995-13bce85d9d88"
+          tags:
+            - "ai"
+            - "ml"
+            - "model"
+          accessPolicy: "RESTRICTED"
+          label: "Test-Crop Disease Detection Model"
+          description: "An test AI model for detecting crop disease with the help of infected leaf images."
+          organizationType: "Private"
+          department: "Agriculture and Co-operation"
+          modelType: "ImageClassifier"
+          fileFormat: "ipynb"
+          itemStatus: "ACTIVE"
+          itemCreatedAt: "2024-01-05T02:09:10+0530"
+    successResponseForCreateDataBankResourceEntity:
+      type: object
+      title: Data Bank Resource Entity
+      description: A Data Bank Resource item is successfully created
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have been triggered
+        title:
+          description: A human-readable title for the message response
+        detail:
+          type: string
+          description: Detailed description of the type or response
+        results:
+          type: object
+          properties:
+            '@context':
+              type: string
+              description: Context URL of the Data Bank Resource item.
+            id:
+              type: string
+              description: ID of the Data Bank Resource item.
+            type:
+              type: array
+              items:
+                type: string
+              description: Type of the Data Bank Resource item.
+            description:
+              type: string
+              description: Description of the Data Bank Resource item.
+            label:
+              type: string
+              description: Label of the Data Bank Resource item.
+            tags:
+              type: array
+              items:
+                type: string
+              description: Tags associated with the Data Bank Resource item.
+            provider:
+              type: string
+              description: Provider id of the Data Bank Resource item.
+              format: uuid
+            itemStatus:
+              type: string
+              description: Status of the Data Bank Resource item.
+            itemCreatedAt:
+              type: string
+              format: date-time
+              description: Creation timestamp of the Data Bank Resource item.
+            domain:
+              type: array
+              items:
+                type: string
+              description: The domain(s) that the Data Bank Resource item belongs to.
+          required:
+            - name
+            - type
+            - label
+            - description
+            - tags
+            - provider
+            - resourceGroup
+            - resourceServer
+            - accessPolicy
+            - organizationType
+            - fileFormat
+            - dataReadiness
+            - department
+            - resourceType
+            - adexResourceAPIs
+            - iudxResourceAPIs
+            - location
+            - dataDescriptor
+            - dataSample
+      example:
+        type: 'urn:dx:cat:Success'
+        title: 'Success'
+        detail: 'Success: Item created'
+        results:
+          '@context': "https://voc.iudx.org.in/"
+          type:
+            - "adex:DataBank"
+          id: "e27a1f6c-6a1b-45b8-a9f5-0c7424d1f0d1"
+          label: 'Weather insights for subdistricts'
+          description: 'Dataset providing weather information such as temperature and rainfall for subdistricts across a state.'
+          tags:
+            - environment
+            - weather
+            - rainfall
+            - temperature
+          provider: '{{UUID}}'
+          resourceGroup: '{{UUID}}'
+          resourceServer: '{{UUID}}'
+          accessPolicy: 'RESTRICTED'
+          organizationType: 'Private'
+          fileFormat: '.xlsx'
+          dataReadiness: 'More than 80%'
+          department: 'Department of IT, Electronics and Communication'
+          resourceType: 'MESSAGESTREAM'
+          adexResourceAPIs:
+            - 'TEMPORAL'
+            - 'ATTR'
+          iudxResourceAPIs:
+            - 'TEMPORAL'
+            - 'ATTR'
+          location:
+            type: 'Place'
+            address: 'Subdistrict HQ, Karnataka'
+            geometry:
+              type: 'Polygon'
+              coordinates:
+                - - [ 77.5946, 12.9716 ]
+                  - [ 77.5956, 12.9726 ]
+                  - [ 77.5966, 12.9736 ]
+                  - [ 77.5946, 12.9716 ]
+          dataDescriptor:
+            '@context': 'https://voc.iudx.org.in/'
+            type: [ 'adex:DataDescriptor' ]
+            dataDescriptorLabel: 'Subdistrict weather structure'
+            description: 'Structure defining data attributes for weather observations'
+            precipitation:
+              type: [ 'adex:Precipitation' ]
+              description: 'Rainfall in mm'
+              unitCode: 'MMT'
+              unitText: 'Millimeter'
+              dataSchema: 'float'
+          dataSample:
+            SomeKey: 'SomeValue'
+            observationDateTime: '2023-02-03T08:30:00+05:30'
+    successResponseForCreateAdexAppsEntity:
+      type: object
+      title: ADeX App Entity
+      description: An ADeX Potential Application item is successfully created
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have been triggered
+        title:
+          type: string
+          description: A human-readable title for the message response
+        detail:
+          type: string
+          description: Detailed description of the type or response
+        results:
+          type: object
+          properties:
+            '@context':
+              type: string
+              format: uri
+              description: JSON-LD context URI
+            id:
+              type: string
+              pattern: "^[a-zA-Z0-9\\-]{36}$"
+              description: Unique identifier of the application item
+            type:
+              type: array
+              items:
+                type: string
+              description: Type tags from the ADeX vocabulary
+            name:
+              type: string
+              maxLength: 512
+              pattern: "^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$"
+              description: Name of the ADeX Application item
+            tags:
+              type: array
+              items:
+                type: string
+              description: Tags associated with the ADeX Application item
+            label:
+              type: string
+              maxLength: 512
+              description: User-friendly label for the application
+            description:
+              type: string
+              description: Detailed description of the application
+            organizationType:
+              type: string
+              description: Type of organization providing the application
+            department:
+              type: string
+              description: Department name
+            itemStatus:
+              type: string
+              enum: [ "ACTIVE", "INACTIVE" ]
+              description: Current status of the application
+            itemCreatedAt:
+              type: string
+              format: date-time
+              description: Creation timestamp of the application item
+          required:
+            - type
+            - name
+            - tags
+            - label
+            - description
+            - organizationType
+            - department
+      example:
+        type: 'urn:dx:cat:Success'
+        title: 'Success'
+        detail: 'Success: Item created'
+        results:
+          '@context': "https://voc.iudx.org.in/"
+          id: "d4fbe5b2-04b0-4a0a-a865-9fef27a5c48e"
+          type:
+            - "adex:Apps"
+          name: "agri-disease-detection"
+          tags:
+            - "ai"
+            - "ml"
+            - "crop"
+            - "disease"
+            - "learning"
+          label: "Crop Disease Detection App"
+          description: "An application for detecting crop diseases using AI-based models trained on infected leaf images."
+          organizationType: "Private"
+          department: "Agriculture and Co-operation"
+          itemStatus: "ACTIVE"
+          itemCreatedAt: "2024-01-05T02:09:10+0530"
     successResponseForUpdateOwnerEntity:
       type: object
       title: Owner Entity
@@ -5057,6 +5666,309 @@ components:
           itemStatus: "ACTIVE"
           itemCreatedAt: "2024-01-07T04:53:31+0530"
         detail: "Success: Item updated successfully"
+    successResponseForUpdateAIModelEntity:
+      type: object
+      title: AI Model Entity
+      description: AI Model item is successfully updated
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have been triggered
+        title:
+          type: string
+          description: A human-readable title for the message response
+        detail:
+          type: string
+          description: Detailed description of the type or response
+        results:
+          type: object
+          properties:
+            "@context":
+              type: string
+              format: uri
+              description: JSON-LD context URI
+            type:
+              type: array
+              items:
+                type: string
+              description: Type tags from the ADeX vocabulary
+            id:
+              type: string
+              pattern: "^[a-zA-Z0-9\\-]{36}$"
+              description: Unique identifier of the model item
+            name:
+              type: string
+              maxLength: 512
+              pattern: "^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$"
+              description: Name of the model
+            provider:
+              type: string
+              maxLength: 36
+              pattern: "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
+              description: UUID of the provider
+            tags:
+              type: array
+              items:
+                type: string
+              description: Tags related to the model
+            accessPolicy:
+              type: string
+              pattern: "^(RESTRICTED|OPEN|PII|restricted|open|pii)$"
+              description: Access policy for the model
+            label:
+              type: string
+              maxLength: 512
+              description: User-friendly label for the model
+            description:
+              type: string
+              description: Detailed description of the model
+            organizationType:
+              type: string
+              description: Type of organization providing the model
+            department:
+              type: string
+              description: Department name
+            modelType:
+              type: string
+              description: Type of model (e.g., ImageClassifier, TimeSeriesPredictor)
+            fileFormat:
+              type: string
+              description: File format of the model
+            itemStatus:
+              type: string
+              enum: [ "ACTIVE", "INACTIVE" ]
+              description: Current status of the model
+            itemCreatedAt:
+              type: string
+              format: date-time
+              description: Creation timestamp of the model item
+      required:
+        - type
+      example:
+        type: 'urn:dx:cat:Success'
+        title: 'Success'
+        detail: 'Success: Item updated successfully'
+        results:
+          "@context": "https://voc.iudx.org.in/"
+          type: [ "adex:AiModel" ]
+          id: "6e58c916-f6c1-448d-acea-756f3272bc57"
+          name: "ai-model-crop"
+          provider: "337545aa-1fa5-4ca0-bf3d-072144dec5b6"
+          tags:
+            - "ai"
+            - "ml"
+            - "model"
+            - "aimodel"
+            - "mlmodel"
+            - "ai-model"
+            - "ml-model"
+            - "machine"
+            - "learning"
+            - "machine learning"
+            - "training"
+            - "algorithm"
+          accessPolicy: "RESTRICTED"
+          label: "Test-Crop Disease Detection Model"
+          description: "An test AI model for detecting crop disease with the help of infected leaf images."
+          organizationType: "Private"
+          department: "Agriculture and Co-operation"
+          modelType: "ImageClassifier"
+          fileFormat: "ipynb"
+          itemStatus: "ACTIVE"
+          itemCreatedAt: "2024-01-07T04:53:31+0530"
+    successResponseForUpdateDataBankEntity:
+      type: object
+      title: DataBank Entity
+      description: DataBank item is successfully updated
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have been triggered
+        title:
+          description: A human-readable title for the message response
+        detail:
+          type: string
+          description: Detailed description of the type or response
+        results:
+          type: object
+          properties:
+            "@context":
+              type: string
+            type:
+              type: array
+              items:
+                type: string
+            name:
+              type: string
+            provider:
+              type: string
+            tags:
+              type: array
+              items:
+                type: string
+            accessPolicy:
+              type: string
+            resourceGroup:
+              type: string
+            organizationType:
+              type: string
+            fileFormat:
+              type: string
+            dataReadiness:
+              type: string
+            department:
+              type: string
+            resourceType:
+              type: string
+            adexResourceAPIs:
+              type: array
+              items:
+                type: string
+            location:
+              type: object
+            dataDescriptor:
+              type: object
+            dataSample:
+              type: object
+            id:
+              type: string
+            itemStatus:
+              type: string
+            itemCreatedAt:
+              type: string
+          required:
+            - type
+      required:
+        - type
+      example:
+        type: 'urn:dx:cat:Success'
+        title: 'Success'
+        results:
+          "@context": "https://voc.iudx.org.in/"
+          type:
+            - "adex:DataBank"
+          name: "subdistrict-weather-info"
+          provider: "337545aa-1fa5-4ca0-bf3d-072144dec5b6"
+          tags:
+            - "environment"
+            - "weather"
+            - "rainfall"
+            - "temperature"
+          accessPolicy: "RESTRICTED"
+          resourceGroup: "96bc97bf-504e-4306-bb49-99d77896cf1d"
+          organizationType: "Private"
+          fileFormat: ".xlsx"
+          dataReadiness: "More than 80%"
+          department: "Department of IT, Electronics and Communication"
+          resourceType: "MESSAGESTREAM"
+          adexResourceAPIs:
+            - "TEMPORAL"
+            - "ATTR"
+          location:
+            SomeKey: "SomeValue"
+          dataDescriptor:
+            SomeKey: "SomeValue"
+          dataSample:
+            SomeKey: "SomeValue"
+            observationDateTime: "2023-02-03T08:30:00+05:30"
+          id: "6e58c916-f6c1-448d-acea-756f3272bc57"
+          itemStatus: "ACTIVE"
+          itemCreatedAt: "2024-01-07T04:53:31+0530"
+        detail: "Success: Item updated successfully"
+    successResponseForUpdateAdexAppsEntity:
+      type: object
+      title: ADeX Potential Application Entity
+      description: ADeX Application metadata item is successfully updated
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have been triggered
+        title:
+          type: string
+          description: A human-readable title for the message response
+        detail:
+          type: string
+          description: Detailed description of the type or response
+        results:
+          type: object
+          properties:
+            "@context":
+              type: string
+              format: uri
+              description: JSON-LD context URI
+            type:
+              type: array
+              items:
+                type: string
+              description: Type tags from the ADeX vocabulary
+            id:
+              type: string
+              pattern: "^[a-zA-Z0-9\\-]{36}$"
+              description: Unique identifier of the application item
+            name:
+              type: string
+              maxLength: 512
+              pattern: "^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$"
+              description: Name of the potential application
+            tags:
+              type: array
+              items:
+                type: string
+              description: Tags related to the application
+            label:
+              type: string
+              maxLength: 512
+              description: User-friendly label for the application
+            description:
+              type: string
+              description: Detailed description of the application
+            organizationType:
+              type: string
+              description: Type of organization providing the application
+            department:
+              type: string
+              description: Department name
+            itemStatus:
+              type: string
+              enum: [ "ACTIVE", "INACTIVE" ]
+              description: Current status of the application
+            itemCreatedAt:
+              type: string
+              format: date-time
+              description: Creation timestamp of the application item
+      required:
+        - type
+      example:
+        type: 'urn:dx:cat:Success'
+        title: 'Success'
+        detail: 'Success: Item updated successfully'
+        results:
+          "@context": "https://voc.iudx.org.in/"
+          type: [ "adex:Apps" ]
+          id: "8b95ab80-2aaf-4636-a65e-7f2563d0d371"
+          name: "some-name"
+          tags:
+            - "ai"
+            - "ml"
+            - "model"
+            - "aimodel"
+            - "mlmodel"
+            - "ai-model"
+            - "ml-model"
+            - "machine"
+            - "learning"
+            - "machine learning"
+            - "training"
+            - "algorithm"
+          label: "Test-Crop Disease Detection Model"
+          description: "An test potential application item for detecting crop disease with the help of infected leaf images."
+          organizationType: "Private"
+          department: "Agriculture and Co-operation"
+          itemStatus: "ACTIVE"
+          itemCreatedAt: "2024-01-07T04:53:31+0530"
     successResponseForGetOwnerEntity:
       type: object
       title: Owner Entity
@@ -5305,6 +6217,215 @@ components:
           itemStatus: "ACTIVE"
           itemCreatedAt: "2024-01-07T04:53:31+0530"
         detail: "Success: Item fetched Successfully"
+    successResponseForGetAIModelEntity:
+      type: object
+      title: AI Model Entity
+      description: AI Model item is successfully fetched
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have been triggered
+        title:
+          type: string
+          description: A human-readable title for the message response
+        detail:
+          type: string
+          description: Detailed description of the type or response
+        results:
+          type: object
+          properties:
+            "@context":
+              type: string
+              format: uri
+              description: JSON-LD context URI
+            type:
+              type: array
+              items:
+                type: string
+              description: Type tags from the ADeX vocabulary
+            id:
+              type: string
+              pattern: "^[a-zA-Z0-9\\-]{36}$"
+              description: Unique identifier of the model item
+            name:
+              type: string
+              pattern: "^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$"
+              maxLength: 512
+              description: An explanation about the purpose of this instance.
+            provider:
+              type: string
+              pattern: "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
+              maxLength: 36
+              description: UUID of the provider
+            tags:
+              type: array
+              items:
+                type: string
+              description: Tags describing the model
+            accessPolicy:
+              type: string
+              pattern: "^(RESTRICTED|OPEN|PII|restricted|open|pii)$"
+              description: Access policy for the model
+            label:
+              type: string
+              maxLength: 512
+              description: User-friendly label for the model
+            description:
+              type: string
+              description: Detailed description of the model
+            organizationType:
+              type: string
+              description: Type of organization providing the model
+            department:
+              type: string
+              description: Department name
+            modelType:
+              type: string
+              description: Type of model (e.g., ImageClassifier, TimeSeriesPredictor)
+            fileFormat:
+              type: string
+              description: File format of the model
+            itemStatus:
+              type: string
+              enum: [ "ACTIVE", "INACTIVE" ]
+              description: Current status of the model
+            itemCreatedAt:
+              type: string
+              format: date-time
+              description: Creation timestamp of the model item
+      required:
+        - type
+      example:
+        type: 'urn:dx:cat:Success'
+        title: 'Success'
+        detail: 'Success: Item fetched successfully'
+        results:
+          "@context": "https://voc.iudx.org.in/"
+          type:
+            - "adex:AiModel"
+          id: "6e58c916-f6c1-448d-acea-756f3272bc57"
+          name: "ai-model-crop"
+          provider: "8fe8d1dd-ae51-4ff8-b995-13bce85d9d88"
+          tags:
+            - "ai"
+            - "ml"
+            - "model"
+            - "aimodel"
+            - "mlmodel"
+            - "ai-model"
+            - "ml-model"
+            - "machine"
+            - "learning"
+            - "training"
+            - "algorithm"
+          accessPolicy: "RESTRICTED"
+          label: "Test-Crop Disease Detection Model"
+          description: "An test AI model for detecting crop disease with the help of infected leaf images."
+          organizationType: "Private"
+          department: "Agriculture and Co-operation"
+          modelType: "ImageClassifier"
+          fileFormat: "ipynb"
+          itemStatus: "ACTIVE"
+          itemCreatedAt: "2024-01-07T04:53:31+0530"
+    successResponseForGetDataBankEntity:
+      type: object
+      title: DataBank Entity
+      description: DataBank item is successfully fetched
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have been triggered
+        title:
+          description: A human-readable title for the message response
+        detail:
+          type: string
+          description: Detailed description of the type or response
+        results:
+          type: object
+          description: DataBank entity response body
+      required:
+        - type
+      example:
+        type: 'urn:dx:cat:Success'
+        title: 'Success'
+        results:
+          "@context": "https://voc.iudx.org.in/"
+          type:
+            - "adex:DataBank"
+          name: "subdistrict-weather-info"
+          provider: "337545aa-1fa5-4ca0-bf3d-072144dec5b6"
+          tags:
+            - "environment"
+            - "weather"
+            - "rainfall"
+            - "temperature"
+          accessPolicy: "RESTRICTED"
+          resourceGroup: "96bc97bf-504e-4306-bb49-99d77896cf1d"
+          organizationType: "Private"
+          fileFormat: ".xlsx"
+          dataReadiness: "More than 80%"
+          department: "Department of IT, Electronics and Communication"
+          resourceType: "MESSAGESTREAM"
+          adexResourceAPIs:
+            - "TEMPORAL"
+            - "ATTR"
+          location:
+            SomeKey: "SomeValue"
+          dataDescriptor:
+            SomeKey: "SomeValue"
+          dataSample:
+            SomeKey: "SomeValue"
+            observationDateTime: "2023-02-03T08:30:00+05:30"
+        detail: "Success: Item fetched Successfully"
+    successResponseForGetAdexAppsEntity:
+      type: object
+      title: ADeX Apps Entity
+      description: ADeX Potential Application item is successfully fetched
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have been triggered
+        title:
+          description: A human-readable title for the message response
+        detail:
+          type: string
+          description: Detailed description of the type or response
+        results:
+          type: object
+          description: ADeX Application entity response body
+      required:
+        - type
+      example:
+        type: 'urn:dx:cat:Success'
+        title: 'Success'
+        detail: 'Success: Item fetched Successfully'
+        results:
+          "@context": "https://voc.iudx.org.in/"
+          type:
+            - "adex:Apps"
+          name: "crop-disease-detector"
+          tags:
+            - "ai"
+            - "ml"
+            - "model"
+            - "aimodel"
+            - "mlmodel"
+            - "ai-model"
+            - "ml-model"
+            - "machine"
+            - "learning"
+            - "machine learning"
+            - "training"
+            - "algorithm"
+          label: "Crop Disease Detection Model"
+          description: "A model that helps detect crop diseases using infected leaf images."
+          organizationType: "Private"
+          department: "Agriculture and Co-operation"
+          itemStatus: "ACTIVE"
+          itemCreatedAt: "2024-06-15T10:25:00+05:30"
     successResponseForTagSearch:
       type: object
       title: Tag Search
@@ -6666,7 +7787,7 @@ components:
         type: urn:dx:cat:InvalidSchema
         title: Invalid Schema
         detail: Invalid Schema
-        results: []
+        results: [ ]
     errorInvalidLinks:
       type: object
       title: Response  - invalid links
@@ -7130,6 +8251,271 @@ components:
         resourceServer: '{{uuid}}'
         provider: '{uuid}}'
         resourceGroup: '{{uuid}}'
+    exampleEntityAIModel:
+      type: object
+      title: AI Model entity
+      description: An example AI model entity for first-time onboarding (without system-generated fields like itemCreatedAt or itemStatus)
+      properties:
+        '@context':
+          type: string
+          format: uri
+        id:
+          type: string
+          pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
+        name:
+          type: string
+          pattern: '^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$'
+          maxLength: 512
+        type:
+          type: array
+          items:
+            type: string
+        label:
+          type: string
+          maxLength: 512
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        provider:
+          type: string
+          pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
+        accessPolicy:
+          type: string
+          pattern: '^(RESTRICTED|OPEN|PII|restricted|open|pii)$'
+        organizationType:
+          type: string
+          enum: [ 'Private', 'Government' ]
+        department:
+          type: string
+        modelType:
+          type: string
+        fileFormat:
+          type: string
+      required:
+        - type
+        - name
+        - label
+        - description
+        - tags
+        - provider
+        - accessPolicy
+        - organizationType
+        - department
+        - modelType
+        - fileFormat
+      example:
+        '@context': 'https://voc.iudx.org.in/'
+        id: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+        type:
+          - 'adex:AiModel'
+        name: 'ai-model-crop'
+        label: 'Test-Crop Disease Detection Model'
+        description: 'A test AI model for detecting crop disease with the help of infected leaf images.'
+        tags:
+          - ai
+          - ml
+          - model
+          - ai-model
+          - ml-model
+          - machine
+          - learning
+          - machine learning
+          - training
+          - algorithm
+        provider: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+        accessPolicy: 'RESTRICTED'
+        organizationType: 'Private'
+        department: 'Agriculture and Co-operation'
+        modelType: 'ImageClassifier'
+        fileFormat: 'ipynb'
+    exampleEntityDataBank:
+      type: object
+      title: Data Bank entity
+      description: An example entity without ID (For first time onboarding)
+      properties:
+        '@context':
+          type: string
+        id:
+          type: string
+          format: uuid
+        type:
+          type: array
+          items:
+            type: string
+        label:
+          type: string
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        provider:
+          type: string
+          format: uuid
+        accessPolicy:
+          type: string
+        resourceGroup:
+          type: string
+          format: uuid
+        organizationType:
+          type: string
+        fileFormat:
+          type: string
+        dataReadiness:
+          type: string
+        department:
+          type: string
+        resourceType:
+          type: string
+        adexResourceAPIs:
+          type: array
+          items:
+            type: string
+        iudxResourceAPIs:
+          type: array
+          items:
+            type: string
+        location:
+          type: object
+        dataDescriptor:
+          type: object
+        dataSample:
+          type: object
+      required:
+        - name
+        - type
+        - label
+        - description
+        - tags
+        - provider
+        - resourceGroup
+        - resourceServer
+        - accessPolicy
+        - organizationType
+        - fileFormat
+        - dataReadiness
+        - department
+        - resourceType
+        - adexResourceAPIs
+        - iudxResourceAPIs
+        - location
+        - dataDescriptor
+        - dataSample
+      example:
+        type:
+          - 'adex:DataBank'
+        label: 'Weather insights for subdistricts'
+        description: 'Dataset providing weather information such as temperature and rainfall for subdistricts across a state.'
+        tags:
+          - environment
+          - weather
+          - rainfall
+          - temperature
+        provider: '{{UUID}}'
+        resourceGroup: '{{UUID}}'
+        resourceServer: '{{UUID}}'
+        accessPolicy: 'RESTRICTED'
+        organizationType: 'Private'
+        fileFormat: '.xlsx'
+        dataReadiness: 'More than 80%'
+        department: 'Department of IT, Electronics and Communication'
+        resourceType: 'MESSAGESTREAM'
+        adexResourceAPIs:
+          - 'TEMPORAL'
+          - 'ATTR'
+        iudxResourceAPIs:
+          - 'TEMPORAL'
+          - 'ATTR'
+        location:
+          type: 'Place'
+          address: 'Subdistrict HQ, Karnataka'
+          geometry:
+            type: 'Polygon'
+            coordinates:
+              - - [ 77.5946, 12.9716 ]
+                - [ 77.5956, 12.9726 ]
+                - [ 77.5966, 12.9736 ]
+                - [ 77.5946, 12.9716 ]
+        dataDescriptor:
+          '@context': 'https://voc.iudx.org.in/'
+          type: [ 'adex:DataDescriptor' ]
+          dataDescriptorLabel: 'Subdistrict weather structure'
+          description: 'Structure defining data attributes for weather observations'
+          precipitation:
+            type: [ 'adex:Precipitation' ]
+            description: 'Rainfall in mm'
+            unitCode: 'MMT'
+            unitText: 'Millimeter'
+            dataSchema: 'float'
+        dataSample:
+          SomeKey: 'SomeValue'
+          observationDateTime: '2023-02-03T08:30:00+05:30'
+    exampleEntityAdexApps:
+      type: object
+      title: ADeX Apps entity
+      description: An example ADeX Apps entity for onboarding (without system-generated fields like itemCreatedAt or itemStatus)
+      properties:
+        '@context':
+          type: string
+          format: uri
+        id:
+          type: string
+          pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
+        name:
+          type: string
+          pattern: '^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$'
+          maxLength: 512
+        type:
+          type: array
+          items:
+            type: string
+        label:
+          type: string
+          maxLength: 512
+        description:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        organizationType:
+          type: string
+          enum: [ 'Private', 'Government' ]
+        department:
+          type: string
+      required:
+        - type
+        - name
+        - label
+        - description
+        - tags
+        - organizationType
+        - department
+      example:
+        '@context': 'https://voc.iudx.org.in/'
+        id: 'f2c6a437-8109-4a2c-8923-efc2a9e6df1d'
+        type:
+          - 'adex:Apps'
+        name: 'crop-disease-detector-app'
+        label: 'Crop Disease Detection Application'
+        description: 'A potential application designed to detect crop diseases from infected leaf images using AI/ML models.'
+        tags:
+          - ai
+          - ml
+          - model
+          - ai-model
+          - ml-model
+          - machine
+          - learning
+          - machine learning
+          - training
+          - algorithm
+        organizationType: 'Private'
+        department: 'Agriculture and Co-operation'
     unAuthorizedAccess:
       type: object
       title: Common to unauthorized access response
@@ -8330,30 +9716,30 @@ components:
               totalResources: 2
               instance_icon: "https://iudx-catalogue-assets.s3.ap-south-1.amazonaws.com/instances/icons/surat.jpg"
             resource:
-              -  instance: "surat"
-                 apdURL: "authdev.iudx.io"
-                 description: "TEST ITEM FOR APD verify. authdev.iudx.io is a dummy APD"
-                 label: "TEST ITEM FOR APD /verify TESTS"
-                 '@context': "https://voc.iudx.org.in/"
-                 resourceServer: "49cf5c76-09de-11ee-be56-0242ac120002"
-                 location:
-                   address: "Surat"
-                   type: "Place"
-                 accessPolicy: "SECURE"
-                 schema: "https://voc.iudx.org.in/TransitManagement"
-                 resourceId: "2d043bdb-fc62-4650-8426-dc72492cd621"
-              -  accessPolicy: "SECURE"
-                 apdURL: "acl-apd.iudx.io"
-                 resourceServer: "49cf5c76-09de-11ee-be56-0242ac120002"
-                 instance: "surat"
-                 description: "Realtime bus position information from Surat city public transit buses."
-                 label: "Surat Transit Realtime Position-UUID"
-                 '@context': "https://voc.iudx.org.in/"
-                 location:
-                   address: "Surat"
-                   type: "Place"
-                 schema: "https://voc.iudx.org.in/TransitManagement"
-                 resourceId: "83c2e5c2-3574-4e11-9530-2b1fbdfce832"
+              - instance: "surat"
+                apdURL: "authdev.iudx.io"
+                description: "TEST ITEM FOR APD verify. authdev.iudx.io is a dummy APD"
+                label: "TEST ITEM FOR APD /verify TESTS"
+                '@context': "https://voc.iudx.org.in/"
+                resourceServer: "49cf5c76-09de-11ee-be56-0242ac120002"
+                location:
+                  address: "Surat"
+                  type: "Place"
+                accessPolicy: "SECURE"
+                schema: "https://voc.iudx.org.in/TransitManagement"
+                resourceId: "2d043bdb-fc62-4650-8426-dc72492cd621"
+              - accessPolicy: "SECURE"
+                apdURL: "acl-apd.iudx.io"
+                resourceServer: "49cf5c76-09de-11ee-be56-0242ac120002"
+                instance: "surat"
+                description: "Realtime bus position information from Surat city public transit buses."
+                label: "Surat Transit Realtime Position-UUID"
+                '@context': "https://voc.iudx.org.in/"
+                location:
+                  address: "Surat"
+                  type: "Place"
+                schema: "https://voc.iudx.org.in/TransitManagement"
+                resourceId: "83c2e5c2-3574-4e11-9530-2b1fbdfce832"
     successResponseForPostDatasetWithTags:
       type: object
       title: Post Dataset With Tags
