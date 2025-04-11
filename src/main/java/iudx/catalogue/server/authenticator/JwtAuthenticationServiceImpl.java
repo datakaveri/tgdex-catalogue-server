@@ -82,6 +82,8 @@ public class JwtAuthenticationServiceImpl implements AuthenticationService {
       case ITEM_TYPE_PROVIDER:
       case ITEM_TYPE_RESOURCE_GROUP:
       case ITEM_TYPE_RESOURCE:
+      case ITEM_TYPE_AI_MODEL:
+      case ITEM_TYPE_DATA_BANK:
         isValidAudience = serverUrl != null && serverUrl.equalsIgnoreCase(jwtData.getAud());
         break;
       case RATINGS:
@@ -206,7 +208,9 @@ public class JwtAuthenticationServiceImpl implements AuthenticationService {
     boolean skipAdminCheck =
         itemType.equalsIgnoreCase("")
             || itemType.equalsIgnoreCase(ITEM_TYPE_RESOURCE_GROUP)
-            || itemType.equalsIgnoreCase(ITEM_TYPE_RESOURCE);
+            || itemType.equalsIgnoreCase(ITEM_TYPE_RESOURCE)
+            || itemType.equalsIgnoreCase(ITEM_TYPE_AI_MODEL)
+            || itemType.equalsIgnoreCase(ITEM_TYPE_DATA_BANK);
 
     jwtDecodeFuture
         .compose(
@@ -284,11 +288,14 @@ public class JwtAuthenticationServiceImpl implements AuthenticationService {
       case ITEM_TYPE_OWNER:
       case ITEM_TYPE_COS:
       case ITEM_TYPE_RESOURCE_SERVER:
+      case ITEM_TYPE_APPS:
         isValidIid = type.equalsIgnoreCase("cos") && server.equalsIgnoreCase(issuer);
         break;
       case ITEM_TYPE_PROVIDER:
       case ITEM_TYPE_RESOURCE_GROUP:
       case ITEM_TYPE_RESOURCE:
+      case ITEM_TYPE_AI_MODEL:
+      case ITEM_TYPE_DATA_BANK:
         isValidIid = type.equalsIgnoreCase("rs") && server.equalsIgnoreCase(resourceServerRegUrl);
         break;
       default:

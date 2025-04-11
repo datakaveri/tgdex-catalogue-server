@@ -88,6 +88,15 @@ public final class ListApis {
           case COS:
             type = ITEM_TYPE_COS;
             break;
+          case AI_MODEL:
+            type = ITEM_TYPE_AI_MODEL;
+            break;
+          case DATA_BANK:
+            type = ITEM_TYPE_DATA_BANK;
+            break;
+          case APPS:
+            type = ITEM_TYPE_APPS;
+            break;
           default:
             LOGGER.error("Fail: Invalid itemType:" + itemType);
             response

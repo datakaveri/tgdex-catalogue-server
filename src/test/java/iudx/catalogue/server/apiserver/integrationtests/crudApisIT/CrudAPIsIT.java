@@ -28,6 +28,9 @@ public class CrudAPIsIT {
     public static String provider_id;
     public static String resource_group_id;
     public static String resource_item_id;
+    public static String ai_model_item_id;
+    public static String data_bank_resource_item_id;
+    public static String adex_app_id;
 
     // Helper method to check item existence
     private boolean itemExists(String id) {
@@ -61,7 +64,7 @@ public class CrudAPIsIT {
         jsonPayload.put("@context", "https://voc.iudx.org.in/");
         JsonArray typeArray = new JsonArray().add("iudx:Owner");
         jsonPayload.put("type", typeArray);
-        jsonPayload.put("name", "OwnerItemPM18");
+        jsonPayload.put("name", "OwnerItemForTest");
         jsonPayload.put("description", "testing owner item creation through integration tests");
 
         Response response= given()
@@ -102,7 +105,7 @@ public class CrudAPIsIT {
         JsonObject jsonPayload = new JsonObject()
                 .put("@context", "https://voc.iudx.org.in/")
                 .put("type",new JsonArray().add("iudx:COS"))
-                .put("name", "iudxCOSPM18")
+                .put("name", "CosItem4Test")
                 .put("owner", owner_id)
                 .put("description", "testing COS item creation through integration tests")
                 .put("cosURL","cat-test.iudx.io")
@@ -128,6 +131,55 @@ public class CrudAPIsIT {
 
     @Test
     @Order(3)
+    @DisplayName("testing create ADEX Apps item - 201")
+    void createAdexAppsItem() {
+
+        // Optional delay if needed, similar to COS item creation
+        try {
+            Thread.sleep(2000); // 2 seconds delay
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        JsonObject jsonPayload = new JsonObject()
+            .put("type", new JsonArray().add("adex:Apps"))
+            .put("name", "AppsItem4Test")
+            .put("tags", new JsonArray()
+                .add("ai")
+                .add("ml")
+                .add("agriculture")
+                .add("planthealth")
+                .add("diseasedetection")
+                .add("deep-learning")
+                .add("cnn")
+                .add("image-classification")
+                .add("leaf-analysis"))
+            .put("label", "Crop Disease Detection using AI")
+            .put("description", "An AI-based application that detects diseases in crops by analyzing images of leaves. It uses deep learning models to identify symptoms and suggest treatments.")
+            .put("organizationType", "Private")
+            .put("department", "Agriculture and Co-operation");
+
+        Response response = given()
+            .contentType("application/json")
+            .header("token", cosAdminToken)
+            .body(jsonPayload.toString())
+            .when()
+            .post("/item/")
+            .then()
+            .statusCode(201)
+            .body("type", is("urn:dx:cat:Success"))
+            .body("title", is("Success"))
+            .body("detail", equalTo("Success: Item created"))
+            .body("results.id", notNullValue())
+            .extract()
+            .response();
+
+        // Extract and store the created item ID if needed
+        adex_app_id = response.path("results.id");
+    }
+
+    @Test
+    @Order(4)
     @DisplayName("testing the creation of DX Resource Server Item Entity - 201")
     void createDXResourceServerItemEntity() {
         LOGGER.debug("cos_id from resource server item creation..."+cos_id);
@@ -146,7 +198,7 @@ public class CrudAPIsIT {
         JsonObject jsonPayload = new JsonObject()
                 .put("@context", "https://voc.iudx.org.in/")
                 .put("type", new JsonArray().add("iudx:ResourceServer"))
-                .put("name", "IudxResourceServerPM")
+                .put("name", "ResourceServer4Test")
                 .put("description", "Multi tenanted IUDX resource server for integration tests")
                 .put("tags",new JsonArray().add("IUDX").add("Resource").add("Server").add("Platform"))
                 .put("cos", cos_id)
@@ -195,7 +247,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(4)
+    @Order(5)
     @DisplayName("testing create DX Provider item - 201")
     void createDXProviderItem() {
         LOGGER.debug("resource server id from provider item creation..."+resource_server_id);
@@ -250,7 +302,54 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(5)
+    @Order(6)
+    @DisplayName("testing create DX AI Model Item Entity - 201")
+    void createDXAIModelItemEntity() {
+        LOGGER.debug("provider id check..."+provider_id);
+        // Introduce a delay
+        try {
+            Thread.sleep(2000); // 2 seconds delay
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        // Check if provider item exists before creating DX Resource Group item
+        if (!itemExists(provider_id)) {
+            LOGGER.warn("provider item does not exist. Retrying...");
+        }
+
+        JsonObject jsonPayload = new JsonObject()
+            .put("type", new JsonArray().add("adex:AiModel"))
+            .put("name", "AiModelForTest")
+            .put("description", "ai model item for the postman collection")
+            .put("label", "ai model item for test only")
+            .put("tags", new JsonArray().add("ai").add("crop").add("crop disease")
+                .add("disease detection").add("ai model"))
+            .put("provider", provider_id)
+            .put("accessPolicy", "RESTRICTED")
+            .put("organizationType", "Private")
+            .put("department", "Agriculture and Co-operation")
+            .put("modelType", "ImageClassifier")
+            .put("fileFormat", "ipynb");
+        Response response = given()
+            .contentType("application/json")
+            .header("token", token)
+            .body(jsonPayload.toString())
+            .when()
+            .post("/item/")
+            .then()
+            .statusCode(201)
+            .body("type", is("urn:dx:cat:Success"))
+            .body("title", is("Success"))
+            .body("detail", equalTo("Success: Item created"))
+            .body("results.id", notNullValue())
+            .extract()
+            .response();
+        // Extract the generated ID from the response
+        ai_model_item_id = response.path("results.id");
+    }
+
+    @Test
+    @Order(7)
     @DisplayName("testing create DX Resource Group Item Entity - 201")
     void createDXResourceGroupItemEntity() {
         LOGGER.debug("provider id before check..."+provider_id);
@@ -274,7 +373,7 @@ public class CrudAPIsIT {
         JsonObject jsonPayload = new JsonObject()
                 .put("@context", "https://voc.iudx.org.in/")
                 .put("type", new JsonArray().add("iudx:ResourceGroup").add("iudx:IssueReporting"))
-                .put("name", "ResourceGroupPM19")
+                .put("name", "ResourceGroupForTest")
                 .put("description", "resource group item for the postman collection")
                 .put("tags", new JsonArray().add("swachhata").add("complaints").add("construction material").add("requests"))
                 .put("provider", provider_id);
@@ -297,7 +396,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(6)
+    @Order(8)
     @DisplayName("testing create DX Resource Item - 201")
     void createDXResourceItem() {
         LOGGER.debug("from DX RS item..."+resource_server_id +" "+provider_id+" "+resource_group_id);
@@ -328,7 +427,7 @@ public class CrudAPIsIT {
         JsonObject jsonPayload = new JsonObject()
                 .put("@context", "https://voc.iudx.org.in/")
                 .put("type", new JsonArray().add("iudx:Resource").add("iudx:PointOfInterest"))
-                .put("name", "ResourceItemPM19")
+                .put("name", "ResourceItemForTest")
                 .put("label", "item for test only")
                 .put("description", "resource item for the postman collection")
                 .put("tags", new JsonArray().add("swachhata").add("complaints").add("construction material").add("requests"))
@@ -357,7 +456,78 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(7)
+    @Order(9)
+    @DisplayName("testing create DX Data Bank Resource Item Entity - 201")
+    void createDXDataBankResourceItemEntity() {
+        LOGGER.debug("from DX Data Bank RS item..."
+            + resource_server_id + " " + provider_id + " " + resource_group_id);
+
+        // Introduce a delay
+        try {
+            Thread.sleep(2000); // 2 seconds delay
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        // Check if RS item exists before creating DX Resource item
+        if (!itemExists(resource_server_id)) {
+            LOGGER.debug("Inside RS id check..");
+            LOGGER.warn("item does not exist. Retrying...");
+            // Add retry logic or handle the situation accordingly
+        }
+        if (!itemExists(provider_id)) {
+            LOGGER.debug("Inside provider id check..");
+            LOGGER.warn("item does not exist. Retrying...");
+            // Add retry logic or handle the situation accordingly
+        }
+        if (!itemExists(resource_group_id)) {
+            LOGGER.debug("Inside RS group id check..");
+            LOGGER.warn("item does not exist. Retrying...");
+            // Add retry logic or handle the situation accordingly
+        }
+
+        JsonObject jsonPayload = new JsonObject()
+            .put("@context", "https://voc.iudx.org.in/")
+            .put("type", new JsonArray().add("adex:DataBank"))
+            .put("name", "DataBankItem4Test")
+            .put("description", "ai model item for the postman collection")
+            .put("label", "ai model item for test only")
+            .put("tags", new JsonArray().add("ai").add("crop").add("crop disease")
+                .add("disease detection").add("ai model"))
+            .put("resourceServer", resource_server_id)
+            .put("provider", provider_id)
+            .put("resourceGroup", resource_group_id)
+            .put("accessPolicy", "RESTRICTED")
+            .put("organizationType", "Private")
+            .put("department", "Agriculture and Co-operation")
+            .put("dataReadiness", "More than 80%")
+            .put("resourceType", "MESSAGESTREAM")
+            .put("iudxResourceAPIs", new JsonArray().add("ATTR"))
+            .put("adexResourceAPIs", new JsonArray().add("TEMPORAL").add("ATTR"))
+            .put("location", new JsonObject().put("type", "Place").put("address", "Khammam, " +
+                "Telanagana").put("geometry", new JsonObject().put("coordinates", new JsonArray())))
+            .put("dataDescriptor", "sample descriptor")
+            .put("dataSample", "sample data")
+            .put("fileFormat", "xlsx");
+        Response response = given()
+            .contentType("application/json")
+            .header("token", token)
+            .body(jsonPayload.toString())
+            .when()
+            .post("/item/")
+            .then()
+            .statusCode(201)
+            .body("type", is("urn:dx:cat:Success"))
+            .body("title", is("Success"))
+            .body("detail", equalTo("Success: Item created"))
+            .body("results.id", notNullValue())
+            .extract()
+            .response();
+        // Extract the generated ID from the response
+        data_bank_resource_item_id = response.path("results.id");
+    }
+
+    @Test
+    @Order(10)
     @DisplayName("testing create a DX Resource item - 400")
     void createDXResourceItem400() {
         JsonObject jsonPayload = new JsonObject()
@@ -387,7 +557,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(8)
+    @Order(11)
     @DisplayName("testing create DX Entity - 400")
     void createDXEntity400() {
         LOGGER.info("owner_id: "+owner_id);
@@ -413,7 +583,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(9)
+    @Order(12)
     @DisplayName("testing create DX Entity - 400 Invalid UUID")
     void createDXEntityInvalidUUID400() {
         JsonObject jsonPayload = new JsonObject()
@@ -450,7 +620,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(10)
+    @Order(13)
     @DisplayName("testing create DX Entity - 401 Invalid Credentials")
     void createDXEntityInvalidCredentials() {
         JsonObject jsonPayload = new JsonObject()
@@ -482,13 +652,13 @@ public class CrudAPIsIT {
      */
 
     @Test
-    @Order(11)
+    @Order(14)
     @DisplayName("testing update owner item - 200")
     void updateOwnerItem() {
         JsonObject jsonPayload = new JsonObject()
                 .put("@context", "https://voc.iudx.org.in/")
                 .put("type", new JsonArray().add("iudx:Owner"))
-                .put("name", "iudxOwnerPM18")
+                .put("name", "OwnerItemForTest")
                 .put("description", "testing the owner id updation through integration tests")
                 .put("id", owner_id);
         Response response = given()
@@ -506,13 +676,13 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(12)
+    @Order(15)
     @DisplayName("testing update COS item - 200")
     void updateCOSItem() {
         JsonObject jsonPayload = new JsonObject()
                 .put("@context", "https://voc.iudx.org.in/")
                 .put("type", new JsonArray().add("iudx:COS"))
-                .put("name", "IudxCosPM18")
+                .put("name", "CosItem4Test")
                 .put("owner", owner_id)
                 .put("id", cos_id)
                 .put("description", "COS item for postman collection")
@@ -534,13 +704,49 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(13)
+    @Order(16)
+    @DisplayName("testing update ADEX Apps item - 200")
+    void updateAdexAppsItem() {
+        LOGGER.info("Updating ADEX Apps item with ID: " + adex_app_id);
+
+        JsonObject updatePayload = new JsonObject()
+            .put("type", new JsonArray().add("adex:Apps"))
+            .put("name", "AppsItem4Test")
+            .put("id", adex_app_id)
+            .put("tags", new JsonArray()
+                .add("ai")
+                .add("ml")
+                .add("agriculture")
+                .add("planthealth")
+                .add("diseasedetection")
+                .add("deep-learning")
+                .add("cnn")
+                .add("image-classification")
+                .add("leaf-analysis"))
+            .put("organizationType", "Private")
+            .put("department", "Agriculture and Co-operation")
+            .put("description", "UPDATED: AI app for crop disease detection using advanced CNN models.")
+            .put("label", "Updated Crop Disease Detection");
+
+        given()
+            .contentType("application/json")
+            .header("token", cosAdminToken)
+            .body(updatePayload.toString())
+            .when()
+            .put("/item/")
+            .then()
+            .statusCode(200)
+            .body("type", is("urn:dx:cat:Success"));
+    }
+
+    @Test
+    @Order(17)
     @DisplayName("testing update DX Resource Server Item - 200")
-    void updateDXResourceItem(){
+    void updateDXResourceServerItem(){
         JsonObject jsonPayload = new JsonObject()
                 .put("@context", "https://voc.iudx.org.in/")
                 .put("type", new JsonArray().add("iudx:ResourceServer"))
-                .put("name", "ResourceServerPM19")
+                .put("name", "ResourceServer4Test")
                 .put("id", resource_server_id)
                 .put("description", "Multi tenanted IUDX resource server for postman collection")
                 .put("tags", new JsonArray().add("IUDX").add("Resource").add("Server").add("Platform"))
@@ -591,13 +797,13 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(14)
+    @Order(18)
     @DisplayName("testing updation of DX Provider Item - 200")
     void updateDXProviderItem() {
         JsonObject jsonPayload = new JsonObject()
                 .put("@context", "https://voc.iudx.org.in/")
                 .put("type", new JsonArray().add("iudx:Provider"))
-                .put("name", "ProviderPM19")
+                .put("name", "ProviderForTest")
                 .put("id", provider_id)
                 .put("resourceServer", resource_server_id)
                 .put("description", "provider for the postman collection")
@@ -628,13 +834,45 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(15)
+    @Order(19)
+    @DisplayName("testing updation of DX AI Model Item - 200")
+    void updateDXAiModelItem() {
+        JsonObject jsonPayload = new JsonObject()
+            .put("@context", "https://voc.iudx.org.in/")
+            .put("type", new JsonArray().add("adex:AiModel"))
+            .put("name", "AiModelForTest")
+            .put("id", ai_model_item_id)
+            .put("description", "update ai model item for the postman collection")
+            .put("label", "ai model item for test only")
+            .put("tags", new JsonArray().add("ai").add("crop").add("crop disease")
+                .add("disease detection").add("ai model"))
+            .put("provider", provider_id)
+            .put("accessPolicy", "RESTRICTED")
+            .put("organizationType", "Private")
+            .put("department", "Agriculture and Co-operation")
+            .put("modelType", "ImageClassifier")
+            .put("fileFormat", "ipynb");
+        Response response = given()
+            .contentType("application/json")
+            .header("token", token)
+            .body(jsonPayload.toString())
+            .when()
+            .put("/item/")
+            .then()
+            .statusCode(200)
+            .body("type", is("urn:dx:cat:Success"))
+            .extract()
+            .response();
+    }
+
+    @Test
+    @Order(20)
     @DisplayName("testing updation of DX Resource Group Item - 200")
     void updateDXResourceGroupItem() {
         JsonObject jsonPayload = new JsonObject()
                 .put("@context", "https://voc.iudx.org.in/")
                 .put("type", new JsonArray().add("iudx:ResourceGroup").add("iudx:IssueReporting"))
-                .put("name", "ResourceGroupPM19")
+                .put("name", "ResourceGroupForTest")
                 .put("id", resource_group_id)
                 .put("description", "resource group item for the postman collection")
                 .put("tags", new JsonArray().add("swachhata").add("complaints").add("construction material").add("requests"))
@@ -652,13 +890,13 @@ public class CrudAPIsIT {
                 .response();
     }
     @Test
-    @Order(16)
+    @Order(21)
     @DisplayName("testing updation of DX Resource Item - 200")
     void updateDXResourceItem200() {
         JsonObject jsonPayload = new JsonObject()
                 .put("@context", "https://voc.iudx.org.in/")
                 .put("type", new JsonArray().add("iudx:Resource").add("iudx:PointOfInterest"))
-                .put("name", "ResourceItemPM19")
+                .put("name", "ResourceItemForTest")
                 .put("id", resource_item_id)
                 .put("label", "item for test only")
                 .put("description", "resource item for the postman collection")
@@ -681,9 +919,50 @@ public class CrudAPIsIT {
                 .extract()
                 .response();
     }
+    @Test
+    @Order(22)
+    @DisplayName("testing updation of DX Resource Item - 200")
+    void updateDXDataBankItem200() {
+        JsonObject jsonPayload = new JsonObject()
+            .put("@context", "https://voc.iudx.org.in/")
+            .put("type", new JsonArray().add("adex:DataBank"))
+            .put("name", "DataBankItem4Test")
+            .put("id", data_bank_resource_item_id)
+            .put("description", "ai model item for the postman collection")
+            .put("label", "ai model item for test only")
+            .put("tags", new JsonArray().add("ai").add("crop").add("crop disease")
+                .add("disease detection").add("ai model"))
+            .put("resourceServer", resource_server_id)
+            .put("provider", provider_id)
+            .put("resourceGroup", resource_group_id)
+            .put("accessPolicy", "RESTRICTED")
+            .put("organizationType", "Private")
+            .put("department", "Agriculture and Co-operation")
+            .put("dataReadiness", "More than 80%")
+            .put("resourceType", "MESSAGESTREAM")
+            .put("iudxResourceAPIs", new JsonArray().add("ATTR"))
+            .put("adexResourceAPIs", new JsonArray().add("TEMPORAL").add("ATTR"))
+            .put("location", new JsonObject().put("type", "Place").put("address", "Khammam, " +
+                "Telanagana").put("geometry", new JsonObject().put("coordinates", new JsonArray())))
+            .put("dataDescriptor", "sample")
+            .put("dataSample", "sample")
+            .put("fileFormat", "xlsx");
+
+        Response response = given()
+            .contentType("application/json")
+            .header("token", token)
+            .body(jsonPayload.toString())
+            .when()
+            .put("/item/")
+            .then()
+            .statusCode(200)
+            .body("type", is("urn:dx:cat:Success"))
+            .extract()
+            .response();
+    }
 
     @Test
-    @Order(17)
+    @Order(23)
     @DisplayName("testing updation of DX Entity - 400")
     void updateDXEntity400() {
         JsonObject jsonPayload = new JsonObject()
@@ -708,7 +987,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(18)
+    @Order(24)
     @DisplayName("testing updation of DX Entity - 400 (Invalid links)")
     void updateDXEntity400InvalidLinks() {
         JsonObject jsonPayload = new JsonObject()
@@ -738,7 +1017,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(19)
+    @Order(25)
     @DisplayName("testing update DX Entity - 401 Invalid Credentials")
     void updateDXEntityInvalidCredentials() {
         JsonObject jsonPayload = new JsonObject()
@@ -765,7 +1044,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(20)
+    @Order(26)
     @DisplayName("testing update DX Entity - 404 Not Found")
     void updateDXEntityNotFound() {
         JsonObject jsonPayload = new JsonObject()
@@ -800,7 +1079,7 @@ public class CrudAPIsIT {
      * DX Provider items, DX Resource Group items, and DX Resource items.
      */
     @Test
-    @Order(21)
+    @Order(27)
     @DisplayName("testing get DX Entity by ID- 200 Success")
     void getDXEntityByID() {
         LOGGER.info("owner_id: "+owner_id);
@@ -817,7 +1096,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(22)
+    @Order(28)
     @DisplayName("testing get DX Entity by ID - 404 Not Found")
     void getDXEntityNotFound() {
         Response response = given()
@@ -833,7 +1112,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(23)
+    @Order(29)
     @DisplayName("testing get DX Entity by ID - 400 Invalid UUID")
     void getDXEntityInvalidUUID() {
         Response response = given()
@@ -849,7 +1128,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(24)
+    @Order(30)
     @DisplayName("testing list Type (Data Model) given Resource Id - 200 type of item")
     void getDXEntityTypeRS() {
         Response response = given()
@@ -867,7 +1146,7 @@ public class CrudAPIsIT {
     }
 
     @Test
-    @Order(25)
+    @Order(31)
     @DisplayName("testing list Type (Data Model) given Resource Group Id - 200 type of item")
     void getDXEntityRSGroup() {
         Response response = given()
@@ -890,7 +1169,7 @@ public class CrudAPIsIT {
      * DX Provider items, DX Resource Group items, and DX Resource items.
      */
     @Test
-    @Order(26)
+    @Order(32)
     @DisplayName("testing delete a Resource Item DX Entity - 200")
     void DeleteRSItemDXEntity() {
         Response response = given()
@@ -906,7 +1185,7 @@ public class CrudAPIsIT {
                 .response();
     }
     @Test
-    @Order(27)
+    @Order(33)
     @DisplayName("testing delete a Resource Group DX Entity - 200")
     void DeleteRSGroupDXEntity() {
         Response response = given()
@@ -922,7 +1201,39 @@ public class CrudAPIsIT {
                 .response();
     }
     @Test
-    @Order(28)
+    @Order(34)
+    @DisplayName("testing delete ai model DX Entity - 200")
+    void DeleteAiModelDXEntity() {
+        Response response = given()
+            .param("id", ai_model_item_id)
+            .header("token", token)
+            .contentType("application/json")
+            .when()
+            .delete("/item")
+            .then()
+            .statusCode(200)
+            .body("type", is("urn:dx:cat:Success"))
+            .extract()
+            .response();
+    }
+    @Test
+    @Order(35)
+    @DisplayName("testing delete data bank resource DX Entity - 200")
+    void DeleteDataBankDXEntity() {
+        Response response = given()
+            .param("id", data_bank_resource_item_id)
+            .header("token", token)
+            .contentType("application/json")
+            .when()
+            .delete("/item")
+            .then()
+            .statusCode(200)
+            .body("type", is("urn:dx:cat:Success"))
+            .extract()
+            .response();
+    }
+    @Test
+    @Order(36)
     @DisplayName("testing delete a Provider DX Entity - 200")
     void DeleteProviderDXEntity() {
         Response response = given()
@@ -938,7 +1249,7 @@ public class CrudAPIsIT {
                 .response();
     }
     @Test
-    @Order(29)
+    @Order(37)
     @DisplayName("testing delete a Resource Server DX Entity - 200")
     void DeleteResourceServerDXEntity() {
         Response response = given()
@@ -953,24 +1264,9 @@ public class CrudAPIsIT {
                 .extract()
                 .response();
     }
+
     @Test
-    @Order(31)
-    @DisplayName("testing delete a Owner DX Entity - 200")
-    void DeleteOwnerDXEntity() {
-        Response response = given()
-                .param("id", owner_id)
-                .header("token", cosAdminToken)
-                .contentType("application/json")
-                .when()
-                .delete("/item")
-                .then()
-                .statusCode(200)
-                .body("type", is("urn:dx:cat:Success"))
-                .extract()
-                .response();
-    }
-    @Test
-    @Order(30)
+    @Order(38)
     @DisplayName("testing delete a COS DX Entity - 200")
     void DeleteCosDXEntity() {
         Response response = given()
@@ -985,8 +1281,42 @@ public class CrudAPIsIT {
                 .extract()
                 .response();
     }
+
     @Test
-    @Order(32)
+    @Order(39)
+    @DisplayName("testing delete a Owner DX Entity - 200")
+    void DeleteOwnerDXEntity() {
+        Response response = given()
+            .param("id", owner_id)
+            .header("token", cosAdminToken)
+            .contentType("application/json")
+            .when()
+            .delete("/item")
+            .then()
+            .statusCode(200)
+            .body("type", is("urn:dx:cat:Success"))
+            .extract()
+            .response();
+    }
+
+    @Test
+    @Order(40)
+    @DisplayName("testing delete ADEX Apps item - 200")
+    void deleteAdexAppsItem() {
+        LOGGER.info("Deleting ADEX Apps item with ID: " + adex_app_id);
+
+        given()
+            .contentType("application/json")
+            .header("token", cosAdminToken)
+            .when()
+            .delete("/item")
+            .then()
+            .statusCode(200)
+            .body("type", is("urn:dx:cat:Success"));
+    }
+
+    @Test
+    @Order(41)
     @DisplayName("testing delete a DX Entity - 404 Not Found")
     void DeleteDXEntity404() {
         Response response = given()
@@ -1002,7 +1332,7 @@ public class CrudAPIsIT {
                 .response();
     }
     @Test
-    @Order(33)
+    @Order(42)
     @DisplayName("testing delete a DX Entity - 400 Invalid UUID")
     void DeleteDXEntityInvalidUUID() {
         Response response = given()
@@ -1018,7 +1348,7 @@ public class CrudAPIsIT {
                 .response();
     }
     @Test
-    @Order(34)
+    @Order(43)
     @DisplayName("testing delete a DX Entity - 401 Invalid credentials")
     void DeleteDXEntityInvalidCred() {
         Response response = given()

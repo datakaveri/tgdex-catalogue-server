@@ -1,6 +1,8 @@
 package iudx.catalogue.server.authenticator.authorization;
 
 import static iudx.catalogue.server.authenticator.authorization.Method.*;
+import static iudx.catalogue.server.util.Constants.ITEM_TYPE_AI_MODEL;
+import static iudx.catalogue.server.util.Constants.ITEM_TYPE_DATA_BANK;
 import static iudx.catalogue.server.util.Constants.ITEM_TYPE_RESOURCE;
 import static iudx.catalogue.server.util.Constants.ITEM_TYPE_RESOURCE_GROUP;
 
@@ -37,10 +39,16 @@ public class ProviderAuthStrategy implements AuthorizationStratergy {
     // /item access list
     accessList.add(new AuthorizationRequest(POST, api.getRouteItems(), ITEM_TYPE_RESOURCE_GROUP));
     accessList.add(new AuthorizationRequest(POST, api.getRouteItems(), ITEM_TYPE_RESOURCE));
+    accessList.add(new AuthorizationRequest(POST, api.getRouteItems(), ITEM_TYPE_AI_MODEL));
+    accessList.add(new AuthorizationRequest(POST, api.getRouteItems(), ITEM_TYPE_DATA_BANK));
     accessList.add(new AuthorizationRequest(PUT, api.getRouteItems(), ITEM_TYPE_RESOURCE_GROUP));
     accessList.add(new AuthorizationRequest(PUT, api.getRouteItems(), ITEM_TYPE_RESOURCE));
+    accessList.add(new AuthorizationRequest(PUT, api.getRouteItems(), ITEM_TYPE_AI_MODEL));
+    accessList.add(new AuthorizationRequest(PUT, api.getRouteItems(), ITEM_TYPE_DATA_BANK));
     accessList.add(new AuthorizationRequest(DELETE, api.getRouteItems(), ITEM_TYPE_RESOURCE_GROUP));
     accessList.add(new AuthorizationRequest(DELETE, api.getRouteItems(), ITEM_TYPE_RESOURCE));
+    accessList.add(new AuthorizationRequest(DELETE, api.getRouteItems(), ITEM_TYPE_AI_MODEL));
+    accessList.add(new AuthorizationRequest(DELETE, api.getRouteItems(), ITEM_TYPE_DATA_BANK));
   }
 
   @Override

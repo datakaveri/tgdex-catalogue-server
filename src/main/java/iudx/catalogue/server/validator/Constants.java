@@ -48,5 +48,9 @@ public class Constants {
       "{\"query\":{\"bool\":{\"must\":[{"
           + "\"match\":{\"type\":\"iudx:Owner\"}},"
           + "{\"match\":{\"name.keyword\":\"$1\"}}]}}}";
+  public static final String APPS_ITEM_EXISTS_QUERY =
+      "{\"query\":{\"bool\":{\"must\":[{"
+          + "\"match\":{\"type\":\"adex:Apps\"}},"
+          + "{\"match\":{\"name.keyword\":\"$1\"}}]}}}";
   static final String FILTER_PATH = "?filter_path=took,hits.total.value,hits.hits._source";
 }

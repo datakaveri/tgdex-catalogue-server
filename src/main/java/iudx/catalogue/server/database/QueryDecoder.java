@@ -172,6 +172,11 @@ public final class QueryDecoder {
             JsonArray shouldQuery = new JsonArray();
             JsonArray valueArray = valueAttrs.getJsonArray(i);
             for (int j = 0; j < valueArray.size(); j++) {
+              if (ALL.equalsIgnoreCase(valueArray.getString(j))) {
+                String existsQuery = EXISTS_QUERY.replace("$1", propertyAttrs.getString(i));
+                shouldQuery.add(new JsonObject(existsQuery));
+                continue;
+              }
               String matchQuery;
               /* Attribute related queries using "match" and without the ".keyword" */
               if (propertyAttrs.getString(i).equals(TAGS)

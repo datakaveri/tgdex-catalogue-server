@@ -64,6 +64,9 @@ public class Constants {
   public static final String PROVIDER_USER_ID = "ownerUserId";
   public static final String RESOURCE_SERVER_URL = "resourceServerRegURL";
   public static final String COS_ITEM = "cos";
+  public static final String AI_MODEL = "aiModel";
+  public static final String DATA_BANK = "dataBank";
+  public static final String APPS = "apps";
   public static final String RESOURCETYPE = "resourceType";
 
 
@@ -76,10 +79,14 @@ public class Constants {
   public static final String ITEM_TYPE_COS = "iudx:COS";
   public static final String ITEM_TYPE_OWNER = "iudx:Owner";
   public static final String ITEM_TYPE_INSTANCE = "iudx:Instance";
+  public static final String ITEM_TYPE_AI_MODEL = "adex:AiModel";
+  public static final String ITEM_TYPE_DATA_BANK = "adex:DataBank";
+  public static final String ITEM_TYPE_APPS = "adex:Apps";
 
   public static final ArrayList<String> ITEM_TYPES =
       new ArrayList<String>(Arrays.asList(ITEM_TYPE_RESOURCE, ITEM_TYPE_RESOURCE_GROUP,
-          ITEM_TYPE_RESOURCE_SERVER, ITEM_TYPE_PROVIDER, ITEM_TYPE_COS, ITEM_TYPE_OWNER));
+          ITEM_TYPE_RESOURCE_SERVER, ITEM_TYPE_PROVIDER, ITEM_TYPE_COS, ITEM_TYPE_OWNER,
+          ITEM_TYPE_AI_MODEL, ITEM_TYPE_DATA_BANK, ITEM_TYPE_APPS));
 
   public static final String AGGREGATIONS = "aggregations";
   public static final String INSTANCE = "instance";
