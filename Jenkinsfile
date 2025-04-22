@@ -1,8 +1,8 @@
 pipeline {
   environment {
-    devRegistry = 'ghcr.io/datakaveri/cat-tgdex-dev'
-    deplRegistry = 'ghcr.io/datakaveri/cat-tgdex-prod'
-    testRegistry = 'ghcr.io/datakaveri/cat-tgdex-test:latest'
+    devRegistry = 'ghcr.io/datakaveri/cat-dev'
+    deplRegistry = 'ghcr.io/datakaveri/cat-prod'
+    testRegistry = 'ghcr.io/datakaveri/cat-test:latest'
     registryUri = 'https://ghcr.io'
     registryCredential = 'datakaveri-ghcr'
     GIT_HASH = GIT_COMMIT.take(7)
@@ -28,7 +28,7 @@ pipeline {
     stage('Unit Tests and CodeCoverage Test'){
       steps{
         script{
-          sh 'cp /home/ubuntu/configs/5.6.0/cat-config-tgdex.json ./configs/config-test.json'
+          sh 'cp /home/ubuntu/configs/tgdex/cat-config-test.json ./configs/config-test.json'
           sh 'mvn clean test checkstyle:checkstyle pmd:pmd'
         }
         xunit (
@@ -108,7 +108,7 @@ pipeline {
           }
         }
         script{
-            sh 'scp /home/ubuntu/configs/5.6.0/cat-config-tgdex.json ./configs/config-test.json'
+            sh 'scp /home/ubuntu/configs/tgdex/cat-config-test.json ./configs/config-test.json'
             sh 'mvn test-compile failsafe:integration-test -DskipUnitTests=true -DintTestProxyHost=jenkins-master-priv -DintTestProxyPort=8090 -DintTestHost=jenkins-slave1 -DintTestPort=8080'
         }
         node('built-in') {
@@ -160,8 +160,8 @@ pipeline {
           steps {
             script {
               docker.withRegistry( registryUri, registryCredential ) {
-                devImage.push("5.6.0-alpha-${env.GIT_HASH}")
-                deplImage.push("5.6.0-alpha-${env.GIT_HASH}")
+                devImage.push("tgdex-5.6.0-alpha-${env.GIT_HASH}")
+                deplImage.push("tgdex-5.6.0-alpha-${env.GIT_HASH}")
               }
             }
           }
@@ -169,7 +169,7 @@ pipeline {
         stage('Docker Swarm deployment') {
           steps {
             script {
-              sh "ssh azureuser@docker-swarm 'docker service update cat-tgdex_cat-tgdex --image ghcr.io/datakaveri/cat-tgdex-prod:5.6.0-alpha-${env.GIT_HASH}'"
+              sh "ssh azureuser@docker-swarm 'docker service update cat-tgdex_cat-tgdex --image ghcr.io/datakaveri/cat-prod:tgdex-5.6.0-alpha-${env.GIT_HASH}'"
               sh 'sleep 10'
             }
           }
