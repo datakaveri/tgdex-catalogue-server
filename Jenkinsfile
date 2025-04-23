@@ -28,7 +28,7 @@ pipeline {
     stage('Unit Tests and CodeCoverage Test'){
       steps{
         script{
-          sh 'cp /home/ubuntu/configs/5.6.0/cat-config-test.json ./configs/config-test.json'
+          sh 'cp /home/ubuntu/configs/tgdex/cat-config-test.json ./configs/config-test.json'
           sh 'mvn clean test checkstyle:checkstyle pmd:pmd'
         }
         xunit (
@@ -108,7 +108,7 @@ pipeline {
           }
         }
         script{
-            sh 'scp /home/ubuntu/configs/5.6.0/cat-config-test.json ./configs/config-test.json'
+            sh 'scp /home/ubuntu/configs/tgdex/cat-config-test.json ./configs/config-test.json'
             sh 'mvn test-compile failsafe:integration-test -DskipUnitTests=true -DintTestProxyHost=jenkins-master-priv -DintTestProxyPort=8090 -DintTestHost=jenkins-slave1 -DintTestPort=8080'
         }
         node('built-in') {
@@ -151,7 +151,7 @@ pipeline {
             triggeredBy cause: 'UserIdCause'
           }
           expression {
-            return env.GIT_BRANCH == 'origin/master';
+            return env.GIT_BRANCH == 'origin/tgdex';
           }
         }
       }
@@ -160,8 +160,8 @@ pipeline {
           steps {
             script {
               docker.withRegistry( registryUri, registryCredential ) {
-                devImage.push("5.6.0-alpha-${env.GIT_HASH}")
-                deplImage.push("5.6.0-alpha-${env.GIT_HASH}")
+                devImage.push("tgdex-5.6.0-alpha-${env.GIT_HASH}")
+                deplImage.push("tgdex-5.6.0-alpha-${env.GIT_HASH}")
               }
             }
           }
@@ -169,7 +169,7 @@ pipeline {
         stage('Docker Swarm deployment') {
           steps {
             script {
-              sh "ssh azureuser@docker-swarm 'docker service update cat_cat --image ghcr.io/datakaveri/cat-prod:5.6.0-alpha-${env.GIT_HASH}'"
+              sh "ssh azureuser@docker-swarm 'docker service update cat-tgdex_cat-tgdex --image ghcr.io/datakaveri/cat-prod:tgdex-5.6.0-alpha-${env.GIT_HASH}'"
               sh 'sleep 10'
             }
           }
@@ -203,7 +203,7 @@ pipeline {
   post{
     failure{
       script{
-        if (env.GIT_BRANCH == 'origin/master')
+        if (env.GIT_BRANCH == 'origin/tgdex')
         emailext recipientProviders: [buildUser(), developers()], to: '$RS_RECIPIENTS, $DEFAULT_RECIPIENTS', subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!', body: '''$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:
 Check console output at $BUILD_URL to view the results.'''
       }
