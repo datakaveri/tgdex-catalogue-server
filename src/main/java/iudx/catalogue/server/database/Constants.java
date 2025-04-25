@@ -56,7 +56,7 @@ public class Constants {
           + "{\"field\":instances.keyword,"
           + "\"size\": 10000}}}}";
   public static final String LIST_AGGREGATION_QUERY =
-      "{\"query\": {\"bool\": {\"filter\": {\"term\": {\"instance.keyword\": \"$1\"}}}},"
+      "{\"query\": {\"bool\": {\"filter\": {\"term\": {\"$filterKey\": \"$\"}}}},"
           + "\"aggs\":"
           + "{\"results\": {\"terms\":"
           + "{\"field\":\"$field\","

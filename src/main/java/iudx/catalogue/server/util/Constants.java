@@ -90,6 +90,8 @@ public class Constants {
 
   public static final String AGGREGATIONS = "aggregations";
   public static final String INSTANCE = "instance";
+  public static final String FILTER_FIELD = "filterField";
+  public static final String FILTER_VALUE = "filterValue";
   public static final String BUCKETS = "buckets";
   public static final String ID = "id";
   public static final String ITEM = "item";

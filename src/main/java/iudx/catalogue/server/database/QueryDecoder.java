@@ -621,17 +621,21 @@ public final class QueryDecoder {
     String itemType = request.getString(ITEM_TYPE);
     String type = request.getString(TYPE_KEY);
     String instanceId = request.getString(INSTANCE);
+    String filterKey = request.getString(FILTER_FIELD) + KEYWORD_KEY;
+    String filterValue = request.getString(FILTER_VALUE);
     String elasticQuery = "";
     String tempQuery = "";
 
     if (itemType.equalsIgnoreCase(TAGS) || itemType.equalsIgnoreCase(DEPARTMENT)
     || itemType.equalsIgnoreCase(ORGANIZATION_TYPE)) {
-      if (instanceId == null || instanceId == "") {
+      if ((instanceId == null || instanceId == "")
+      && (filterValue == null || filterValue == "")) {
         tempQuery = LIST_AGGREGATION_QUERY_NO_FILTER
             .replace("$field", itemType+KEYWORD_KEY);
       } else {
         tempQuery = LIST_AGGREGATION_QUERY
-            .replace("$1", instanceId)
+            .replace("$filterKey", filterKey)
+            .replace("$filterVal", filterValue)
             .replace("$field", itemType+KEYWORD_KEY);
       }
     } else {
