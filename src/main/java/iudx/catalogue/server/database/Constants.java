@@ -15,6 +15,8 @@ public class Constants {
   public static final String TEXTSEARCH_REGEX = "(.*)textSearch(.*)";
   public static final String ATTRIBUTE_SEARCH_REGEX = "(.*)attributeSearch(.*)";
   public static final String GEOSEARCH_REGEX = "(.*)geoSearch(.*)";
+  public static final String TEMPORAL_SEARCH_REGEX = "(.*)temporalSearch(.*)";
+  public static final String RANGE_SEARCH_REGEX = "(.*)rangeSearch(.*)";
   public static final String RESPONSE_FILTER_GEO = "responseFilter_geoSearch_";
   public static final String RESPONSE_FILTER_REGEX = "(.*)responseFilter(.*)";
 
@@ -53,17 +55,17 @@ public class Constants {
           + "{\"results\": {\"terms\":"
           + "{\"field\":instances.keyword,"
           + "\"size\": 10000}}}}";
-
-  public static final String LIST_INSTANCE_TAGS_QUERY =
+  public static final String LIST_AGGREGATION_QUERY =
       "{\"query\": {\"bool\": {\"filter\": {\"term\": {\"instance.keyword\": \"$1\"}}}},"
           + "\"aggs\":"
           + "{\"results\": {\"terms\":"
-          + "{\"field\":\"tags.keyword\","
+          + "{\"field\":\"$field\","
           + "\"size\": $size}}}}";
-  public static final String LIST_TAGS_QUERY =
+
+  public static final String LIST_AGGREGATION_QUERY_NO_FILTER =
       "{ \"aggs\":"
           + "{\"results\": {\"terms\":"
-          + "{\"field\":\"tags.keyword\","
+          + "{\"field\":\"$field\","
           + "\"size\": $size}}}}";
   public static final String LIST_INSTANCE_TYPES_QUERY =
       "{\"query\": {\"bool\": {\"filter\": [ {\"match\": {\"type\": \"$1\"}},"

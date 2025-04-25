@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Temporal Search Schema",
+  "type": "object",
+  "required": ["timerel", "time", "attribute"],
+  "properties": {
+    "timerel": {
+      "type": "string",
+      "enum": ["before", "after", "during", "between"],
+      "description": "Temporal relationship to apply for time search"
+    },
+    "time": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+      "description": "Datetime value for the temporal relation"
+    },
+    "endTime": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+      "description": "Optional datetime indicating the end of the duration"
+    },
+    "timeProperty": {
+      "type": "string",
+      "enum": ["observationDateTime", "itemCreatedAt", "itemModifiedAt", "itemUpdatedAt"],
+      "description": "Which time field to apply the search on"
+    },
+    "searchType": {
+      "type": "string",
+      "const": "temporal",
+      "description": "Set to 'temporal' if temporal search is involved"
+    }
+  },
+  "additionalProperties": true,
+  "if": {
+    "properties": {
+      "timerel": {
+        "enum": ["during", "between"]
+      }
+    }
+  },
+  "then": {
+    "required": ["endTime"]
+  }
+}

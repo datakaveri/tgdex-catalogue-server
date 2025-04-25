@@ -235,6 +235,87 @@ public final class QueryDecoder {
       }
     }
 
+    /* Construct the query for range based search */
+    if (searchType.matches(RANGE_SEARCH_REGEX)) {
+      LOGGER.debug("Info: Range search block");
+
+      match = true;
+
+      if (request.containsKey(RANGE_REL) && !request.getString(RANGE_REL).isBlank()
+          && request.containsKey(RANGE)) {
+
+        String rangeRel = request.getString(RANGE_REL);
+        int rangeValue = Integer.parseInt(request.getString(RANGE));
+        String field = request.getString(ATTRIBUTE_KEY);
+
+        Integer endRangeValue = null;
+        if (rangeRel.equalsIgnoreCase(BETWEEN)
+            || rangeRel.equalsIgnoreCase(DURING)) {
+          if (request.containsKey(END_RANGE) && !request.getString(END_RANGE).isBlank()) {
+            endRangeValue = Integer.parseInt(request.getString(END_RANGE));
+          } else {
+            return new JsonObject().put(ERROR, new RespBuilder()
+                .withType(TYPE_BAD_RANGE_QUERY)
+                .withTitle(TITLE_BAD_RANGE_QUERY)
+                .withDetail("End range value is required for 'between' or 'during' relationships.")
+                .getJsonResponse());
+          }
+        }
+
+        try {
+          JsonObject numericRangeQuery = constructRangeQuery(field, rangeRel, rangeValue, endRangeValue);
+          mustQuery.add(numericRangeQuery);
+        } catch (IllegalArgumentException e) {
+          return new JsonObject().put(ERROR, new RespBuilder()
+              .withType(TYPE_BAD_RANGE_QUERY)
+              .withTitle(TITLE_BAD_RANGE_QUERY)
+              .withDetail(DETAIL_INVALID_RANGEREL)
+              .getJsonResponse());
+        }
+
+      } else {
+        return new JsonObject().put(ERROR, new RespBuilder()
+            .withType(TYPE_BAD_RANGE_QUERY)
+            .withTitle(TITLE_BAD_RANGE_QUERY)
+            .withDetail(DETAIL_MISSING_RANGEREL)
+            .getJsonResponse());
+      }
+    }
+
+    /* Construct the query for range based search */
+    if (searchType.matches(TEMPORAL_SEARCH_REGEX)) {
+      LOGGER.debug("Info: temporal search block");
+
+      match = true;
+      /* validating temporal search attributes */
+      if (request.containsKey(TIME_REL) && !request.getString(TIME_REL).isBlank()
+          && request.containsKey(TIME)) {
+
+        String timeRel = request.getString(TIME_REL);
+        String time = request.getString(TIME);
+        String endTime = request.getString(END_TIME);
+
+        try {
+          String field = request.getString(ATTRIBUTE_KEY);
+          JsonObject temporalRangeQuery =
+              constructRangeQuery(field, timeRel, time, endTime);
+          mustQuery.add(temporalRangeQuery);
+        } catch (IllegalArgumentException e) {
+          return new JsonObject().put(ERROR, new RespBuilder()
+              .withType(TYPE_BAD_TEMPORAL_QUERY)
+              .withTitle(TITLE_BAD_TEMPORAL_QUERY)
+              .withDetail(DETAIL_INVALID_TIMEREL)
+              .getJsonResponse());
+        }
+      } else {
+        return new JsonObject().put(ERROR, new RespBuilder()
+            .withType(TYPE_BAD_RANGE_QUERY)
+            .withTitle(TITLE_BAD_RANGE_QUERY)
+            .withDetail(DETAIL_MISSING_RANGEREL)
+            .getJsonResponse());
+      }
+    }
+
     /* Will be used for multi-tenancy */
     String instanceId = request.getString(INSTANCE);
 
@@ -309,6 +390,39 @@ public final class QueryDecoder {
       }
       return elasticQuery.put(QUERY_KEY, boolQuery);
     }
+  }
+
+  private JsonObject constructRangeQuery(String fieldName, String relation, Object value,
+                                         Object endValue) {
+    JsonObject rangeQuery = new JsonObject();
+    JsonObject fieldRange = new JsonObject();
+
+    switch (relation.toLowerCase()) {
+      case BEFORE:
+      case LESS_THAN:
+        fieldRange.put(LESS_THAN, value);
+        break;
+      case AFTER:
+      case GREATER_THAN:
+        fieldRange.put(GREATER_THAN, value);
+        break;
+      case BETWEEN:
+      case DURING:
+        fieldRange.put(GREATER_THAN_EQUALS, value);
+        fieldRange.put(LESS_THAN_EQUALS, endValue);
+        break;
+      case LESS_THAN_EQUALS:
+        fieldRange.put(LESS_THAN_EQUALS, value);
+        break;
+      case GREATER_THAN_EQUALS:
+        fieldRange.put(GREATER_THAN_EQUALS, value);
+        break;
+      default:
+        throw new IllegalArgumentException("Invalid relation: " + relation);
+    }
+
+    rangeQuery.put(RANGE, new JsonObject().put(fieldName, fieldRange));
+    return rangeQuery;
   }
 
   /**
@@ -510,11 +624,15 @@ public final class QueryDecoder {
     String elasticQuery = "";
     String tempQuery = "";
 
-    if (itemType.equalsIgnoreCase(TAGS)) {
+    if (itemType.equalsIgnoreCase(TAGS) || itemType.equalsIgnoreCase(DEPARTMENT)
+    || itemType.equalsIgnoreCase(ORGANIZATION_TYPE)) {
       if (instanceId == null || instanceId == "") {
-        tempQuery = LIST_TAGS_QUERY;
+        tempQuery = LIST_AGGREGATION_QUERY_NO_FILTER
+            .replace("$field", itemType+KEYWORD_KEY);
       } else {
-        tempQuery = LIST_INSTANCE_TAGS_QUERY.replace("$1", instanceId);
+        tempQuery = LIST_AGGREGATION_QUERY
+            .replace("$1", instanceId)
+            .replace("$field", itemType+KEYWORD_KEY);
       }
     } else {
       if (instanceId == null || instanceId == "") {
