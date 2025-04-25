@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "adbf46da-9eae-4bd2-8cd3-e325de262a91",
+		"_postman_id": "7ac9a51c-e2a6-4514-a471-3d1623406128",
 		"name": "iudx-catalogue-server v5.5.0",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "27217689"
@@ -10341,6 +10341,275 @@
 										{
 											"key": "offset",
 											"value": "1010101"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Fuzzy Search",
+					"item": [
+						{
+							"name": "Text Fuzzy Search on \"paid parking\"",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Check response header\", function () {\r",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Check response body\", function () {    \r",
+											"    const body = pm.response.json();\r",
+											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}{{base}}/search?q=pard painking&fuzzy=true",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"search"
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "pard painking"
+										},
+										{
+											"key": "fuzzy",
+											"value": "true"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Text Fuzzy Search on Resource Item",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Check response header\", function () {\r",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Check response body\", function () {    \r",
+											"    const body = pm.response.json();\r",
+											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}{{base}}/search?q=pard painking&fuzzy=true&property=\"[type]\"&value=\"[[iudx:Resource]]\"",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"search"
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "pard painking"
+										},
+										{
+											"key": "fuzzy",
+											"value": "true"
+										},
+										{
+											"key": "property",
+											"value": "\"[type]\""
+										},
+										{
+											"key": "value",
+											"value": "\"[[iudx:Resource]]\""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Attribute Fuzzy Search",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}{{base}}/search?property=\"[instance]\"&fuzzy=true&value=\"[[suwat]]\"",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"search"
+									],
+									"query": [
+										{
+											"key": "property",
+											"value": "\"[instance]\""
+										},
+										{
+											"key": "fuzzy",
+											"value": "true"
+										},
+										{
+											"key": "value",
+											"value": "\"[[suwat]]\""
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Multi-Attribute Fuzzy Search",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Check response header\", function () {\r",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Check response body\", function () {    \r",
+											"    const body = pm.response.json();\r",
+											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}{{base}}/search?property=\"[tags,description]\"&value=\"[[floing, current level],[Sensor]]\"&fuzzy=true",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"search"
+									],
+									"query": [
+										{
+											"key": "property",
+											"value": "\"[tags,description]\""
+										},
+										{
+											"key": "value",
+											"value": "\"[[floing, current level],[Sensor]]\""
+										},
+										{
+											"key": "fuzzy",
+											"value": "true"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Complex Text Geo",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status\", function () {\r",
+											"    pm.response.to.have.status(200);\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Check response header\", function () {\r",
+											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
+											"});\r",
+											"\r",
+											"pm.test(\"Check response body\", function () {    \r",
+											"    const body = pm.response.json();\r",
+											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{host}}{{base}}/search?q=\"flod senors\"&geoproperty=location&georel=within&geometry=Polygon&coordinates=[[[73.696,18.592],[73.69079,18.391],[73.96,18.3643],[74.09,18.526],[73.8947,18.689830],[73.696,18.592]]]&fuzzy=true",
+									"host": [
+										"{{host}}{{base}}"
+									],
+									"path": [
+										"search"
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "\"flod senors\""
+										},
+										{
+											"key": "geoproperty",
+											"value": "location"
+										},
+										{
+											"key": "georel",
+											"value": "within"
+										},
+										{
+											"key": "geometry",
+											"value": "Polygon"
+										},
+										{
+											"key": "coordinates",
+											"value": "[[[73.696,18.592],[73.69079,18.391],[73.96,18.3643],[74.09,18.526],[73.8947,18.689830],[73.696,18.592]]]"
+										},
+										{
+											"key": "filter",
+											"value": "[id, description]",
+											"disabled": true
+										},
+										{
+											"key": "fuzzy",
+											"value": "true"
 										}
 									]
 								}
