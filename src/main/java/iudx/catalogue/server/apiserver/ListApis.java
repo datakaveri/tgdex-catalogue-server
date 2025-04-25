@@ -80,6 +80,8 @@ public final class ListApis {
             type = ITEM_TYPE_PROVIDER;
             break;
           case TAGS:
+          case DEPARTMENT:
+          case ORGANIZATION_TYPE:
             type = itemType;
             break;
           case OWNER:
