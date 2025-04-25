@@ -313,7 +313,6 @@ public final class SearchApis {
             .setStatusCode(400)
             .end(validateHandler.cause().getLocalizedMessage());
       } else {
-        LOGGER.debug("Request body: " + requestBody);
         if (path.equals(api.getRouteSearch())) {
           dbService.searchQuery(requestBody, handler -> {
             if (handler.succeeded()) {

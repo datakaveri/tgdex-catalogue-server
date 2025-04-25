@@ -266,9 +266,8 @@ public class SearchQueryValidatorHelper {
           }
         })
         .onFailure(x -> {
-          LOGGER.error("Fail: Invalid Schema");
           String errorMsg = x.getMessage();
-          LOGGER.error(errorMsg);
+          LOGGER.error("Fail: Invalid Schema; {}", errorMsg);
 
           JsonObject errorResponse = new JsonObject().put(TYPE, TYPE_INVALID_PROPERTY_VALUE);
 

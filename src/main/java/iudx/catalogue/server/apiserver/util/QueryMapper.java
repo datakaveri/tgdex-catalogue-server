@@ -349,8 +349,6 @@ public class QueryMapper {
         int endRange = Integer.parseInt(endRangeVal);
 
         if (startRange > endRange) {
-          LOGGER.debug("startRange: {}", startRange);
-          LOGGER.debug("endRange: {}", endRange);
           LOGGER.error("Error: startRange must be before endRange for BETWEEN relation");
           return errResponse
               .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
