@@ -161,6 +161,7 @@ public class Constants {
   public static final String RESOURCE_COUNT = "resourceCount";
   public static final String PROVIDER_COUNT = "providerCount";
   public static final String RESOURCE_GROUP_COUNT = "resourceGroupCount";
+  public static final String FUZZY = "fuzzy";
 
   /** HTTP Methods. */
   public static final String REQUEST_GET = "GET";
