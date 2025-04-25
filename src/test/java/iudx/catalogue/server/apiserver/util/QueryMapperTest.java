@@ -5,26 +5,17 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.MatchResult;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
 import static iudx.catalogue.server.util.Constants.*;
+import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.when;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -290,4 +281,62 @@ public class QueryMapperTest {
         vertxTestContext.completeNow();
     }
 
+    @Test
+    @DisplayName("Temporal validation should fail when endTime is missing with 'during'")
+    public void testTemporalSearchValidationMissingEndTime() {
+        JsonObject requestBody = new JsonObject()
+            .put(SEARCH_TYPE, SEARCH_TYPE_TEMPORAL)
+            .put(TIME_REL, DURING)
+            .put(TIME, "2023-01-01T00:00:00Z");
+
+        JsonObject result = QueryMapper.validateQueryParam(requestBody);
+        assertEquals(FAILED, result.getString(STATUS));
+        assertEquals(TYPE_INVALID_PROPERTY_VALUE, result.getString(TYPE));
+        Assertions.assertTrue(
+            result.getString(DESC).contains("Both time and endTime must be provided for temporal relation"));
+    }
+
+    @Test
+    @DisplayName("Temporal validation should pass when 'during' has both time and endTime")
+    public void testTemporalSearchValidationValidDuring() {
+        JsonObject requestBody = new JsonObject()
+            .put(SEARCH_TYPE, SEARCH_TYPE_TEMPORAL)
+            .put(TIME_REL, DURING)
+            .put(TIME, "2023-01-01T00:00:00Z")
+            .put(END_TIME, "2023-01-02T00:00:00Z");
+
+        JsonObject result = QueryMapper.validateQueryParam(requestBody);
+        assertNull(result.getString(ERROR)); // valid input should not return error
+    }
+
+    @Test
+    @DisplayName("Range validation should fail when endRange is missing")
+    public void testRangeSearchValidationMissingRangeTo() {
+        JsonObject requestBody = new JsonObject()
+            .put(SEARCH_TYPE, SEARCH_TYPE_RANGE)
+            .put(ATTRIBUTE_KEY, "dataReadiness")
+            .put(RANGE_REL, "between")
+            .put(RANGE, 10);
+
+        JsonObject result = QueryMapper.validateQueryParam(requestBody);
+        assertEquals(FAILED, result.getString(STATUS));
+        assertEquals(TYPE_INVALID_PROPERTY_VALUE, result.getString(TYPE));
+        assertEquals(result.getString(DESC),
+            "Both range and endRange must be provided for range relation " +
+            "during/between");
+    }
+
+    @Test
+    @DisplayName("Range validation should pass when both rangeFrom and rangeTo are present")
+    public void testRangeSearchValidationValidBetween() {
+        JsonObject requestBody = new JsonObject()
+            .put(SEARCH_TYPE, SEARCH_TYPE_RANGE)
+            .put(ATTRIBUTE_KEY, "dataReadiness")
+            .put(RANGE_REL, "between")
+            .put(RANGE, 10)
+            .put(END_RANGE, 50);
+
+        JsonObject result = QueryMapper.validateQueryParam(requestBody);
+        assertNull(result.getString(ERROR)); // valid input should not return error
+    }
 }

@@ -92,8 +92,11 @@ public class ValidatorServiceImplTest {
   private static Stream<Arguments> itemTypes() {
     return Stream.of(
         Arguments.of(ITEM_TYPE_RESOURCE),
+        Arguments.of(ITEM_TYPE_DATA_BANK),
         Arguments.of(ITEM_TYPE_RESOURCE_GROUP),
+        Arguments.of(ITEM_TYPE_AI_MODEL),
         Arguments.of(ITEM_TYPE_PROVIDER),
+        Arguments.of(ITEM_TYPE_APPS),
         Arguments.of(ITEM_TYPE_RESOURCE_SERVER),
         Arguments.of(ITEM_TYPE_COS),
         Arguments.of(ITEM_TYPE_OWNER));

@@ -22,7 +22,7 @@ public class InverseRelationshipsIT {
     @DisplayName("testing get resources for resource group - 200 Success")
     void GetResourcesForRG() {
         Response response= given()
-                .queryParam("id","e63b756a-1c26-3a0c-8bbf-aeed53e423db")
+                .queryParam("id","a4f83b5d-4431-4193-9c33-41f6fc1557b7")
                 .queryParam("rel","resource")
                 .when()
                 .get("/relationship")
@@ -36,7 +36,7 @@ public class InverseRelationshipsIT {
     @DisplayName("testing get Resource for provider - 200 Success")
     void GetResourcesForProvider() {
         Response response = given()
-                .queryParam("id","dec308e5-bc50-3671-af18-7f89ec33564b")
+                .queryParam("id","411df492-45f6-4345-a12d-e3207f2b8623")
                 .queryParam("rel","resource")
                 .when()
                 .get("/relationship")
@@ -64,7 +64,7 @@ public class InverseRelationshipsIT {
     @DisplayName("testing get resources for resource server - 200 Success")
     void GetResourceForRS() {
         Response response = given()
-                .queryParam("id","dec308e5-bc50-3671-af18-7f89ec33564b")
+                .queryParam("id","411df492-45f6-4345-a12d-e3207f2b8623")
                 .queryParam("rel","resource")
                 .when()
                 .get("/relationship")
@@ -78,7 +78,7 @@ public class InverseRelationshipsIT {
     @DisplayName("testing get RGs for resource server - 200 Success")
     void GetRGsForRS() {
         Response response = given()
-                .queryParam("id","f3061e6c-9639-321d-a532-829c7bb870aa")
+                .queryParam("id","8e901b91-5bf1-4ad2-bf8f-d59dc139cc29")
                 .queryParam("rel","resourceGroup")
                 .when()
                 .get("/relationship")
@@ -92,7 +92,7 @@ public class InverseRelationshipsIT {
     @DisplayName("testing get providers for resource server - 200 Success")
     void GetProvidersForRS() {
         Response response = given()
-                .queryParam("id","f3061e6c-9639-321d-a532-829c7bb870aa")
+                .queryParam("id","8e901b91-5bf1-4ad2-bf8f-d59dc139cc29")
                 .queryParam("rel","provider")
                 .when()
                 .get("/relationship")
@@ -106,7 +106,7 @@ public class InverseRelationshipsIT {
     @DisplayName("testing get resources for cos - 200 Success")
     void GetResourcesForCos() {
         Response response = given()
-                .queryParam("id","637e32b6-9a6c-396f-914c-9db5d1a222b0")
+                .queryParam("id","5484ddce-d372-4962-8a07-3e72149716b3")
                 .queryParam("rel","resource")
                 .when()
                 .get("/relationship")
@@ -120,7 +120,7 @@ public class InverseRelationshipsIT {
     @DisplayName("testing get RGs for cos - 200 Success")
     void GetRGsForCos() {
         Response response = given()
-                .queryParam("id","637e32b6-9a6c-396f-914c-9db5d1a222b0")
+                .queryParam("id","5484ddce-d372-4962-8a07-3e72149716b3")
                 .queryParam("rel","resourceGroup")
                 .when()
                 .get("/relationship")
@@ -134,7 +134,7 @@ public class InverseRelationshipsIT {
     @DisplayName("testing get providers for cos - 200 Success")
     void GetProvidersForCos() {
         Response response = given()
-                .queryParam("id","637e32b6-9a6c-396f-914c-9db5d1a222b0")
+                .queryParam("id","5484ddce-d372-4962-8a07-3e72149716b3")
                 .queryParam("rel","provider")
                 .when()
                 .get("/relationship")
@@ -148,7 +148,7 @@ public class InverseRelationshipsIT {
     @DisplayName("testing get RSs for cos - 200 Success")
     void GetRSsForCos() {
         Response response = given()
-                .queryParam("id","637e32b6-9a6c-396f-914c-9db5d1a222b0")
+                .queryParam("id","5484ddce-d372-4962-8a07-3e72149716b3")
                 .queryParam("rel","resourceServer")
                 .when()
                 .get("/relationship")
