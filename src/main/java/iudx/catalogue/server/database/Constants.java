@@ -76,6 +76,10 @@ public class Constants {
       "{ \"geo_shape\": { \"$4\": { \"shape\": { \"type\": \"$1\", \"coordinates\": $2 },"
           + " \"relation\": \"$3\" } } }";
   public static final String TEXT_QUERY = "{\"query_string\":{\"query\":\"$1\"}}";
+  public static final String TEXT_QUERY_FUZZY =
+          "{\"multi_match\":{\"fields\":[\"label\",\"tags\",\"description\"],\"query\":\"$1\","
+          +  "\"fuzziness\":\"AUTO\",\"minimum_should_match\":\"100%\",\"operator\":\"and\"}}";
+
   public static final String GET_DOC_QUERY =
       "{\"_source\":[$2],\"query\":{\"term\":{\"id.keyword\":\"$1\"}}}";
 
@@ -223,6 +227,8 @@ public class Constants {
   public static final String MUST_QUERY = "{\"bool\":{\"must\":$1}}";
   public static final String FILTER_QUERY = "{\"bool\":{\"filter\":[$1]}}";
   public static final String MATCH_QUERY = "{\"match\":{\"$1\":\"$2\"}}";
+  public static final String FUZZY_MATCH_QUERY = "{ \"match\": { \"$1\": { \"query\": "
+          + "\"$2\", \"fuzziness\": \"AUTO\", \"operator\": \"or\" }}}";
   public static final String TERM_QUERY = "{\"term\":{\"$1\":\"$2\"}}";
   public static final String GET_RATING_DOCS =
       "{\"query\": {\"bool\": {\"must\": [ { \"match\": {\"$1\":\"$2\" } }, "
