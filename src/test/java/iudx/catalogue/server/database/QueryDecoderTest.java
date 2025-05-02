@@ -201,8 +201,15 @@ public class QueryDecoderTest {
     JsonObject json = queryDecoder.searchQuery(requests);
 
     assertEquals("Golibar Square",
-            json.getJsonObject(QUERY_KEY).getJsonObject("bool").getJsonArray("must").getJsonObject(0)
-                    .getJsonObject("query_string").getString(QUERY_KEY));
+        json.getJsonObject(QUERY_KEY)
+            .getJsonObject("bool")
+            .getJsonArray("must")
+            .getJsonObject(0)
+            .getJsonObject("bool") // <-- Extract inner bool first
+            .getJsonArray("should")
+            .getJsonObject(0)
+            .getJsonObject("query_string")
+            .getString(QUERY_KEY));
     testContext.completeNow();
   }
 
@@ -310,7 +317,10 @@ public class QueryDecoderTest {
     JsonObject request=new JsonObject();
     request.put(ITEM_TYPE,TAGS);
     request.put(INSTANCE,"dummy").put(LIMIT,2).put(OFFSET,1);
-    String elasticQuery=LIST_INSTANCE_TAGS_QUERY.replace("$1", request.getString(INSTANCE)).replace("$size",request.getInteger(LIMIT,FILTER_PAGINATION_SIZE-request.getInteger(OFFSET,0)).toString());
+    String elasticQuery=
+        LIST_INSTANCE_FIELD_QUERY.replace("$1", request.getString(INSTANCE)).replace("$field",
+            TAGS+KEYWORD_KEY).replace("$size",
+        request.getInteger(LIMIT,FILTER_PAGINATION_SIZE-request.getInteger(OFFSET,0)).toString());
     assertEquals(elasticQuery,queryDecoder.listItemQuery(request));
     vertxTestContext.completeNow();
   }
@@ -768,6 +778,7 @@ public class QueryDecoderTest {
         .put(SEARCH_TYPE, TEMPORAL_SEARCH_REGEX)
         .put(SEARCH, true)
         .put(TIME_REL, "during")
+        .put(ATTRIBUTE_KEY, ITEM_CREATED_AT)
         .put(END_TIME, "2020-09-09T20:05:45Z")
         .put(TIME, "2020-09-01T20:05:45Z");
 

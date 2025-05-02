@@ -79,7 +79,7 @@ public class ElasticClientTest {
         testContext.completeNow();
       } else {
         LOGGER.error("Failed, cause:" + res.cause());
-        testContext.failed();
+        testContext.failNow(res.cause());
       }
     });
   }
@@ -101,7 +101,7 @@ public class ElasticClientTest {
         testContext.completeNow();
       } else {
         LOGGER.error("Failed, cause:" + res.cause());
-        testContext.failed();
+        testContext.failNow(res.cause());
       }
     });
   }

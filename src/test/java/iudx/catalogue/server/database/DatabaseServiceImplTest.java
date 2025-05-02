@@ -376,6 +376,60 @@ public class DatabaseServiceImplTest {
   }
 
   @Test
+  @Description("test list multiple Items when handler succeeded ")
+  public void testListMulItems(VertxTestContext vertxTestContext) {
+    JsonObject request = new JsonObject();
+    request.put(SEARCH_CRITERIA, new JsonArray().add(
+        new JsonObject()
+            .put(FIELD, "type")
+            .put(VALUES, new JsonArray().add("adex:DataBank"))
+    ));
+    request.put("type", new JsonArray().add("tags"));
+    request.put(FILTER, new JsonArray().add("tags"));
+
+    when(asyncResult.succeeded()).thenReturn(true);
+
+    dbService.listMultipleItems(
+        request,
+        handler -> {
+          if (handler.succeeded()) {
+            verify(client, times(2)).listAggregationAsync(any(), any());
+            vertxTestContext.completeNow();
+          } else {
+            vertxTestContext.failNow("fail");
+          }
+        });
+    vertxTestContext.completeNow();
+  }
+
+  @Test
+  @Description("test list multiple Items method")
+  public void testListMulItemsFailed(VertxTestContext vertxTestContext) {
+    JsonObject request = new JsonObject();
+    request.put(SEARCH_CRITERIA, new JsonArray().add(
+        new JsonObject()
+            .put(FIELD, "type")
+            .put(VALUES, new JsonArray().add("adex:DataBank"))
+    ));
+    request.put(FILTER, new JsonArray().add("tags"));
+    request.put("type", new JsonArray().add("tags"));
+
+    when(asyncResult.succeeded()).thenReturn(false);
+
+    dbService.listMultipleItems(
+        request,
+        handler -> {
+          if (handler.failed()) {
+            verify(client, times(1)).listAggregationAsync(anyString(), any());
+            vertxTestContext.completeNow();
+          } else {
+            vertxTestContext.failNow("Fail");
+          }
+        });
+    vertxTestContext.completeNow();
+  }
+
+  @Test
   @Description("test countQuery when method returns Null")
   public void testCountQueryHandler(VertxTestContext vertxTestContext) {
     JsonObject request = new JsonObject();
