@@ -2,6 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "RangeSearchQuerySchema",
   "type": "object",
+  "required": ["rangerel", "attribute", "range"],
   "properties": {
     "rangerel": {
       "type": "string",
@@ -21,19 +22,17 @@
       "type": "string"
     }
   },
-  "required": ["rangerel", "attribute"],
-  "if": {
-    "properties": {
-      "rangerel": {
-        "enum": ["during", "between"]
+  "anyOf": [
+    {
+      "not": {
+        "properties": {
+          "rangerel": { "enum": ["between", "during"] }
+        }
       }
+    },
+    {
+      "required": ["endRange"]
     }
-  },
-  "then": {
-    "required": ["range", "endRange"]
-  },
-  "else": {
-    "required": ["range"]
-  },
+  ],
   "additionalProperties": true
 }

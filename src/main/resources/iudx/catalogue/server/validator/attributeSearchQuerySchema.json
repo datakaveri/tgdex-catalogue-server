@@ -2,33 +2,36 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Attribute Search Schema",
   "type": "object",
-  "required": ["property", "value"],
+  "required": [
+    "searchCriteria"
+  ],
   "properties": {
-    "property": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "minItems": 1,
-      "maxItems": 4
-    },
-    "value": {
+    "searchCriteria": {
       "type": "array",
       "minItems": 1,
       "maxItems": 4,
       "items": {
-        "type": "array",
-        "minItems": 1,
-        "maxItems": 4,
-        "items": {
-          "type": "string",
-          "pattern": "^[a-zA-Z0-9]([\\w-._:\\/() ]*[a-zA-Z0-9])?$"
-        }
+        "type": "object",
+        "required": [
+          "field",
+          "values"
+        ],
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "values": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4,
+            "items": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9]([\\w\\-.,:/()& ]*[a-zA-Z0-9])?$"
+            }
+          }
+        },
+        "additionalProperties": false
       }
-    },
-    "searchType": {
-      "type": "string",
-      "const": "attribute"
     }
   },
   "additionalProperties": true
