@@ -383,6 +383,13 @@ public class ApiServerVerticle extends AbstractVerticle {
             routingContext -> {
               listApis.listItemsHandler(routingContext);
             });
+    router
+        .post(api.getRouteListMulItems())
+        .produces(MIME_APPLICATION_JSON)
+        .handler(
+            routingContext -> {
+              listApis.listItemsPostHandler(routingContext);
+            });
 
     //  Routes for relationships
 

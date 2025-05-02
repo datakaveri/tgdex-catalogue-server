@@ -90,8 +90,6 @@ public class Constants {
 
   public static final String AGGREGATIONS = "aggregations";
   public static final String INSTANCE = "instance";
-  public static final String FILTER_FIELD = "filterField";
-  public static final String FILTER_VALUE = "filterValue";
   public static final String BUCKETS = "buckets";
   public static final String ID = "id";
   public static final String ITEM = "item";
@@ -102,6 +100,7 @@ public class Constants {
 
   public static final String PROPERTY = "property";
   public static final String VALUE = "value";
+  public static final String SEARCH_CRITERIA = "searchCriteria";
 
   /** GeoRels. */
   public static final String GEOREL_WITHIN = "within";
@@ -175,6 +174,8 @@ public class Constants {
   public static final String TAGS = "tags";
   public static final String DEPARTMENT = "department";
   public static final String ORGANIZATION_TYPE = "organizationType";
+  public static final String FILE_FORMAT = "fileFormat";
+  public static final String DATA_READINESS = "dataReadiness";
   public static final String AVERAGE_RATING = "average_rating";
   public static final String TOTAL_RATINGS = "totalRatings";
   public static final String ICON_BASE64 = "icon_base64";
@@ -183,6 +184,9 @@ public class Constants {
   public static final String PROVIDER_COUNT = "providerCount";
   public static final String RESOURCE_GROUP_COUNT = "resourceGroupCount";
   public static final String FUZZY = "fuzzy";
+  public static final String AUTO_COMPLETE = "autoComplete";
+  public static final String FIELD = "field";
+  public static final String VALUES = "values";
 
   /** HTTP Methods. */
   public static final String REQUEST_GET = "GET";
@@ -262,6 +266,8 @@ public class Constants {
   public static final String DETAIL_CONFLICT = "Conflicts";
   public static final String DETAIL_INTERNAL_SERVER_ERROR = "Internal error";
   public static final String DETAIL_WRONG_ITEM_TYPE = "Wrong Item Type";
+  public static final String DETAIL_WRONG_FILTER_TYPE = "Filter must be provided";
+  public static final String DETAIL_INVALID_REQUEST_BODY = "Request body missing or invalid";
   public static final String DETAIL_ID_NOT_FOUND = "id not present in the request";
 
   public static final String TYPE_INVALID_GEO_PARAM = "urn:dx:cat:InvalidGeoParam";
@@ -296,9 +302,10 @@ public class Constants {
   public static final String TITLE_BAD_TEMPORAL_QUERY = "Bad temporal query values";
   public static final String TYPE_BAD_RANGE_QUERY = "urn:dx:cat:BadRangeQuery";
   public static final String TITLE_BAD_RANGE_QUERY = "Bad range query values";
-  public static final String DETAIL_MISSING_RANGEREL = "Missing required 'timerel' or " +
-      "'time' and 'rangerel' parameter for range search";
-  public static final String DETAIL_INVALID_TIMEREL = "Invalid value for 'timerel'. Expected one of: before, after, during, between";
+  public static final String DETAIL_MISSING_RANGEREL = "Missing required 'timerel' or "
+      + "'time' and 'rangerel' parameter for range search";
+  public static final String DETAIL_INVALID_TIMEREL = "Invalid value for 'timerel'. "
+      + "Expected one of: before, after, during, between";
   public static final String DETAIL_INVALID_RANGEREL = "Invalid rangerel value";
 
   public static final String TYPE_BAD_FILTER = "urn:dx:cat:BadFilter";

@@ -1,6 +1,39 @@
 package iudx.catalogue.server.validator.util;
 
-import static iudx.catalogue.server.util.Constants.*;
+import static iudx.catalogue.server.util.Constants.BBOX;
+import static iudx.catalogue.server.util.Constants.BETWEEN;
+import static iudx.catalogue.server.util.Constants.COORDINATES;
+import static iudx.catalogue.server.util.Constants.COORDINATES_PRECISION;
+import static iudx.catalogue.server.util.Constants.COORDINATES_SIZE;
+import static iudx.catalogue.server.util.Constants.DESC;
+import static iudx.catalogue.server.util.Constants.DURING;
+import static iudx.catalogue.server.util.Constants.END_RANGE;
+import static iudx.catalogue.server.util.Constants.END_TIME;
+import static iudx.catalogue.server.util.Constants.FAILED;
+import static iudx.catalogue.server.util.Constants.FILTER_VALUE_SIZE;
+import static iudx.catalogue.server.util.Constants.GEOMETRY;
+import static iudx.catalogue.server.util.Constants.LINESTRING;
+import static iudx.catalogue.server.util.Constants.MAX_DISTANCE;
+import static iudx.catalogue.server.util.Constants.POINT;
+import static iudx.catalogue.server.util.Constants.POLYGON;
+import static iudx.catalogue.server.util.Constants.PROPERTY;
+import static iudx.catalogue.server.util.Constants.PROPERTY_SIZE;
+import static iudx.catalogue.server.util.Constants.RANGE;
+import static iudx.catalogue.server.util.Constants.RANGE_REL;
+import static iudx.catalogue.server.util.Constants.STATUS;
+import static iudx.catalogue.server.util.Constants.STRING_SIZE;
+import static iudx.catalogue.server.util.Constants.TIME;
+import static iudx.catalogue.server.util.Constants.TIME_REL;
+import static iudx.catalogue.server.util.Constants.TITLE;
+import static iudx.catalogue.server.util.Constants.TITLE_INVALID_PROPERTY_VALUE;
+import static iudx.catalogue.server.util.Constants.TITLE_INVALID_SYNTAX;
+import static iudx.catalogue.server.util.Constants.TYPE;
+import static iudx.catalogue.server.util.Constants.TYPE_BAD_FILTER;
+import static iudx.catalogue.server.util.Constants.TYPE_INTERNAL_SERVER_ERROR;
+import static iudx.catalogue.server.util.Constants.TYPE_INVALID_PROPERTY_VALUE;
+import static iudx.catalogue.server.util.Constants.TYPE_INVALID_SYNTAX;
+import static iudx.catalogue.server.util.Constants.VALUE;
+import static iudx.catalogue.server.util.Constants.VALUE_SIZE;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -18,6 +51,7 @@ import org.apache.logging.log4j.Logger;
 
 public class SearchQueryValidatorHelper {
   private static final Logger LOGGER = LogManager.getLogger(ValidatorServiceImpl.class);
+
   public static void handleAttributeSearchValidationResult(
       Future<String> validationFuture, JsonObject request,
       Handler<AsyncResult<JsonObject>> handler) {
@@ -67,7 +101,8 @@ public class SearchQueryValidatorHelper {
                         errResponse
                             .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
                             .put(DESC,
-                                "The max point of 'coordinates' precision is " + COORDINATES_PRECISION)
+                                "The max point of 'coordinates' precision is "
+                                    + COORDINATES_PRECISION)
                             .encodePrettily()));
                     return;
                   }
@@ -85,8 +120,8 @@ public class SearchQueryValidatorHelper {
               LOGGER.error("Error: Overflow coordinate values");
               handler.handle(Future.failedFuture(
                   errResponse
-                  .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
-                  .put(DESC, "The max number of 'coordinates' value is " + COORDINATES_SIZE)
+                      .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
+                      .put(DESC, "The max number of 'coordinates' value is " + COORDINATES_SIZE)
                       .encodePrettily()));
               return;
             }
@@ -144,6 +179,7 @@ public class SearchQueryValidatorHelper {
           handler.handle(Future.failedFuture(errorResponse.encode()));
         });
   }
+
   private static List<Double> extractAllCoordinates(JsonArray arr) {
     List<Double> result = new ArrayList<>();
     for (Object obj : arr) {
@@ -194,28 +230,31 @@ public class SearchQueryValidatorHelper {
       Future<String> validationFuture, JsonObject request,
       Handler<AsyncResult<JsonObject>> handler) {
 
-    JsonObject errResponse = new JsonObject()
-        .put(STATUS, FAILED)
-        .put(TYPE, TYPE_BAD_FILTER);
-    validationFuture
-        .onFailure(x -> {
-          LOGGER.error("Fail: Invalid Schema");
-          String errorMsg = x.getMessage();
-          LOGGER.error(errorMsg);
+    validationFuture.onFailure(x -> {
+      LOGGER.error("Fail: Invalid Schema");
+      String errorMsg = x.getMessage();
+      LOGGER.error(errorMsg);
 
-          if (errorMsg.contains("is too long")) {
-            errResponse.put(DESC, "The max number of 'filter' should be " + FILTER_VALUE_SIZE);
-          } else if (errorMsg.contains("pattern")) {
-            errResponse.put(DESC, "Invalid format in 'filter'");
-          } else if (errorMsg.contains("has missing required properties")) {
-            errResponse.put(DESC, "Mandatory field(s) not provided; " + errorMsg);
-          } else {
-            errResponse.put(DESC, errorMsg);
-          }
+      String errorDesc;
+      if (errorMsg.contains("is too long")) {
+        errorDesc = "The max number of 'filter' should be " + FILTER_VALUE_SIZE;
+      } else if (errorMsg.contains("pattern")) {
+        errorDesc = "Invalid format in 'filter'";
+      } else if (errorMsg.contains("has missing required properties")) {
+        errorDesc = "Mandatory field(s) not provided";
+      } else {
+        errorDesc = errorMsg;
+      }
 
-          handler.handle(Future.failedFuture(errResponse.encode()));
-        });
+      JsonObject errResponse = new JsonObject()
+          .put(STATUS, FAILED)
+          .put(TYPE, TYPE_BAD_FILTER)
+          .put(DESC, errorDesc);
+
+      handler.handle(Future.failedFuture(errResponse.encode()));
+    });
   }
+
 
   public static void handleTemporalSearchValidationResult(
       Future<String> validationFuture, JsonObject request,
@@ -229,19 +268,31 @@ public class SearchQueryValidatorHelper {
 
               // Only check time ordering if 'during' or 'between' is used
               if ((timeRel.equals(DURING) || timeRel.equals(BETWEEN))
-                  && time != null && endTime != null) {
-                if (!(time.compareTo(endTime) < 0)) {
-                  String message = "'endTime' must be after 'time'";
-                  LOGGER.error("Fail: " + message);
-                  handler.handle(Future.failedFuture(new JsonArray().add(message).toString()));
-                }
+                  && time != null && endTime != null
+                  && !(time.compareTo(endTime) < 0)) {
+
+                String message = "'endTime' must be after 'time'";
+                LOGGER.error("Fail: " + message);
+                handler.handle(Future.failedFuture(new JsonArray().add(message).toString()));
               }
             })
         .onFailure(
             x -> {
-              LOGGER.error("Fail: Invalid Schema; {}", x.getMessage());
+              String errorMsg = x.getMessage();
+              LOGGER.error("Fail: Invalid Schema; {}", errorMsg);
+
+              JsonObject errorResponse = new JsonObject().put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
+                  .put(TITLE, TITLE_INVALID_PROPERTY_VALUE);
+
+              if (errorMsg.contains("has missing required properties")
+                  || errorMsg.contains("failed to match at least one required schema")) {
+                errorResponse.put(DESC, "Mandatory field(s) not provided");
+              } else {
+                errorResponse.put(DESC, errorMsg);
+              }
+
               handler.handle(
-                  Future.failedFuture(new JsonArray().add(x.getMessage()).toString()));
+                  Future.failedFuture(errorResponse.encodePrettily()));
             });
   }
 
@@ -252,7 +303,7 @@ public class SearchQueryValidatorHelper {
         .onSuccess(x -> {
           String rangeRel = request.getString(RANGE_REL);
 
-          if ((rangeRel.equalsIgnoreCase(DURING) || rangeRel.equalsIgnoreCase(BETWEEN))) {
+          if (rangeRel.equalsIgnoreCase(DURING) || rangeRel.equalsIgnoreCase(BETWEEN)) {
             int startRange = request.getInteger(RANGE);
             int endRange = request.getInteger(END_RANGE);
 
@@ -269,12 +320,16 @@ public class SearchQueryValidatorHelper {
           String errorMsg = x.getMessage();
           LOGGER.error("Fail: Invalid Schema; {}", errorMsg);
 
-          JsonObject errorResponse = new JsonObject().put(TYPE, TYPE_INVALID_PROPERTY_VALUE);
+          JsonObject errorResponse = new JsonObject().put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
+              .put(TITLE, TITLE_INVALID_PROPERTY_VALUE);
 
-          if (errorMsg.contains("has missing required properties")) {
-            errorResponse.put(DESC, "Mandatory field(s) not provided; " + errorMsg);
-          } else if (errorMsg.contains("type")) {
-            errorResponse.put(DESC, "Invalid datatype for 'range' or 'endRange'");
+          if (errorMsg.contains("has missing required properties")
+              || errorMsg.contains("failed to match at least one required schema")) {
+            errorResponse.put(DESC, "Mandatory field(s) not provided");
+          } else if (errorMsg.contains(
+              "not found in enum (possible values:" +
+                  " [\"before\",\"after\",\"during\",\"between\"])")) {
+            errorResponse.put(DESC, "Invalid rangerel value; " + errorMsg);
           } else {
             errorResponse.put(DESC, errorMsg);
           }

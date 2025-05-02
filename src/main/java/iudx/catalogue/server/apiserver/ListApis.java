@@ -15,11 +15,14 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.MultiMap;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import iudx.catalogue.server.apiserver.util.QueryMapper;
 import iudx.catalogue.server.apiserver.util.RespBuilder;
 import iudx.catalogue.server.database.DatabaseService;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -82,6 +85,7 @@ public final class ListApis {
           case TAGS:
           case DEPARTMENT:
           case ORGANIZATION_TYPE:
+          case FILE_FORMAT:
             type = itemType;
             break;
           case OWNER:
@@ -151,6 +155,112 @@ public final class ListApis {
                   .getResponse());
     }
   }
+
+  /**
+   * Post API to get list of items for multiple itemTypes at once.
+   *
+   * @param routingContext handles web requests in Vert.x Web
+   */
+  public void listItemsPostHandler(RoutingContext routingContext) {
+
+    LOGGER.debug("Info: Listing items via POST");
+
+    HttpServerRequest request = routingContext.request();
+    HttpServerResponse response = routingContext.response();
+    response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
+
+    String instanceId = request.getHeader(HEADER_INSTANCE);
+
+    JsonObject requestBody = routingContext.body().asJsonObject();
+    if (requestBody == null) {
+      LOGGER.error("Fail: No request body provided");
+      response.setStatusCode(400).end(
+          new RespBuilder()
+              .withType(TYPE_INVALID_SYNTAX)
+              .withTitle(TITLE_INVALID_SYNTAX)
+              .withDetail(DETAIL_INVALID_REQUEST_BODY)
+              .getResponse());
+      return;
+    }
+
+    JsonArray itemTypes = requestBody.getJsonArray(FILTER);
+    if (itemTypes == null || itemTypes.isEmpty()) {
+      LOGGER.error("Fail: No filter provided in request body");
+      response.setStatusCode(400).end(
+          new RespBuilder()
+              .withType(TYPE_INVALID_SYNTAX)
+              .withTitle(TITLE_INVALID_SYNTAX)
+              .withDetail(DETAIL_WRONG_FILTER_TYPE)
+              .getResponse());
+      return;
+    }
+    requestBody.put(HEADER_INSTANCE, instanceId);
+
+    JsonObject resp = QueryMapper.validateQueryParam(requestBody);
+    if (resp.getString(STATUS).equals(SUCCESS)) {
+      List<String> type = new ArrayList<>();
+      for (Object obj : itemTypes) {
+        String itemType = obj.toString();
+
+        switch (itemType) {
+          case INSTANCE:
+            type.add(ITEM_TYPE_INSTANCE);
+            break;
+          case RESOURCE_GRP:
+            type.add(ITEM_TYPE_RESOURCE_GROUP);
+            break;
+          case RESOURCE_SVR:
+            type.add(ITEM_TYPE_RESOURCE_SERVER);
+            break;
+          case PROVIDER:
+            type.add(ITEM_TYPE_PROVIDER);
+            break;
+          case TAGS:
+          case DEPARTMENT:
+          case ORGANIZATION_TYPE:
+          case FILE_FORMAT:
+          case DATA_READINESS:
+            type.add(itemType);
+            break;
+          case OWNER:
+            type.add(ITEM_TYPE_OWNER);
+            break;
+          case COS:
+            type.add(ITEM_TYPE_COS);
+            break;
+          case AI_MODEL:
+            type.add(ITEM_TYPE_AI_MODEL);
+            break;
+          case DATA_BANK:
+            type.add(ITEM_TYPE_DATA_BANK);
+            break;
+          case APPS:
+            type.add(ITEM_TYPE_APPS);
+            break;
+          default:
+            LOGGER.error("Fail: Invalid itemType: " + itemType);
+        }
+      }
+      requestBody.put(TYPE, type);
+      /* Request database service with requestBody for listing items */
+      dbService.listMultipleItems(
+          requestBody,
+          dbhandler -> {
+            handleResponseFromDatabase(response, itemTypes.toString(), dbhandler);
+          });
+    } else {
+      LOGGER.error("Fail: Search/Count; Invalid request query parameters");
+      response
+          .setStatusCode(400)
+          .end(
+              new RespBuilder()
+                  .withType(TYPE_INVALID_SYNTAX)
+                  .withTitle(TITLE_INVALID_SYNTAX)
+                  .withDetail(DETAIL_WRONG_ITEM_TYPE)
+                  .getResponse());
+    }
+  }
+
 
   void handleResponseFromDatabase(
       HttpServerResponse response, String itemType, AsyncResult<JsonObject> dbhandler) {

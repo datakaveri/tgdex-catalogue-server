@@ -214,9 +214,6 @@ public final class SearchApis {
    * @param routingContext Handles web request in Vert.x web
    */
   public void postSearchHandler(RoutingContext routingContext) {
-
-    String path = routingContext.normalizedPath();
-
     HttpServerRequest request = routingContext.request();
     HttpServerResponse response = routingContext.response();
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
@@ -230,7 +227,8 @@ public final class SearchApis {
     LOGGER.debug("Info: instance;" + instanceId);
 
     /* validating proper actual query parameters from request */
-    if ((!requestBody.containsKey(PROPERTY) || !requestBody.containsKey(VALUE))
+    if ((!requestBody.containsKey(SEARCH_CRITERIA)
+        || requestBody.getJsonArray(SEARCH_CRITERIA).isEmpty())
         && (!requestBody.containsKey(GEOPROPERTY)
         || !requestBody.containsKey(GEORELATION)
         || !requestBody.containsKey(GEOMETRY)
@@ -251,11 +249,13 @@ public final class SearchApis {
       return;
 
     }
+
     boolean hasValidFilter = false;
 
     /* ATTRIBUTE filter */
-    if (requestBody.getJsonArray(PROPERTY) != null && !requestBody.getJsonArray(PROPERTY).isEmpty()) {
-      requestBody.put(SEARCH_TYPE, requestBody.getString(SEARCH_TYPE, "") + SEARCH_TYPE_ATTRIBUTE);
+    if (requestBody.getJsonArray(SEARCH_CRITERIA) != null
+        && !requestBody.getJsonArray(SEARCH_CRITERIA).isEmpty()) {
+      requestBody.put(SEARCH_TYPE, requestBody.getString(SEARCH_TYPE, "") + SEARCH_CRITERIA);
       hasValidFilter = true;
     }
 
@@ -313,6 +313,7 @@ public final class SearchApis {
             .setStatusCode(400)
             .end(validateHandler.cause().getLocalizedMessage());
       } else {
+        String path = routingContext.normalizedPath();
         if (path.equals(api.getRouteSearch())) {
           dbService.searchQuery(requestBody, handler -> {
             if (handler.succeeded()) {

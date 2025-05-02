@@ -331,8 +331,8 @@ public class QueryMapper {
           LOGGER.error("Error: Missing range or endRange for range relation");
           return errResponse
               .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
-              .put(DESC, "Both range and endRange must be provided for range relation " +
-                  "during/between");
+              .put(DESC, "Both range and endRange must be provided for range relation "
+                  + "during/between");
         }
 
         String rangeVal = requestBody.getString(RANGE);
@@ -400,7 +400,7 @@ public class QueryMapper {
     if (requestBody.containsKey(LIMIT) || requestBody.containsKey(OFFSET)) {
       Integer limit = requestBody.getInteger(LIMIT, 0);
       Integer offset = requestBody.getInteger(OFFSET, 0);
-      Integer totalSize = limit + offset;
+      int totalSize = limit + offset;
       if (totalSize <= 0 || totalSize > MAX_RESULT_WINDOW) {
         LOGGER.error("Error: The limit + offset param has exceeded the limit");
         return errResponse
@@ -413,7 +413,7 @@ public class QueryMapper {
   }
 
   private static boolean isValidTimeFormat(String time) {
-    return !time.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z");
+    return !time.matches("^\\d{4}-\\d{2}-\\d{2}T(0[1-9]|1[0-2]):[0-5]\\d:[0-5]\\d\\+\\d{4}$");
   }
 
   private static boolean isStartBeforeEnd(String startTime, String endTime) {
@@ -422,7 +422,9 @@ public class QueryMapper {
   }
 
   private static boolean isNumeric(String str) {
-    if (str == null || str.isBlank()) return false;
+    if (str == null || str.isBlank()) {
+      return false;
+    }
     try {
       Integer.parseInt(str);
       return true;

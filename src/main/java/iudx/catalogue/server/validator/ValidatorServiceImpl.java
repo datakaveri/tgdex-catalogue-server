@@ -14,7 +14,11 @@ import iudx.catalogue.server.validator.util.SearchQueryValidatorHelper;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,9 +38,13 @@ public class ValidatorServiceImpl implements ValidatorService {
 
   private static final Logger LOGGER = LogManager.getLogger(ValidatorServiceImpl.class);
 
-  /** ES client. */
+  /**
+   * ES client.
+   */
   static ElasticClient client;
-
+  private final String docIndex;
+  private final boolean isUacInstance;
+  private final String vocContext;
   private Future<String> isValidSchema;
   private Validator resourceValidator;
   private Validator resourceGroupValidator;
@@ -60,20 +68,17 @@ public class ValidatorServiceImpl implements ValidatorService {
   private Validator rangeSearchQueryValidator;
   private Validator stack4PatchValidator;
   private Validator stackSchema4Post;
-  private final String docIndex;
-  private final boolean isUacInstance;
-  private final String vocContext;
 
   /**
    * Constructs a new ValidatorServiceImpl object with the specified ElasticClient and docIndex.
    *
-   * @param client the ElasticClient object to use for interacting with the Elasticsearch instance
+   * @param client   the ElasticClient object to use for interacting with the Elasticsearch instance
    * @param docIndex the index name to use for storing documents in Elasticsearch
    */
   public ValidatorServiceImpl(
       ElasticClient client, String docIndex, boolean isUacInstance, String vocContext) {
 
-    this.client = client;
+    ValidatorServiceImpl.client = client;
     this.docIndex = docIndex;
     this.isUacInstance = isUacInstance;
     this.vocContext = vocContext;
@@ -105,7 +110,9 @@ public class ValidatorServiceImpl implements ValidatorService {
     }
   }
 
-  /** Generates timestamp with timezone +05:30. */
+  /**
+   * Generates timestamp with timezone +05:30.
+   */
   public static String getUtcDatetimeAsString() {
     DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZ");
     df.setTimeZone(TimeZone.getTimeZone("IST"));
@@ -181,10 +188,10 @@ public class ValidatorServiceImpl implements ValidatorService {
         isValidSchema = adexAppsValidator.validate(request.toString());
         break;
       case "patch:Stack":
-        isValidSchema =  stack4PatchValidator.validate(request.toString());
+        isValidSchema = stack4PatchValidator.validate(request.toString());
         break;
       case "post:Stack":
-        isValidSchema =  stackSchema4Post.validate(request.toString());
+        isValidSchema = stackSchema4Post.validate(request.toString());
         break;
       default:
         handler.handle(Future.failedFuture("Invalid Item Type"));
@@ -193,6 +200,19 @@ public class ValidatorServiceImpl implements ValidatorService {
 
     validateSchema(handler);
     return this;
+  }
+
+  private void validateSchema(Handler<AsyncResult<JsonObject>> handler) {
+    isValidSchema
+        .onSuccess(
+            x -> handler.handle(Future.succeededFuture(new JsonObject().put(STATUS, SUCCESS))))
+        .onFailure(
+            x -> {
+              LOGGER.error("Fail: Invalid Schema");
+              LOGGER.error(x.getMessage());
+              handler.handle(
+                  Future.failedFuture(String.valueOf(new JsonArray().add(x.getMessage()))));
+            });
   }
 
   /*
@@ -233,7 +253,7 @@ public class ValidatorServiceImpl implements ValidatorService {
   }
 
   private void validateAppsItem(JsonObject request, String method,
-                                    Handler<AsyncResult<JsonObject>> handler) {
+                                Handler<AsyncResult<JsonObject>> handler) {
     validateId(request, handler, isUacInstance);
     if (!isUacInstance && !request.containsKey(ID)) {
       UUID uuid = UUID.randomUUID();
@@ -578,19 +598,6 @@ public class ValidatorServiceImpl implements ValidatorService {
     }
   }
 
-  private void validateSchema(Handler<AsyncResult<JsonObject>> handler) {
-    isValidSchema
-        .onSuccess(
-            x -> handler.handle(Future.succeededFuture(new JsonObject().put(STATUS, SUCCESS))))
-        .onFailure(
-            x -> {
-              LOGGER.error("Fail: Invalid Schema");
-              LOGGER.error(x.getMessage());
-              handler.handle(
-                  Future.failedFuture(String.valueOf(new JsonArray().add(x.getMessage()))));
-            });
-  }
-
   @Override
   public ValidatorService validateRating(
       JsonObject request, Handler<AsyncResult<JsonObject>> handler) {
@@ -645,7 +652,7 @@ public class ValidatorServiceImpl implements ValidatorService {
     if (searchType.contains(SEARCH_TYPE_TEXT)) {
       this.validateTextSearchQuery(request, handler);
     }
-    if (searchType.contains(SEARCH_TYPE_ATTRIBUTE)) {
+    if (searchType.contains(SEARCH_CRITERIA)) {
       this.validateAttributeSearchQuery(request, handler);
     }
     if (searchType.contains(SEARCH_TYPE_GEO)) {
@@ -707,16 +714,20 @@ public class ValidatorServiceImpl implements ValidatorService {
                                                       Handler<AsyncResult<JsonObject>> handler) {
     isValidSchema = temporalSearchQueryValidator.validate(request.toString());
 
-    SearchQueryValidatorHelper.handleTemporalSearchValidationResult(isValidSchema, request, handler);
+    SearchQueryValidatorHelper.handleTemporalSearchValidationResult(isValidSchema, request,
+        handler);
     return this;
   }
+
   public ValidatorService validateAttributeSearchQuery(JsonObject request,
                                                        Handler<AsyncResult<JsonObject>> handler) {
     isValidSchema = attributeSearchQueryValidator.validate(request.toString());
 
-    SearchQueryValidatorHelper.handleAttributeSearchValidationResult(isValidSchema, request, handler);
+    SearchQueryValidatorHelper.handleAttributeSearchValidationResult(isValidSchema, request,
+        handler);
     return this;
   }
+
   public ValidatorService validateGeoSearchQuery(JsonObject request,
                                                  Handler<AsyncResult<JsonObject>> handler) {
     isValidSchema = geoSearchQueryValidator.validate(request.toString());
@@ -724,6 +735,7 @@ public class ValidatorServiceImpl implements ValidatorService {
     SearchQueryValidatorHelper.handleGeoSearchValidationResult(isValidSchema, request, handler);
     return this;
   }
+
   public ValidatorService validateTextSearchQuery(JsonObject request,
                                                   Handler<AsyncResult<JsonObject>> handler) {
     isValidSchema = textSearchQueryValidator.validate(request.toString());
@@ -731,6 +743,7 @@ public class ValidatorServiceImpl implements ValidatorService {
     SearchQueryValidatorHelper.handleTextSearchValidationResult(isValidSchema, request, handler);
     return this;
   }
+
   public ValidatorService validateFilterSearchQuery(JsonObject request,
                                                     Handler<AsyncResult<JsonObject>> handler) {
     isValidSchema = filterSearchQueryValidator.validate(request.toString());
@@ -738,6 +751,7 @@ public class ValidatorServiceImpl implements ValidatorService {
     SearchQueryValidatorHelper.handleFilterSearchValidationResult(isValidSchema, request, handler);
     return this;
   }
+
   public ValidatorService validateRangeSearchQuery(JsonObject request,
                                                    Handler<AsyncResult<JsonObject>> handler) {
     isValidSchema = rangeSearchQueryValidator.validate(request.toString());

@@ -80,6 +80,7 @@ public interface ValidatorService {
   @Fluent
   ValidatorService validateMlayerDatasetId(JsonObject requestData,
                                            Handler<AsyncResult<JsonObject>> handler);
+
   @Fluent
   ValidatorService validateSearchQuery(JsonObject requestData,
                                             Handler<AsyncResult<JsonObject>> handler);

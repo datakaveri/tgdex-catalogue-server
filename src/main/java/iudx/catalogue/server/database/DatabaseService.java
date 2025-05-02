@@ -129,6 +129,16 @@ public interface DatabaseService {
   DatabaseService listItems(JsonObject request, Handler<AsyncResult<JsonObject>> handler);
 
   /**
+   * Lists multiple items from the database based on the provided request payload.
+   *
+   * @param request a JsonObject containing the request body
+   * @param handler a handler to process the asynchronous result containing the response
+   * @return the current instance of DatabaseService
+   */
+  @Fluent
+  DatabaseService listMultipleItems(JsonObject request, Handler<AsyncResult<JsonObject>> handler);
+
+  /**
    * The listOwnerOrCos implements the fetch of entire owner or cos item from the database.
    *
    * @param request which is a JsonObject

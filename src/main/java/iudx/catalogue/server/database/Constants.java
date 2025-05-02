@@ -14,6 +14,8 @@ public class Constants {
 
   public static final String TEXTSEARCH_REGEX = "(.*)textSearch(.*)";
   public static final String ATTRIBUTE_SEARCH_REGEX = "(.*)attributeSearch(.*)";
+  public static final String SEARCH_CRITERIA_ATTRIBUTE_SEARCH_REGEX = "(.*)searchCriteria(.*)";
+
   public static final String GEOSEARCH_REGEX = "(.*)geoSearch(.*)";
   public static final String TEMPORAL_SEARCH_REGEX = "(.*)temporalSearch(.*)";
   public static final String RANGE_SEARCH_REGEX = "(.*)rangeSearch(.*)";
@@ -40,6 +42,7 @@ public class Constants {
   public static final String FORWARD_SLASH = "/";
   public static final String WILDCARD_KEY = "wildcard";
   public static final String AGGREGATION_ONLY = "AGGREGATION";
+  public static final String AGGREGATION_LIST = "AGGREGATION_LIST";
   public static final String RATING_AGGREGATION_ONLY = "R_AGGREGATION";
   public static final String TYPE_KEYWORD = "type.keyword";
   public static final String WORD_VECTOR_KEY = "_word_vector";
@@ -56,7 +59,7 @@ public class Constants {
           + "{\"field\":instances.keyword,"
           + "\"size\": 10000}}}}";
   public static final String LIST_AGGREGATION_QUERY =
-      "{\"query\": {\"bool\": {\"filter\": {\"term\": {\"$filterKey\": \"$\"}}}},"
+      "{\"query\": {\"bool\": {\"filter\": {\"term\": {\"$filterKey\": \"$filterVal\"}}}},"
           + "\"aggs\":"
           + "{\"results\": {\"terms\":"
           + "{\"field\":\"$field\","
@@ -67,10 +70,27 @@ public class Constants {
           + "{\"results\": {\"terms\":"
           + "{\"field\":\"$field\","
           + "\"size\": $size}}}}";
+  public static final String QUERY_START = "{";
+  public static final String QUERY_END = "}";
+  public static final String QUERY_BOOL_FILTER_START = "\"query\": { \"bool\": { \"filter\": [";
+  public static final String QUERY_BOOL_FILTER_END = "] } },";
+  public static final String AGGS_START = "\"aggs\": {";
+  public static final String AGGS_END = "}";
+  public static final String TERM_QUERY_TEMPLATE = "{ \"term\": { \"$field\": \"$value\" } }";
+  public static final String TERMS_QUERY_TEMPLATE = "{ \"terms\": { \"$field\": $value } }";
+  public static final String TERMS_AGG_TEMPLATE = "\"$name\": { \"terms\": "
+      + "{ \"field\": \"$field\", \"size\": $size } }";
+
   public static final String LIST_INSTANCE_TYPES_QUERY =
       "{\"query\": {\"bool\": {\"filter\": [ {\"match\": {\"type\": \"$1\"}},"
           + "{\"term\": {\"instance.keyword\": \"$2\"}}]}},"
           + "\"aggs\": {\"results\": {\"terms\": {\"field\": \"id.keyword\", \"size\": $size}}}}";
+  public static final String LIST_INSTANCE_FIELD_QUERY =
+      "{\"query\": {\"bool\": {\"filter\": {\"term\": {\"instance.keyword\": \"$1\"}}}},"
+          + "\"aggs\":"
+          + "{\"results\": {\"terms\":"
+          + "{\"field\":\"$field\","
+          + "\"size\": $size}}}}";
   public static final String LIST_TYPES_QUERY =
       "{\"query\": {\"bool\": {\"filter\": [ {\"match\": {\"type\": \"$1\"}} ]}},"
           + "\"aggs\": {\"results\": {\"terms\": {\"field\": \"id.keyword\", \"size\": $size}}}}";
@@ -80,7 +100,10 @@ public class Constants {
   public static final String TEXT_QUERY = "{\"query_string\":{\"query\":\"$1\"}}";
   public static final String TEXT_QUERY_FUZZY =
       "{\"multi_match\":{\"fields\":[\"label\",\"tags\",\"description\"],\"query\":\"$1\","
-          +  "\"fuzziness\":\"AUTO\",\"minimum_should_match\":\"100%\",\"operator\":\"and\"}}";
+          +  "\"fuzziness\":\"AUTO\",\"boost\":\"1.0\"}}";
+  public static final String TEXT_QUERY_AUTO_COMPLETE =
+      "{\"multi_match\":{\"fields\":[\"label\",\"tags\",\"description\"],\"query\":\"$1\","
+          +  "\"type\":\"bool_prefix\",\"boost\":\"5.0\"}}";
   public static final String GET_DOC_QUERY =
       "{\"_source\":[$2],\"query\":{\"term\":{\"id.keyword\":\"$1\"}}}";
 
@@ -286,6 +309,8 @@ public class Constants {
   static final String FILTER_PATH = "?filter_path=took,hits.total.value,hits.hits._source";
   static final String FILTER_PATH_AGGREGATION =
       "?filter_path=hits.total.value,aggregations.results.buckets";
+  static final String FILTER_PATH_AGGREGATIONS =
+      "?filter_path=hits.total.value,aggregations.*.buckets";
   static final String FILTER_RATING_AGGREGATION = "?filter_path=hits.total.value,aggregations";
   static final String FILTER_ID_ONLY_PATH =
       "?filter_path=hits.total.value,hits.hits._id&size=10000";

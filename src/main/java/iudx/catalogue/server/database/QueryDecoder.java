@@ -142,16 +142,27 @@ public final class QueryDecoder {
       /* validating tag search attributes */
       if (request.containsKey(Q_VALUE) && !request.getString(Q_VALUE).isBlank()) {
         /* constructing db queries */
+        JsonArray shouldQuery = new JsonArray();
         String textAttr = request.getString(Q_VALUE);
-        if (request.containsKey(FUZZY) && request.getString(FUZZY).equals("true")) {
+        boolean isFuzzy = request.containsKey(FUZZY) && "true".equals(request.getString(FUZZY));
+        boolean isAutoComplete =
+            request.containsKey(AUTO_COMPLETE) &&  "true".equals(request.getString(AUTO_COMPLETE));
+        if (isFuzzy) {
           String textQuery = TEXT_QUERY_FUZZY.replace("$1", textAttr);
 
-          mustQuery.add(new JsonObject(textQuery));
-        } else {
+          shouldQuery.add(new JsonObject(textQuery));
+        }
+        if (isAutoComplete) {
+          String textQuery = TEXT_QUERY_AUTO_COMPLETE.replace("$1", textAttr);
+
+          shouldQuery.add(new JsonObject(textQuery));
+        }
+        if (!isFuzzy && !isAutoComplete) {
           String textQuery = TEXT_QUERY.replace("$1", textAttr);
 
-          mustQuery.add(new JsonObject(textQuery));
+          shouldQuery.add(new JsonObject(textQuery));
         }
+        mustQuery.add(new JsonObject(SHOULD_QUERY.replace("$1", shouldQuery.toString())));
       } else {
         return new JsonObject().put(ERROR, new RespBuilder()
                     .withType(TYPE_BAD_TEXT_QUERY)
@@ -208,8 +219,9 @@ public final class QueryDecoder {
                 } else {
 
                   /* add keyword if not avaialble */
-                  matchQuery = MATCH_QUERY.replace("$1", propertyAttrs.getString(i) + KEYWORD_KEY)
-                                          .replace("$2", valueArray.getString(j));
+                  matchQuery = MATCH_QUERY.replace("$1",
+                          propertyAttrs.getString(i) + KEYWORD_KEY)
+                      .replace("$2", valueArray.getString(j));
                 }
                 shouldQuery.add(new JsonObject(matchQuery));
                 if ("true".equals(request.getString(FUZZY))
@@ -232,6 +244,69 @@ public final class QueryDecoder {
                   .withDetail("Invalid Property Value")
                   .getJsonResponse());
         }
+      }
+    }
+
+    /* Construct the query for post request for attribute based search */
+    if (searchType.matches(SEARCH_CRITERIA_ATTRIBUTE_SEARCH_REGEX)) {
+      LOGGER.debug("Info: Attribute search block; {}", request);
+
+      match = true;
+
+      if (request.containsKey(SEARCH_CRITERIA)
+          && !request.getJsonArray(SEARCH_CRITERIA).isEmpty()) {
+        JsonArray searchCriteriaArray = request.getJsonArray(SEARCH_CRITERIA);
+
+        for (int i = 0; i < searchCriteriaArray.size(); i++) {
+          JsonObject criterion = searchCriteriaArray.getJsonObject(i);
+          String field = criterion.getString(FIELD);
+          JsonArray values = criterion.getJsonArray(VALUES);
+
+          JsonArray shouldQuery = new JsonArray();
+          for (int j = 0; j < values.size(); j++) {
+            String matchQuery;
+
+            // fields like tags, description or location (no .keyword needed)
+            if (TAGS.equals(field) || DESCRIPTION_ATTR.equals(field)
+                || field.startsWith(LOCATION)) {
+              matchQuery = MATCH_QUERY.replace("$1", field)
+                  .replace("$2", values.getString(j));
+              shouldQuery.add(new JsonObject(matchQuery));
+
+              if (request.containsKey(FUZZY) && "true".equals(request.getString(FUZZY))
+                  && (TAGS.equals(field) || DESCRIPTION_ATTR.equals(field))) {
+                matchQuery = FUZZY_MATCH_QUERY.replace("$1", field)
+                    .replace("$2", values.getString(j));
+                shouldQuery.add(new JsonObject(matchQuery));
+              }
+            } else {
+              // check if field already has .keyword
+              if (field.endsWith(KEYWORD_KEY)) {
+                matchQuery = MATCH_QUERY.replace("$1", field)
+                    .replace("$2", values.getString(j));
+              } else {
+                matchQuery = MATCH_QUERY.replace("$1", field + KEYWORD_KEY)
+                    .replace("$2", values.getString(j));
+              }
+              shouldQuery.add(new JsonObject(matchQuery));
+
+              if ("true".equals(request.getString(FUZZY))
+                  && (LABEL.equals(field) || INSTANCE.equals(field))) {
+                matchQuery = FUZZY_MATCH_QUERY.replace("$1", field).replace("$2",
+                    values.getString(j));
+                shouldQuery.add(new JsonObject(matchQuery));
+              }
+            }
+          }
+
+          mustQuery.add(new JsonObject(SHOULD_QUERY.replace("$1", shouldQuery.toString())));
+        }
+      } else {
+        return new JsonObject().put(ERROR, new RespBuilder()
+            .withType(TYPE_INVALID_PROPERTY_VALUE)
+            .withTitle(TITLE_INVALID_PROPERTY_VALUE)
+            .withDetail("Invalid Property Value: Empty searchCriteria")
+            .getJsonResponse());
       }
     }
 
@@ -263,7 +338,8 @@ public final class QueryDecoder {
         }
 
         try {
-          JsonObject numericRangeQuery = constructRangeQuery(field, rangeRel, rangeValue, endRangeValue);
+          JsonObject numericRangeQuery = constructRangeQuery(field, rangeRel,
+              rangeValue, endRangeValue);
           mustQuery.add(numericRangeQuery);
         } catch (IllegalArgumentException e) {
           return new JsonObject().put(ERROR, new RespBuilder()
@@ -621,28 +697,26 @@ public final class QueryDecoder {
     String itemType = request.getString(ITEM_TYPE);
     String type = request.getString(TYPE_KEY);
     String instanceId = request.getString(INSTANCE);
-    String filterKey = request.getString(FILTER_FIELD) + KEYWORD_KEY;
-    String filterValue = request.getString(FILTER_VALUE);
     String elasticQuery = "";
     String tempQuery = "";
 
     if (itemType.equalsIgnoreCase(TAGS) || itemType.equalsIgnoreCase(DEPARTMENT)
-    || itemType.equalsIgnoreCase(ORGANIZATION_TYPE)) {
-      if ((instanceId == null || instanceId == "")
-      && (filterValue == null || filterValue == "")) {
+        || itemType.equalsIgnoreCase(ORGANIZATION_TYPE) || itemType.equalsIgnoreCase(FILE_FORMAT)
+        || itemType.equalsIgnoreCase(DATA_READINESS)) {
+      if (instanceId == null || instanceId == "") {
         tempQuery = LIST_AGGREGATION_QUERY_NO_FILTER
-            .replace("$field", itemType+KEYWORD_KEY);
+            .replace("$field", itemType + KEYWORD_KEY);
       } else {
-        tempQuery = LIST_AGGREGATION_QUERY
-            .replace("$filterKey", filterKey)
-            .replace("$filterVal", filterValue)
-            .replace("$field", itemType+KEYWORD_KEY);
+        tempQuery = LIST_INSTANCE_FIELD_QUERY
+            .replace("$1", instanceId)
+            .replace("$field", itemType + KEYWORD_KEY);
       }
     } else {
       if (instanceId == null || instanceId == "") {
         tempQuery = LIST_TYPES_QUERY.replace("$1", type);
       } else {
-        tempQuery = LIST_INSTANCE_TYPES_QUERY.replace("$1", type).replace("$2", instanceId);
+        tempQuery = LIST_INSTANCE_TYPES_QUERY.replace("$1", type)
+            .replace("$2", instanceId);
       }
     }
 
@@ -652,4 +726,80 @@ public final class QueryDecoder {
 
     return elasticQuery;
   }
+
+  public String listMultipleItemTypesQuery(JsonObject request) {
+    LOGGER.debug("Info: Reached list multiple items; " + request.toString());
+
+    String instanceId = request.getString(INSTANCE);
+    JsonArray filters = request.getJsonArray(SEARCH_CRITERIA);  // Now filters is an array of
+    // filter objects
+    Integer limit = request.getInteger(LIMIT,
+        FILTER_PAGINATION_SIZE - request.getInteger(OFFSET, 0));
+
+    StringBuilder queryBuilder = new StringBuilder();
+    queryBuilder.append(QUERY_START);
+
+    boolean hasExtraFilter = filters != null && !filters.isEmpty()
+        || instanceId != null && !instanceId.isEmpty();
+    boolean hasFilter = instanceId != null && !instanceId.isEmpty() || hasExtraFilter;
+
+    if (hasFilter) {
+      queryBuilder.append(QUERY_BOOL_FILTER_START);
+
+      // Handle instanceId filter (if present)
+      if (instanceId != null && !instanceId.isEmpty()) {
+        String instanceFilter = TERM_QUERY_TEMPLATE
+            .replace("$field", INSTANCE + KEYWORD_KEY)
+            .replace("$value", instanceId);
+        queryBuilder.append(instanceFilter).append(",");
+      }
+
+      // Handle additional filters (from the filters array)
+      if (filters != null && !filters.isEmpty()) {
+        for (Object filterObj : filters) {
+          JsonObject filter = (JsonObject) filterObj;
+          String field = filter.getString(FIELD);
+          JsonArray values = filter.getJsonArray(VALUES);
+
+          if (field != null && values != null && !values.isEmpty()) {
+            String extraFilter = TERMS_QUERY_TEMPLATE
+                .replace("$field", field + KEYWORD_KEY)
+                .replace("$value", values.toString());
+            // Assuming a single value in "values" for simplicity
+            queryBuilder.append(extraFilter).append(",");
+          }
+        }
+      }
+
+      // Remove last comma if necessary
+      if (queryBuilder.toString().endsWith(",")) {
+        queryBuilder = new StringBuilder(queryBuilder.substring(0, queryBuilder.length() - 1));
+      }
+
+      queryBuilder.append(QUERY_BOOL_FILTER_END);
+    }
+
+    queryBuilder.append(AGGS_START);
+
+    // Aggregation part for item types
+    JsonArray itemTypes = request.getJsonArray(TYPE);
+    for (int i = 0; i < itemTypes.size(); i++) {
+      String itemType = itemTypes.getString(i);
+      String agg = TERMS_AGG_TEMPLATE
+          .replace("$name", itemType)
+          .replace("$field", itemType + KEYWORD_KEY)
+          .replace("$size", limit.toString());
+      queryBuilder.append(agg);
+
+      if (i != itemTypes.size() - 1) {
+        queryBuilder.append(",");
+      }
+    }
+
+    queryBuilder.append(AGGS_END);
+    queryBuilder.append(QUERY_END);
+
+    return queryBuilder.toString();
+  }
+
 }
