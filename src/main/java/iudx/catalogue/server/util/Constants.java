@@ -261,7 +261,7 @@ public class Constants {
   public static final String TITLE_OPERATION_NOT_ALLOWED = "Operation not allowed";
   public static final String TITLE_LINK_VALIDATION_FAILED = "Link Validation Failed";
   public static final String TITLE_REQUIREMENTS_NOT_MET =
-          "Resource usage requirements not satisfied";
+      "Resource usage requirements not satisfied";
 
   public static final String DETAIL_CONFLICT = "Conflicts";
   public static final String DETAIL_INTERNAL_SERVER_ERROR = "Internal error";
@@ -283,7 +283,7 @@ public class Constants {
   public static final String DETAIL_INVALID_BBOX = "Issue with bbox coordinates";
   public static final String DETAIL_INVALID_GEO_PARAMETER = "Missing/Invalid geo parameters";
   public static final String DETAIL_INVALID_RESPONSE_FILTER =
-          "Missing/Invalid responseFilter parameters";
+      "Missing/Invalid responseFilter parameters";
 
   public static final String DETAIL_INVALID_TOKEN = "Authorization failed, Invalid token.";
 
@@ -323,4 +323,3 @@ public class Constants {
 
 
 }
-

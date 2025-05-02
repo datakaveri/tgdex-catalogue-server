@@ -104,18 +104,18 @@ public final class QueryDecoder {
         /* Check if valid polygon */
         if (geometry.equalsIgnoreCase(POLYGON)
             && (!coordinates.getJsonArray(0).getJsonArray(0).getDouble(0)
-                .equals(coordinates.getJsonArray(0).getJsonArray(length - 1).getDouble(0))
+            .equals(coordinates.getJsonArray(0).getJsonArray(length - 1).getDouble(0))
             || !coordinates.getJsonArray(0).getJsonArray(0).getDouble(1)
-                .equals(coordinates.getJsonArray(0).getJsonArray(length - 1).getDouble(1)))) {
+            .equals(coordinates.getJsonArray(0).getJsonArray(length - 1).getDouble(1)))) {
 
           return new JsonObject().put(ERROR, new RespBuilder()
-                      .withType(TYPE_INVALID_GEO_VALUE)
-                      .withTitle(TITLE_INVALID_GEO_VALUE)
-                      .withDetail(DETAIL_INVALID_COORDINATE_POLYGON)
-                      .getJsonResponse());
+              .withType(TYPE_INVALID_GEO_VALUE)
+              .withTitle(TITLE_INVALID_GEO_VALUE)
+              .withDetail(DETAIL_INVALID_COORDINATE_POLYGON)
+              .getJsonResponse());
         }
         queryGeoShape = GEO_SHAPE_QUERY.replace("$1", geometry)
-                .replace("$2", coordinates.toString())
+            .replace("$2", coordinates.toString())
             .replace("$3", relation).replace("$4", geoProperty + GEO_KEY);
 
       } else if (BBOX.equalsIgnoreCase(geometry)) {
@@ -123,14 +123,14 @@ public final class QueryDecoder {
         relation = request.getString(GEORELATION);
         coordinates = request.getJsonArray(COORDINATES_KEY);
         queryGeoShape = GEO_SHAPE_QUERY
-                .replace("$1", GEO_BBOX).replace("$2", coordinates.toString())
+            .replace("$1", GEO_BBOX).replace("$2", coordinates.toString())
             .replace("$3", relation).replace("$4", geoProperty + GEO_KEY);
       } else {
         return new JsonObject().put(ERROR, new RespBuilder()
-                    .withType(TYPE_INVALID_GEO_PARAM)
-                    .withTitle(TITLE_INVALID_GEO_PARAM)
-                .withDetail(DETAIL_INVALID_GEO_PARAMETER)
-                .getJsonResponse());
+            .withType(TYPE_INVALID_GEO_PARAM)
+            .withTitle(TITLE_INVALID_GEO_PARAM)
+            .withDetail(DETAIL_INVALID_GEO_PARAMETER)
+            .getJsonResponse());
       }
     }
 
@@ -165,10 +165,10 @@ public final class QueryDecoder {
         mustQuery.add(new JsonObject(SHOULD_QUERY.replace("$1", shouldQuery.toString())));
       } else {
         return new JsonObject().put(ERROR, new RespBuilder()
-                    .withType(TYPE_BAD_TEXT_QUERY)
-                    .withTitle(TITLE_BAD_TEXT_QUERY)
-                .withDetail("bad text query values")
-                .getJsonResponse());
+            .withType(TYPE_BAD_TEXT_QUERY)
+            .withTitle(TITLE_BAD_TEXT_QUERY)
+            .withDetail("bad text query values")
+            .getJsonResponse());
       }
     }
 
@@ -197,7 +197,7 @@ public final class QueryDecoder {
                   || propertyAttrs.getString(i).startsWith(LOCATION)) {
 
                 matchQuery = MATCH_QUERY.replace("$1", propertyAttrs.getString(i))
-                                        .replace("$2", valueArray.getString(j));
+                    .replace("$2", valueArray.getString(j));
                 shouldQuery.add(new JsonObject(matchQuery));
 
                 if (request.containsKey(FUZZY)
@@ -215,7 +215,7 @@ public final class QueryDecoder {
                 /* checking keyword in the query paramters */
                 if (propertyAttrs.getString(i).endsWith(KEYWORD_KEY)) {
                   matchQuery = MATCH_QUERY.replace("$1", propertyAttrs.getString(i))
-                                          .replace("$2", valueArray.getString(j));
+                      .replace("$2", valueArray.getString(j));
                 } else {
 
                   /* add keyword if not avaialble */
@@ -239,10 +239,10 @@ public final class QueryDecoder {
           }
         } else {
           return new JsonObject().put(ERROR, new RespBuilder()
-                      .withType(TYPE_INVALID_PROPERTY_VALUE)
-                      .withTitle(TITLE_INVALID_PROPERTY_VALUE)
-                  .withDetail("Invalid Property Value")
-                  .getJsonResponse());
+              .withType(TYPE_INVALID_PROPERTY_VALUE)
+              .withTitle(TITLE_INVALID_PROPERTY_VALUE)
+              .withDetail("Invalid Property Value")
+              .getJsonResponse());
         }
       }
     }
@@ -423,8 +423,8 @@ public final class QueryDecoder {
         return new JsonObject().put(ERROR, new RespBuilder()
             .withType(TYPE_OPERATION_NOT_ALLOWED)
             .withTitle(TITLE_OPERATION_NOT_ALLOWED)
-                .withDetail("operation not allowed")
-                .getJsonResponse());
+            .withDetail("operation not allowed")
+            .getJsonResponse());
       }
 
       if (request.containsKey(ATTRIBUTE)) {
@@ -437,17 +437,17 @@ public final class QueryDecoder {
         return new JsonObject().put(ERROR, new RespBuilder()
             .withType(TYPE_BAD_FILTER)
             .withTitle(TITLE_BAD_FILTER)
-                .withDetail("bad filters applied")
-                .getJsonResponse());
+            .withDetail("bad filters applied")
+            .getJsonResponse());
       }
     }
 
     if (!match) {
       return new JsonObject().put(ERROR, new RespBuilder()
-            .withType(TYPE_INVALID_SYNTAX)
-            .withTitle(TITLE_INVALID_SYNTAX)
-              .withDetail("Invalid Syntax")
-              .getJsonResponse());
+          .withType(TYPE_INVALID_SYNTAX)
+          .withTitle(TITLE_INVALID_SYNTAX)
+          .withDetail("Invalid Syntax")
+          .getJsonResponse());
     } else {
 
       JsonObject boolQuery = new JsonObject(MUST_QUERY.replace("$1", mustQuery.toString()));
@@ -458,10 +458,10 @@ public final class QueryDecoder {
               new JsonArray().add(new JsonObject(queryGeoShape)));
         } catch (Exception e) {
           return new JsonObject().put(ERROR, new RespBuilder()
-                      .withType(TYPE_INVALID_GEO_VALUE)
-                      .withTitle(TITLE_INVALID_GEO_VALUE)
-                      .withDetail(DETAIL_INVALID_COORDINATE_POLYGON)
-                      .getJsonResponse());
+              .withType(TYPE_INVALID_GEO_VALUE)
+              .withTitle(TITLE_INVALID_GEO_VALUE)
+              .withDetail(DETAIL_INVALID_COORDINATE_POLYGON)
+              .getJsonResponse());
         }
       }
       return elasticQuery.put(QUERY_KEY, boolQuery);
@@ -642,7 +642,7 @@ public final class QueryDecoder {
       if (request.containsKey(RESOURCE_GRP)) {
         subQuery =
             subQuery
-            + MATCH_QUERY.replace("$1", ID_KEYWORD).replace("$2", request.getString(RESOURCE_GRP))
+                + MATCH_QUERY.replace("$1", ID_KEYWORD).replace("$2", request.getString(RESOURCE_GRP))
                 + ",";
       }
       if (request.containsKey(PROVIDER)) {
@@ -656,15 +656,15 @@ public final class QueryDecoder {
         subQuery =
             subQuery
                 + MATCH_QUERY
-                    .replace("$1", ID_KEYWORD)
-                    .replace("$2", request.getString(RESOURCE_SVR))
+                .replace("$1", ID_KEYWORD)
+                .replace("$2", request.getString(RESOURCE_SVR))
                 + ",";
       }
       if (request.containsKey(COS_ITEM)) {
 
         subQuery =
             subQuery
-            + MATCH_QUERY
+                + MATCH_QUERY
                 .replace("$1", ID_KEYWORD)
                 .replace("$2", request.getString(COS_ITEM));
 

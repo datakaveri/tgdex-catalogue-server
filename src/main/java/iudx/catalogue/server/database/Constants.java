@@ -165,8 +165,8 @@ public class Constants {
           + "\"cos\", \"resourceGroup\", \"resourceType\", \"itemCreatedAt\","
           + "\"icon_base64\"]},\"size\": 10000}";
   public static final String GET_ALL_DATASETS_BY_RS_GRP =
-          "{\"size\":10000,\"query\":{\"bool\":{\"must\":[{\"bool\":{\"should\":[{\"match\":"
-                  + "{\"type.keyword\":\"iudx:ResourceGroup\"}}]}}]}}}";
+      "{\"size\":10000,\"query\":{\"bool\":{\"must\":[{\"bool\":{\"should\":[{\"match\":"
+          + "{\"type.keyword\":\"iudx:ResourceGroup\"}}]}}]}}}";
   public static final String GET_ALL_DATASETS_BY_FIELDS =
       "{\"query\":{\"bool\":{\"should\":[{\"bool\":{\"must\":[{\"match\":"
           + "{\"type.keyword\":\"iudx:ResourceGroup\"}}";
@@ -217,7 +217,7 @@ public class Constants {
           + "\"accessPolicy\",\"provider\",\"itemCreatedAt\",\"instance\",\"label\"]},"
           + "\"size\":10000}";
   public static final String GET_LATEST_TOTAL_RG =
-          "{\"size\":6,\"from\": 0,\"sort\":[{\"itemCreatedAt\":{\"order\": \"desc\"}}],"
+      "{\"size\":6,\"from\": 0,\"sort\":[{\"itemCreatedAt\":{\"order\": \"desc\"}}],"
           + "\"query\":{\"bool\":{\"must\":[{\"match\":{\"type\":\"iudx:ResourceGroup\"}}"
           + "]}},\"aggs\":{\"resourceGroupCount\":{\"filter\":{\"term\": {\"type.keyword\":"
           + " \"iudx:ResourceGroup\"}}},\"resourceCount\":{\"global\":{},\"aggs\":"
@@ -227,12 +227,12 @@ public class Constants {
           + "[\"id\",\"description\",\"type\",\"resourceGroup\",\"accessPolicy\",\"provider\","
           + "\"itemCreatedAt\",\"instance\",\"label\"]}}";
   public static final String GET_PROVIDERS_AND_POPULAR_RG =
-          "{\"size\": 10000,\"_source\":[\"id\",\"description\",\"type\",\"resourceGroup\","
+      "{\"size\": 10000,\"_source\":[\"id\",\"description\",\"type\",\"resourceGroup\","
           + "\"accessPolicy\",\"provider\",\"itemCreatedAt\",\"instance\",\"label\"],\"query\":"
           + " {\"bool\": {\"should\":[{\"terms\":{\"id.keyword\": $1}},{\"term\": "
           + "{\"type.keyword\": \"iudx:Provider\"}}]}}}";
   public static final String GET_CATEGORIZED_RESOURCES_AP =
-          "{\"size\": 0, \"query\": {\"terms\": {\"resourceGroup.keyword\": $1}}, "
+      "{\"size\": 0, \"query\": {\"terms\": {\"resourceGroup.keyword\": $1}}, "
           + "\"aggs\": {\"results\": {\"terms\": {\"field\": \"resourceGroup.keyword\","
           + "\"size\": 10000},\"aggs\": {\"access_policies\": {\"terms\": {\"field\": "
           + "\"accessPolicy.keyword\",\"size\": 10000},\"aggs\": {\"accessPolicy_count\":"
