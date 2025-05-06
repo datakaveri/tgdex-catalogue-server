@@ -687,6 +687,37 @@ public class DatabaseServiceImpl implements DatabaseService {
   }
 
   @Override
+  public DatabaseService listMultipleItems(JsonObject request,
+                                      Handler<AsyncResult<JsonObject>> handler) {
+
+    RespBuilder respBuilder = new RespBuilder();
+    String elasticQuery = queryDecoder.listMultipleItemTypesQuery(request);
+
+    LOGGER.debug("Info: Listing Multiple items;" + elasticQuery);
+
+    client.listAggregationsAsync(
+        elasticQuery,
+        clientHandler -> {
+          if (clientHandler.succeeded()) {
+            LOGGER.debug("Success: Successful DB request");
+            JsonObject responseJson = clientHandler.result();
+            responseJson.remove(TOTAL_HITS);
+            handler.handle(Future.succeededFuture(responseJson));
+          } else {
+            LOGGER.error("Fail: DB request has failed;" + clientHandler.cause());
+            /* Handle request error */
+            handler.handle(
+                Future.failedFuture(
+                    respBuilder
+                        .withType(TYPE_INTERNAL_SERVER_ERROR)
+                        .withTitle(TITLE_INTERNAL_SERVER_ERROR)
+                        .getResponse()));
+          }
+        });
+    return this;
+  }
+
+  @Override
   public DatabaseService listOwnerOrCos(
       JsonObject request, Handler<AsyncResult<JsonObject>> handler) {
     RespBuilder respBuilder = new RespBuilder();

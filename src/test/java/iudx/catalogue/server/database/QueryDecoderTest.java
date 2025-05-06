@@ -2,6 +2,7 @@ package iudx.catalogue.server.database;
 
 import static iudx.catalogue.server.database.Constants.*;
 import static iudx.catalogue.server.util.Constants.*;
+import static iudx.catalogue.server.validator.Constants.ITEM_CREATED_AT;
 import static org.junit.jupiter.api.Assertions.*;
 
 import io.vertx.core.DeploymentOptions;
@@ -200,8 +201,15 @@ public class QueryDecoderTest {
     JsonObject json = queryDecoder.searchQuery(requests);
 
     assertEquals("Golibar Square",
-            json.getJsonObject(QUERY_KEY).getJsonObject("bool").getJsonArray("must").getJsonObject(0)
-                    .getJsonObject("query_string").getString(QUERY_KEY));
+        json.getJsonObject(QUERY_KEY)
+            .getJsonObject("bool")
+            .getJsonArray("must")
+            .getJsonObject(0)
+            .getJsonObject("bool") // <-- Extract inner bool first
+            .getJsonArray("should")
+            .getJsonObject(0)
+            .getJsonObject("query_string")
+            .getString(QUERY_KEY));
     testContext.completeNow();
   }
 
@@ -309,7 +317,10 @@ public class QueryDecoderTest {
     JsonObject request=new JsonObject();
     request.put(ITEM_TYPE,TAGS);
     request.put(INSTANCE,"dummy").put(LIMIT,2).put(OFFSET,1);
-    String elasticQuery=LIST_INSTANCE_TAGS_QUERY.replace("$1", request.getString(INSTANCE)).replace("$size",request.getInteger(LIMIT,FILTER_PAGINATION_SIZE-request.getInteger(OFFSET,0)).toString());
+    String elasticQuery=
+        LIST_INSTANCE_FIELD_QUERY.replace("$1", request.getString(INSTANCE)).replace("$field",
+            TAGS+KEYWORD_KEY).replace("$size",
+        request.getInteger(LIMIT,FILTER_PAGINATION_SIZE-request.getInteger(OFFSET,0)).toString());
     assertEquals(elasticQuery,queryDecoder.listItemQuery(request));
     vertxTestContext.completeNow();
   }
@@ -730,6 +741,97 @@ public class QueryDecoderTest {
     String expectedQuery =
         "{\"query\":{\"bool\":{\"should\":[{\"match\":{\"id.keyword\":\"id\"}},{\"match\":{\"id.keyword\":\"dummy\"}}]}},\"size\":\"10000\"}";
     assertEquals(expectedQuery,queryDecoder.listRelationshipQuery(request));
+    vertxTestContext.completeNow();
+  }
+
+  @Test
+  @DisplayName("Range search request to DbQuery")
+  public void searchRangeTest(VertxTestContext testContext) {
+
+    JsonObject request = new JsonObject()
+        .put(SEARCH_TYPE, RANGE_SEARCH_REGEX)
+        .put(SEARCH, true)
+        .put(ATTRIBUTE_KEY, "dataReadiness")
+        .put(RANGE_REL, "during")
+        .put(END_RANGE, "80")
+        .put(RANGE, "20");
+
+    JsonObject json = queryDecoder.searchQuery(request);
+
+    JsonObject range = json.getJsonObject(QUERY_KEY)
+        .getJsonObject("bool")
+        .getJsonArray("must")
+        .getJsonObject(0)
+        .getJsonObject("range");
+
+    assertNotNull(range);
+    assertTrue(range.containsKey("dataReadiness"));
+    assertEquals(20, range.getJsonObject("dataReadiness").getInteger("gte"));
+    assertEquals(80, range.getJsonObject("dataReadiness").getInteger("lte"));
+    testContext.completeNow();
+  }
+  @Test
+  @DisplayName("Temporal search request to DbQuery")
+  public void searchTemporalTest(VertxTestContext testContext) {
+
+    JsonObject request = new JsonObject()
+        .put(SEARCH_TYPE, TEMPORAL_SEARCH_REGEX)
+        .put(SEARCH, true)
+        .put(TIME_REL, "during")
+        .put(ATTRIBUTE_KEY, ITEM_CREATED_AT)
+        .put(END_TIME, "2020-09-09T20:05:45Z")
+        .put(TIME, "2020-09-01T20:05:45Z");
+
+    JsonObject json = queryDecoder.searchQuery(request);
+
+    JsonObject range = json.getJsonObject(QUERY_KEY)
+        .getJsonObject("bool")
+        .getJsonArray("must")
+        .getJsonObject(0)
+        .getJsonObject("range");
+
+    assertNotNull(range);
+    assertTrue(range.containsKey(ITEM_CREATED_AT));
+    assertEquals("2020-09-01T20:05:45Z", range.getJsonObject(ITEM_CREATED_AT).getString("gte"));
+    assertEquals("2020-09-09T20:05:45Z", range.getJsonObject(ITEM_CREATED_AT).getString("lte"));
+    testContext.completeNow();
+  }
+
+  @Test
+  @Description("test searchQuery method when temporal search params are missing")
+  public void testSearchQueryTemporalSearchInvalid(VertxTestContext vertxTestContext) {
+    queryDecoder = new QueryDecoder();
+    JsonObject request = new JsonObject();
+    request.put(SEARCH_TYPE, TEMPORAL_SEARCH_REGEX)
+        .put(SEARCH, true).put(TIME_REL, "soon").put(TIME, "dummy-Time");
+
+    JsonObject expectedError = new JsonObject()
+        .put(ERROR, new RespBuilder()
+            .withType(TYPE_BAD_TEMPORAL_QUERY)
+            .withTitle(TITLE_BAD_TEMPORAL_QUERY)
+            .withDetail(DETAIL_INVALID_TIMEREL)
+            .getJsonResponse());
+
+    assertEquals(expectedError, queryDecoder.searchQuery(request));
+    vertxTestContext.completeNow();
+  }
+
+  @Test
+  @Description("test searchQuery method when range search params are missing")
+  public void testSearchQueryRangeSearchInvalid(VertxTestContext vertxTestContext) {
+    queryDecoder = new QueryDecoder();
+    JsonObject request = new JsonObject();
+    request.put(SEARCH_TYPE, RANGE_SEARCH_REGEX)
+        .put(SEARCH, true);
+
+    JsonObject expectedError = new JsonObject()
+        .put(ERROR, new RespBuilder()
+            .withType(TYPE_BAD_RANGE_QUERY)
+            .withTitle(TITLE_BAD_RANGE_QUERY)
+            .withDetail(DETAIL_MISSING_RANGEREL)
+            .getJsonResponse());
+
+    assertEquals(expectedError, queryDecoder.searchQuery(request));
     vertxTestContext.completeNow();
   }
 

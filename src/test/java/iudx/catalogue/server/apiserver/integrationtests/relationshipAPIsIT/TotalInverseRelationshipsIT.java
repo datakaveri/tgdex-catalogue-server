@@ -35,7 +35,7 @@ public class TotalInverseRelationshipsIT {
     @DisplayName("testing get total inverse relationships[Resource Group] - 200 Success")
     void GetTotalInvRelRG() {
         Response response = given()
-                .queryParam("id","e63b756a-1c26-3a0c-8bbf-aeed53e423db")
+                .queryParam("id","a4f83b5d-4431-4193-9c33-41f6fc1557b7")
                 .queryParam("rel","all")
                 .when()
                 .get("/relationship")
@@ -49,7 +49,7 @@ public class TotalInverseRelationshipsIT {
     @DisplayName("testing get total inverse relationships[Provider] - 200 Success")
     void GetTotalInvRelProvider() {
         Response response = given()
-                .queryParam("id","dec308e5-bc50-3671-af18-7f89ec33564b")
+                .queryParam("id","411df492-45f6-4345-a12d-e3207f2b8623")
                 .queryParam("rel","all")
                 .when()
                 .get("/relationship")
@@ -63,7 +63,7 @@ public class TotalInverseRelationshipsIT {
     @DisplayName("testing get total inverse relationships[Resource Server] - 200 Success")
     void GetTotalInvRelResourceServer() {
         Response response = given()
-                .queryParam("id","f3061e6c-9639-321d-a532-829c7bb870aa")
+                .queryParam("id","8e901b91-5bf1-4ad2-bf8f-d59dc139cc29")
                 .queryParam("rel","all")
                 .when()
                 .get("/relationship")
@@ -77,7 +77,7 @@ public class TotalInverseRelationshipsIT {
     @DisplayName("testing get total inverse relationships[COS] - 400 Invalid item type")
     void GetTotalInvRelCos() {
         given()
-                .queryParam("id","637e32b6-9a6c-396f-914c-9db5d1a222b0")
+                .queryParam("id","5484ddce-d372-4962-8a07-3e72149716b3")
                 .queryParam("rel","all")
                 .when()
                 .get("/relationship")

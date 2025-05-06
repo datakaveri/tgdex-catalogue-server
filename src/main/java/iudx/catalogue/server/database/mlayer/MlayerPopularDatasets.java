@@ -427,7 +427,7 @@ public class MlayerPopularDatasets {
                         popularDatasets.add(resultItem);
                       }
                     }
-                    int popularDatasetCount = (popularDatasets.size() < 6)
+                    int popularDatasetCount = popularDatasets.size() < 6
                             ? latestDatasets.size() : POPULAR_DATASET_COUNT;
                     LOGGER.debug("Target popular dataset count: {}", popularDatasetCount);
 

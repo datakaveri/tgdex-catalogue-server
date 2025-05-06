@@ -1,4 +1,4 @@
-package iudx.catalogue.server.apiserver.integrationtests.searchAPIsIT.geoSpatialSearchIT;
+package iudx.catalogue.server.apiserver.integrationtests.searchAPIsIT;
 
 import io.restassured.response.Response;
 import iudx.catalogue.server.apiserver.integrationtests.RestAssuredConfiguration;

@@ -10,10 +10,15 @@ import io.vertx.core.Handler;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import iudx.catalogue.server.database.ElasticClient;
+import iudx.catalogue.server.validator.util.SearchQueryValidatorHelper;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,9 +38,13 @@ public class ValidatorServiceImpl implements ValidatorService {
 
   private static final Logger LOGGER = LogManager.getLogger(ValidatorServiceImpl.class);
 
-  /** ES client. */
+  /**
+   * ES client.
+   */
   static ElasticClient client;
-
+  private final String docIndex;
+  private final boolean isUacInstance;
+  private final String vocContext;
   private Future<String> isValidSchema;
   private Validator resourceValidator;
   private Validator resourceGroupValidator;
@@ -51,22 +60,25 @@ public class ValidatorServiceImpl implements ValidatorService {
   private Validator mlayerDomainValidator;
   private Validator mlayerGeoQueryValidator;
   private Validator mlayerDatasetValidator;
+  private Validator temporalSearchQueryValidator;
+  private Validator attributeSearchQueryValidator;
+  private Validator geoSearchQueryValidator;
+  private Validator textSearchQueryValidator;
+  private Validator filterSearchQueryValidator;
+  private Validator rangeSearchQueryValidator;
   private Validator stack4PatchValidator;
   private Validator stackSchema4Post;
-  private String docIndex;
-  private boolean isUacInstance;
-  private String vocContext;
 
   /**
    * Constructs a new ValidatorServiceImpl object with the specified ElasticClient and docIndex.
    *
-   * @param client the ElasticClient object to use for interacting with the Elasticsearch instance
+   * @param client   the ElasticClient object to use for interacting with the Elasticsearch instance
    * @param docIndex the index name to use for storing documents in Elasticsearch
    */
   public ValidatorServiceImpl(
       ElasticClient client, String docIndex, boolean isUacInstance, String vocContext) {
 
-    this.client = client;
+    ValidatorServiceImpl.client = client;
     this.docIndex = docIndex;
     this.isUacInstance = isUacInstance;
     this.vocContext = vocContext;
@@ -87,13 +99,20 @@ public class ValidatorServiceImpl implements ValidatorService {
       mlayerDatasetValidator = new Validator("/mlayerDatasetSchema.json");
       stack4PatchValidator = new Validator("/stackSchema4Patch.json");
       stackSchema4Post = new Validator("/stackSchema4Post.json");
-
+      temporalSearchQueryValidator = new Validator("/temporalSearchQuerySchema.json");
+      attributeSearchQueryValidator = new Validator("/attributeSearchQuerySchema.json");
+      geoSearchQueryValidator = new Validator("/geoSearchQuerySchema.json");
+      textSearchQueryValidator = new Validator("/textSearchQuerySchema.json");
+      filterSearchQueryValidator = new Validator("/filterSearchQuerySchema.json");
+      rangeSearchQueryValidator = new Validator("/rangeSearchQuerySchema.json");
     } catch (IOException | ProcessingException e) {
       e.printStackTrace();
     }
   }
 
-  /** Generates timestamp with timezone +05:30. */
+  /**
+   * Generates timestamp with timezone +05:30.
+   */
   public static String getUtcDatetimeAsString() {
     DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ssZ");
     df.setTimeZone(TimeZone.getTimeZone("IST"));
@@ -169,10 +188,10 @@ public class ValidatorServiceImpl implements ValidatorService {
         isValidSchema = adexAppsValidator.validate(request.toString());
         break;
       case "patch:Stack":
-        isValidSchema =  stack4PatchValidator.validate(request.toString());
+        isValidSchema = stack4PatchValidator.validate(request.toString());
         break;
       case "post:Stack":
-        isValidSchema =  stackSchema4Post.validate(request.toString());
+        isValidSchema = stackSchema4Post.validate(request.toString());
         break;
       default:
         handler.handle(Future.failedFuture("Invalid Item Type"));
@@ -181,6 +200,19 @@ public class ValidatorServiceImpl implements ValidatorService {
 
     validateSchema(handler);
     return this;
+  }
+
+  private void validateSchema(Handler<AsyncResult<JsonObject>> handler) {
+    isValidSchema
+        .onSuccess(
+            x -> handler.handle(Future.succeededFuture(new JsonObject().put(STATUS, SUCCESS))))
+        .onFailure(
+            x -> {
+              LOGGER.error("Fail: Invalid Schema");
+              LOGGER.error(x.getMessage());
+              handler.handle(
+                  Future.failedFuture(String.valueOf(new JsonArray().add(x.getMessage()))));
+            });
   }
 
   /*
@@ -221,7 +253,7 @@ public class ValidatorServiceImpl implements ValidatorService {
   }
 
   private void validateAppsItem(JsonObject request, String method,
-                                    Handler<AsyncResult<JsonObject>> handler) {
+                                Handler<AsyncResult<JsonObject>> handler) {
     validateId(request, handler, isUacInstance);
     if (!isUacInstance && !request.containsKey(ID)) {
       UUID uuid = UUID.randomUUID();
@@ -566,19 +598,6 @@ public class ValidatorServiceImpl implements ValidatorService {
     }
   }
 
-  private void validateSchema(Handler<AsyncResult<JsonObject>> handler) {
-    isValidSchema
-        .onSuccess(
-            x -> handler.handle(Future.succeededFuture(new JsonObject().put(STATUS, SUCCESS))))
-        .onFailure(
-            x -> {
-              LOGGER.error("Fail: Invalid Schema");
-              LOGGER.error(x.getMessage());
-              handler.handle(
-                  Future.failedFuture(String.valueOf(new JsonArray().add(x.getMessage()))));
-            });
-  }
-
   @Override
   public ValidatorService validateRating(
       JsonObject request, Handler<AsyncResult<JsonObject>> handler) {
@@ -621,6 +640,123 @@ public class ValidatorServiceImpl implements ValidatorService {
     isValidSchema = mlayerDatasetValidator.validate(request.toString());
 
     validateSchema(handler);
+    return this;
+  }
+
+  @Override
+  public ValidatorService validateSearchQuery(JsonObject request,
+                                              Handler<AsyncResult<JsonObject>> handler) {
+    LOGGER.debug("Info: Validating attributes limits and  constraints");
+    String searchType = request.getString(SEARCH_TYPE, "");
+
+    if (searchType.contains(SEARCH_TYPE_TEXT)) {
+      this.validateTextSearchQuery(request, handler);
+    }
+    if (searchType.contains(SEARCH_CRITERIA)) {
+      this.validateAttributeSearchQuery(request, handler);
+    }
+    if (searchType.contains(SEARCH_TYPE_GEO)) {
+      this.validateGeoSearchQuery(request, handler);
+    }
+    if (searchType.contains(SEARCH_TYPE_RANGE)) {
+      this.validateRangeSearchQuery(request, handler);
+    }
+    if (searchType.contains(SEARCH_TYPE_TEMPORAL)) {
+      this.validateTemporalSearchQuery(request, handler);
+    }
+    if (searchType.contains(RESPONSE_FILTER)) {
+      this.validateFilterSearchQuery(request, handler);
+    }
+    isValidSchema
+        .onFailure(
+            x -> {
+              LOGGER.error("Fail: Invalid Schema");
+              LOGGER.error(x.getMessage());
+              handler.handle(
+                  Future.failedFuture(String.valueOf(new JsonArray().add(x.getMessage()))));
+            });
+    // Additional validation logic for instance, limit, and
+    // offset fields (similar to your previous implementation)
+    // Validating the 'instance' field
+    JsonObject errResponse = new JsonObject().put(STATUS, FAILED);
+    if (request.containsKey(INSTANCE)) {
+      String instance = request.getString("instance", "");
+      if (instance != null && instance.length() > INSTANCE_SIZE) { // Example size check
+        LOGGER.error("Error: The instance length has exceeded the limit");
+        errResponse
+            .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
+            .put(DESC, "The max length of 'instance' should be " + INSTANCE_SIZE);
+        handler.handle(Future.failedFuture(errResponse.encode()));
+        return this;
+      }
+    }
+
+    // Validating the 'limit' and 'offset' fields
+    if (request.containsKey(LIMIT) || request.containsKey(OFFSET)) {
+      Integer limit = request.getInteger(LIMIT, 0);
+      Integer offset = request.getInteger(OFFSET, 0);
+      int totalSize = limit + offset;
+
+      if (totalSize <= 0 || totalSize > MAX_RESULT_WINDOW) { // Example max size check
+        LOGGER.error("Error: The limit + offset param has exceeded the limit");
+        errResponse
+            .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
+            .put(DESC, "The limit + offset should be between 1 to " + MAX_RESULT_WINDOW);
+        handler.handle(Future.failedFuture(errResponse.encode()));
+        return this;
+      }
+    }
+    handler.handle(Future.succeededFuture(new JsonObject().put(STATUS, SUCCESS)));
+    return this;
+  }
+
+  public ValidatorService validateTemporalSearchQuery(JsonObject request,
+                                                      Handler<AsyncResult<JsonObject>> handler) {
+    isValidSchema = temporalSearchQueryValidator.validate(request.toString());
+
+    SearchQueryValidatorHelper.handleTemporalSearchValidationResult(isValidSchema, request,
+        handler);
+    return this;
+  }
+
+  public ValidatorService validateAttributeSearchQuery(JsonObject request,
+                                                       Handler<AsyncResult<JsonObject>> handler) {
+    isValidSchema = attributeSearchQueryValidator.validate(request.toString());
+
+    SearchQueryValidatorHelper.handleAttributeSearchValidationResult(isValidSchema, request,
+        handler);
+    return this;
+  }
+
+  public ValidatorService validateGeoSearchQuery(JsonObject request,
+                                                 Handler<AsyncResult<JsonObject>> handler) {
+    isValidSchema = geoSearchQueryValidator.validate(request.toString());
+
+    SearchQueryValidatorHelper.handleGeoSearchValidationResult(isValidSchema, request, handler);
+    return this;
+  }
+
+  public ValidatorService validateTextSearchQuery(JsonObject request,
+                                                  Handler<AsyncResult<JsonObject>> handler) {
+    isValidSchema = textSearchQueryValidator.validate(request.toString());
+
+    SearchQueryValidatorHelper.handleTextSearchValidationResult(isValidSchema, request, handler);
+    return this;
+  }
+
+  public ValidatorService validateFilterSearchQuery(JsonObject request,
+                                                    Handler<AsyncResult<JsonObject>> handler) {
+    isValidSchema = filterSearchQueryValidator.validate(request.toString());
+
+    SearchQueryValidatorHelper.handleFilterSearchValidationResult(isValidSchema, request, handler);
+    return this;
+  }
+
+  public ValidatorService validateRangeSearchQuery(JsonObject request,
+                                                   Handler<AsyncResult<JsonObject>> handler) {
+    isValidSchema = rangeSearchQueryValidator.validate(request.toString());
+
+    SearchQueryValidatorHelper.handleRangeSearchValidationResult(isValidSchema, request, handler);
     return this;
   }
 }

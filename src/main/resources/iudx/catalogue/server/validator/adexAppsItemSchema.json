@@ -19,7 +19,35 @@
       "label": "Test-Crop Disease Detection Model",
       "description": "An test potential application item for detecting crop disease with the help of infected leaf images.",
       "organizationType": "Private",
-      "department": "Agriculture and Co-operation"
+      "department": "Agriculture and Co-operation",
+      "shortDescription": "A test potential application item for detecting crop disease",
+      "uploadedBy": "cdpg@datakaveri.org",
+      "fileFormat": "xlsx",
+      "accessPolicy": "Public",
+      "canBeUsedFor": {
+        "cropMonitoring": "Detect and classify diseases in crops using image input",
+        "yieldOptimization": "Improve crop yield by early detection of diseases"
+      },
+      "dataInputsAndAiTechniques": {
+        "Input Data Banks": [
+          "Annotated Leaf Image Dataset",
+          "Crop Type Classification Data"
+        ],
+        "Expected Output": [
+          "Disease Type",
+          "Confidence Score",
+          "Recommended Treatment"
+        ],
+        "AI Models": [
+          "Convolutional Neural Networks",
+          "Transfer Learning"
+        ],
+        "Potential Benefits": [
+          "Early detection of crop diseases",
+          "Reduction in crop loss",
+          "Better planning and resource allocation"
+        ]
+      }
     }
   ],
   "required": [
@@ -27,9 +55,15 @@
     "type",
     "tags",
     "label",
+    "shortDescription",
     "description",
     "organizationType",
-    "department"
+    "department",
+    "uploadedBy",
+    "fileFormat",
+    "accessPolicy",
+    "canBeUsedFor",
+    "dataInputsAndAiTechniques"
   ],
   "properties": {
     "name": {
@@ -98,6 +132,11 @@
       "description": "User-friendly label for the model",
       "maxLength": 512
     },
+    "shortDescription": {
+      "type": "string",
+      "title": "The short description schema",
+      "description": "Short description about the item"
+    },
     "description": {
       "type": "string",
       "title": "The description schema",
@@ -107,12 +146,68 @@
       "type": "string",
       "title": "The organizationType schema",
       "description": "Type of organization providing the model",
-      "examples": ["Private", "Government"]
+      "examples": ["Private", "Public"]
     },
     "department": {
       "type": "string",
       "title": "The department schema",
       "description": "Department name"
+    },
+    "canBeUsedFor": {
+      "type": "object",
+      "title": "The canBeUsedFor schema",
+      "description": "Potential uses of the model",
+      "propertyNames": {
+        "type": "string",
+        "maxLength": 100
+      },
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 300
+      },
+      "maxProperties": 5
+    },
+    "dataInputsAndAiTechniques": {
+      "type": "object",
+      "title": "The dataInputsAndAiTechniques schema",
+      "description": "Input data sources and AI methods",
+      "properties": {
+        "Input Data Banks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "Expected Output": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "AI Models": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "Potential Benefits": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      },
+      "required": [
+        "Input Data Banks",
+        "Expected Output",
+        "AI Models",
+        "Potential Benefits"
+      ],
+      "additionalProperties": false
     },
     "itemStatus": {
       "type": "string",

@@ -18,6 +18,7 @@ public class Api {
   private StringBuilder routeSearch;
   private StringBuilder routeNlpSearch;
   private StringBuilder routeListItems;
+  private StringBuilder routeListMulItems;
   private StringBuilder routeGetItems;
   private StringBuilder routeCount;
   private StringBuilder routeRelSearch;
@@ -67,6 +68,7 @@ public class Api {
     routeSearch = new StringBuilder(dxApiBasePath).append(ROUTE_SEARCH);
     routeNlpSearch = new StringBuilder(dxApiBasePath).append(ROUTE_NLP_SEARCH);
     routeListItems = new StringBuilder(dxApiBasePath).append(ROUTE_LIST_ITEMS);
+    routeListMulItems = new StringBuilder(dxApiBasePath).append(ROUTE_LIST);
     routeGetItems = new StringBuilder(dxApiBasePath).append(ROUTE_GET_ITEM);
     routeCount = new StringBuilder(dxApiBasePath).append(ROUTE_COUNT);
     routeRelSearch = new StringBuilder(dxApiBasePath).append(ROUTE_REL_SEARCH);
@@ -117,6 +119,10 @@ public class Api {
 
   public String getRouteListItems() {
     return routeListItems.toString();
+  }
+
+  public String getRouteListMulItems() {
+    return routeListMulItems.toString();
   }
 
   public String getRouteGetItems() {

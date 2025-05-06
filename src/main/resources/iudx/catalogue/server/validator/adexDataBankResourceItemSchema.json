@@ -13,14 +13,22 @@
       ],
       "label": "SomeLabel",
       "description": "SomeDescription",
+      "shortDescription" : "a short description about the item",
       "tags": ["environment", "weather", "rainfall", "temperature"],
       "provider": "337545aa-1fa5-4ca0-bf3d-072144dec5b6",
       "resourceGroup": "96bc97bf-504e-4306-bb49-99d77896cf1d",
-      "resourceServer": "",
+      "resourceServer": "85bc97bf-904f-2306-gb49-89d77896cf2e",
       "accessPolicy": "RESTRICTED",
       "organizationType": "Private",
-      "fileFormat": ".xlsx",
-      "dataReadiness": "More than 80%",
+      "fileFormat": "xlsx",
+      "dataReadiness": 80,
+      "industry": "Climate Research",
+      "uploadedBy": "john.doe@datakaveri.org",
+      "geoCoverage": "Pan India",
+      "yearRange": "2015-2023",
+      "verifiedBy": "Ministry of Earth Sciences",
+      "uploadFrequency": "Weekly",
+      "license": "CC-BY 4.0",
       "department": "Department of IT, Electronics and Communication",
       "resourceType": "MESSAGESTREAM",
       "adexResourceAPIs": [
@@ -46,6 +54,7 @@
     "name",
     "type",
     "label",
+    "shortDescription",
     "description",
     "tags",
     "provider",
@@ -61,7 +70,14 @@
     "iudxResourceAPIs",
     "location",
     "dataDescriptor",
-    "dataSample"
+    "dataSample",
+    "industry",
+    "uploadedBy",
+    "geoCoverage",
+    "yearRange",
+    "verifiedBy",
+    "uploadFrequency",
+    "license"
   ],
   "properties": {
     "name": {
@@ -177,13 +193,47 @@
       "type": "string",
       "title": "The organizationType schema"
     },
+    "shortDescription": {
+      "type": "string",
+      "title": ""
+    },
+    "industry" : {
+      "type": "string",
+      "title": ""
+    },
+    "uploadedBy": {
+      "type": "string",
+      "title": ""
+    },
+    "geoCoverage": {
+      "type": "string",
+      "title": ""
+    },
+    "yearRange": {
+      "type": "string",
+      "title": ""
+    },
+    "verifiedBy": {
+      "type": "string",
+      "title": ""
+    },
+    "uploadFrequency": {
+      "type": "string",
+      "title": ""
+    },
+    "license": {
+      "type": "string",
+      "title": ""
+    },
     "fileFormat": {
       "type": "string",
       "title": "The fileFormat schema"
     },
     "dataReadiness": {
-      "type": "string",
-      "title": "The dataReadiness schema"
+      "type": "integer",
+      "title": "The dataReadiness schema",
+      "minimum": 0,
+      "maximum": 100
     },
     "department": {
       "type": "string",

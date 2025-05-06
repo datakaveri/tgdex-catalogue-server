@@ -77,7 +77,7 @@ public class ForwardRelationshipsIT {
     @DisplayName("testing get cos item for resource group - 200 Success")
     void GetCosForResourceGroup() {
         Response response = given()
-                .queryParam("id","e63b756a-1c26-3a0c-8bbf-aeed53e423db")
+                .queryParam("id","a4f83b5d-4431-4193-9c33-41f6fc1557b7")
                 .queryParam("rel","cos")
                 .when()
                 .get("/relationship")
@@ -91,7 +91,7 @@ public class ForwardRelationshipsIT {
     @DisplayName("testing get RS item for resource group - 200 Success")
     void GetRSForResourceGroup() {
         Response response = given()
-                .queryParam("id","e63b756a-1c26-3a0c-8bbf-aeed53e423db")
+                .queryParam("id","a4f83b5d-4431-4193-9c33-41f6fc1557b7")
                 .queryParam("rel","resourceServer")
                 .when()
                 .get("/relationship")
@@ -105,7 +105,7 @@ public class ForwardRelationshipsIT {
     @DisplayName("testing get provider item for resource group - 200 Success")
     void GetProviderForResourceGroup() {
         Response response = given()
-                .queryParam("id","e63b756a-1c26-3a0c-8bbf-aeed53e423db")
+                .queryParam("id","a4f83b5d-4431-4193-9c33-41f6fc1557b7")
                 .queryParam("rel","provider")
                 .when()
                 .get("/relationship")
@@ -119,7 +119,7 @@ public class ForwardRelationshipsIT {
     @DisplayName("testing get cos item for provider - 200 Success")
     void GetCosForProvider() {
         Response response = given()
-                .queryParam("id","dec308e5-bc50-3671-af18-7f89ec33564b")
+                .queryParam("id","411df492-45f6-4345-a12d-e3207f2b8623")
                 .queryParam("rel","cos")
                 .when()
                 .get("/relationship")
@@ -133,7 +133,7 @@ public class ForwardRelationshipsIT {
     @DisplayName("testing get resource item for provider - 200 Success")
     void GetResourceItemForProvider() {
         Response response = given()
-                .queryParam("id","dec308e5-bc50-3671-af18-7f89ec33564b")
+                .queryParam("id","411df492-45f6-4345-a12d-e3207f2b8623")
                 .queryParam("rel","resourceServer")
                 .when()
                 .get("/relationship")
@@ -147,7 +147,7 @@ public class ForwardRelationshipsIT {
     @DisplayName("testing get cos item for resource server - 200 Success")
     void GetCosForRS() {
         Response response = given()
-                .queryParam("id","f3061e6c-9639-321d-a532-829c7bb870aa")
+                .queryParam("id","8e901b91-5bf1-4ad2-bf8f-d59dc139cc29")
                 .queryParam("rel","cos")
                 .when()
                 .get("/relationship")

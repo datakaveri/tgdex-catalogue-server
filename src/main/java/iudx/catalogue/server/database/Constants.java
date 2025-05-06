@@ -14,7 +14,11 @@ public class Constants {
 
   public static final String TEXTSEARCH_REGEX = "(.*)textSearch(.*)";
   public static final String ATTRIBUTE_SEARCH_REGEX = "(.*)attributeSearch(.*)";
+  public static final String SEARCH_CRITERIA_ATTRIBUTE_SEARCH_REGEX = "(.*)searchCriteria(.*)";
+
   public static final String GEOSEARCH_REGEX = "(.*)geoSearch(.*)";
+  public static final String TEMPORAL_SEARCH_REGEX = "(.*)temporalSearch(.*)";
+  public static final String RANGE_SEARCH_REGEX = "(.*)rangeSearch(.*)";
   public static final String RESPONSE_FILTER_GEO = "responseFilter_geoSearch_";
   public static final String RESPONSE_FILTER_REGEX = "(.*)responseFilter(.*)";
 
@@ -38,6 +42,7 @@ public class Constants {
   public static final String FORWARD_SLASH = "/";
   public static final String WILDCARD_KEY = "wildcard";
   public static final String AGGREGATION_ONLY = "AGGREGATION";
+  public static final String AGGREGATION_LIST = "AGGREGATION_LIST";
   public static final String RATING_AGGREGATION_ONLY = "R_AGGREGATION";
   public static final String TYPE_KEYWORD = "type.keyword";
   public static final String WORD_VECTOR_KEY = "_word_vector";
@@ -53,22 +58,39 @@ public class Constants {
           + "{\"results\": {\"terms\":"
           + "{\"field\":instances.keyword,"
           + "\"size\": 10000}}}}";
-
-  public static final String LIST_INSTANCE_TAGS_QUERY =
-      "{\"query\": {\"bool\": {\"filter\": {\"term\": {\"instance.keyword\": \"$1\"}}}},"
+  public static final String LIST_AGGREGATION_QUERY =
+      "{\"query\": {\"bool\": {\"filter\": {\"term\": {\"$filterKey\": \"$filterVal\"}}}},"
           + "\"aggs\":"
           + "{\"results\": {\"terms\":"
-          + "{\"field\":\"tags.keyword\","
+          + "{\"field\":\"$field\","
           + "\"size\": $size}}}}";
-  public static final String LIST_TAGS_QUERY =
+
+  public static final String LIST_AGGREGATION_QUERY_NO_FILTER =
       "{ \"aggs\":"
           + "{\"results\": {\"terms\":"
-          + "{\"field\":\"tags.keyword\","
+          + "{\"field\":\"$field\","
           + "\"size\": $size}}}}";
+  public static final String QUERY_START = "{";
+  public static final String QUERY_END = "}";
+  public static final String QUERY_BOOL_FILTER_START = "\"query\": { \"bool\": { \"filter\": [";
+  public static final String QUERY_BOOL_FILTER_END = "] } },";
+  public static final String AGGS_START = "\"aggs\": {";
+  public static final String AGGS_END = "}";
+  public static final String TERM_QUERY_TEMPLATE = "{ \"term\": { \"$field\": \"$value\" } }";
+  public static final String TERMS_QUERY_TEMPLATE = "{ \"terms\": { \"$field\": $value } }";
+  public static final String TERMS_AGG_TEMPLATE = "\"$name\": { \"terms\": "
+      + "{ \"field\": \"$field\", \"size\": $size } }";
+
   public static final String LIST_INSTANCE_TYPES_QUERY =
       "{\"query\": {\"bool\": {\"filter\": [ {\"match\": {\"type\": \"$1\"}},"
           + "{\"term\": {\"instance.keyword\": \"$2\"}}]}},"
           + "\"aggs\": {\"results\": {\"terms\": {\"field\": \"id.keyword\", \"size\": $size}}}}";
+  public static final String LIST_INSTANCE_FIELD_QUERY =
+      "{\"query\": {\"bool\": {\"filter\": {\"term\": {\"instance.keyword\": \"$1\"}}}},"
+          + "\"aggs\":"
+          + "{\"results\": {\"terms\":"
+          + "{\"field\":\"$field\","
+          + "\"size\": $size}}}}";
   public static final String LIST_TYPES_QUERY =
       "{\"query\": {\"bool\": {\"filter\": [ {\"match\": {\"type\": \"$1\"}} ]}},"
           + "\"aggs\": {\"results\": {\"terms\": {\"field\": \"id.keyword\", \"size\": $size}}}}";
@@ -77,9 +99,11 @@ public class Constants {
           + " \"relation\": \"$3\" } } }";
   public static final String TEXT_QUERY = "{\"query_string\":{\"query\":\"$1\"}}";
   public static final String TEXT_QUERY_FUZZY =
-          "{\"multi_match\":{\"fields\":[\"label\",\"tags\",\"description\"],\"query\":\"$1\","
-          +  "\"fuzziness\":\"AUTO\",\"minimum_should_match\":\"100%\",\"operator\":\"and\"}}";
-
+      "{\"multi_match\":{\"fields\":[\"label\",\"tags\",\"description\"],\"query\":\"$1\","
+          +  "\"fuzziness\":\"AUTO\",\"boost\":\"1.0\"}}";
+  public static final String TEXT_QUERY_AUTO_COMPLETE =
+      "{\"multi_match\":{\"fields\":[\"label\",\"tags\",\"description\"],\"query\":\"$1\","
+          +  "\"type\":\"bool_prefix\",\"boost\":\"5.0\"}}";
   public static final String GET_DOC_QUERY =
       "{\"_source\":[$2],\"query\":{\"term\":{\"id.keyword\":\"$1\"}}}";
 
@@ -141,8 +165,8 @@ public class Constants {
           + "\"cos\", \"resourceGroup\", \"resourceType\", \"itemCreatedAt\","
           + "\"icon_base64\"]},\"size\": 10000}";
   public static final String GET_ALL_DATASETS_BY_RS_GRP =
-          "{\"size\":10000,\"query\":{\"bool\":{\"must\":[{\"bool\":{\"should\":[{\"match\":"
-                  + "{\"type.keyword\":\"iudx:ResourceGroup\"}}]}}]}}}";
+      "{\"size\":10000,\"query\":{\"bool\":{\"must\":[{\"bool\":{\"should\":[{\"match\":"
+          + "{\"type.keyword\":\"iudx:ResourceGroup\"}}]}}]}}}";
   public static final String GET_ALL_DATASETS_BY_FIELDS =
       "{\"query\":{\"bool\":{\"should\":[{\"bool\":{\"must\":[{\"match\":"
           + "{\"type.keyword\":\"iudx:ResourceGroup\"}}";
@@ -193,7 +217,7 @@ public class Constants {
           + "\"accessPolicy\",\"provider\",\"itemCreatedAt\",\"instance\",\"label\"]},"
           + "\"size\":10000}";
   public static final String GET_LATEST_TOTAL_RG =
-          "{\"size\":6,\"from\": 0,\"sort\":[{\"itemCreatedAt\":{\"order\": \"desc\"}}],"
+      "{\"size\":6,\"from\": 0,\"sort\":[{\"itemCreatedAt\":{\"order\": \"desc\"}}],"
           + "\"query\":{\"bool\":{\"must\":[{\"match\":{\"type\":\"iudx:ResourceGroup\"}}"
           + "]}},\"aggs\":{\"resourceGroupCount\":{\"filter\":{\"term\": {\"type.keyword\":"
           + " \"iudx:ResourceGroup\"}}},\"resourceCount\":{\"global\":{},\"aggs\":"
@@ -203,12 +227,12 @@ public class Constants {
           + "[\"id\",\"description\",\"type\",\"resourceGroup\",\"accessPolicy\",\"provider\","
           + "\"itemCreatedAt\",\"instance\",\"label\"]}}";
   public static final String GET_PROVIDERS_AND_POPULAR_RG =
-          "{\"size\": 10000,\"_source\":[\"id\",\"description\",\"type\",\"resourceGroup\","
+      "{\"size\": 10000,\"_source\":[\"id\",\"description\",\"type\",\"resourceGroup\","
           + "\"accessPolicy\",\"provider\",\"itemCreatedAt\",\"instance\",\"label\"],\"query\":"
           + " {\"bool\": {\"should\":[{\"terms\":{\"id.keyword\": $1}},{\"term\": "
           + "{\"type.keyword\": \"iudx:Provider\"}}]}}}";
   public static final String GET_CATEGORIZED_RESOURCES_AP =
-          "{\"size\": 0, \"query\": {\"terms\": {\"resourceGroup.keyword\": $1}}, "
+      "{\"size\": 0, \"query\": {\"terms\": {\"resourceGroup.keyword\": $1}}, "
           + "\"aggs\": {\"results\": {\"terms\": {\"field\": \"resourceGroup.keyword\","
           + "\"size\": 10000},\"aggs\": {\"access_policies\": {\"terms\": {\"field\": "
           + "\"accessPolicy.keyword\",\"size\": 10000},\"aggs\": {\"accessPolicy_count\":"
@@ -228,7 +252,7 @@ public class Constants {
   public static final String FILTER_QUERY = "{\"bool\":{\"filter\":[$1]}}";
   public static final String MATCH_QUERY = "{\"match\":{\"$1\":\"$2\"}}";
   public static final String FUZZY_MATCH_QUERY = "{ \"match\": { \"$1\": { \"query\": "
-          + "\"$2\", \"fuzziness\": \"AUTO\", \"operator\": \"or\" }}}";
+      + "\"$2\", \"fuzziness\": \"AUTO\", \"operator\": \"or\" }}}";
   public static final String TERM_QUERY = "{\"term\":{\"$1\":\"$2\"}}";
   public static final String GET_RATING_DOCS =
       "{\"query\": {\"bool\": {\"must\": [ { \"match\": {\"$1\":\"$2\" } }, "
@@ -285,6 +309,8 @@ public class Constants {
   static final String FILTER_PATH = "?filter_path=took,hits.total.value,hits.hits._source";
   static final String FILTER_PATH_AGGREGATION =
       "?filter_path=hits.total.value,aggregations.results.buckets";
+  static final String FILTER_PATH_AGGREGATIONS =
+      "?filter_path=hits.total.value,aggregations.*.buckets";
   static final String FILTER_RATING_AGGREGATION = "?filter_path=hits.total.value,aggregations";
   static final String FILTER_ID_ONLY_PATH =
       "?filter_path=hits.total.value,hits.hits._id&size=10000";

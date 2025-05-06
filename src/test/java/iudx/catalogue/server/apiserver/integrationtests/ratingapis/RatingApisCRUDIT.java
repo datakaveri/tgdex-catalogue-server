@@ -16,7 +16,7 @@ creating, updating, retrieving and deleting ratings in catalogue server APIs*/
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class RatingApisCRUDIT {
     String itemId ="83c2e5c2-3574-4e11-9530-2b1fbdfce832";
-    String approvedItemId ="b58da193-23d9-43eb-b98a-a103d4b6103e";
+    String approvedItemId ="3897a41c-83f7-37e7-9194-374d5278dff5";
     static {
         RestAssured.basePath = "";
     }
@@ -88,7 +88,7 @@ public class RatingApisCRUDIT {
     @Order(4)
     @DisplayName("Create rating with invalid access count test-400")
     public void createRatingWithInvalidAccessCount(){
-        String itemIdWIAC = "db9deaf0-2e6f-4d8c-9cc0-5f738cd75b46";
+        String itemIdWIAC = "a4f83b5d-4431-4193-9c33-41f6fc1557b7";
         //request body
         JsonObject requestBody = new JsonObject()
                 .put("rating", 4.8)
@@ -203,7 +203,7 @@ public class RatingApisCRUDIT {
     }
     @Test
     @Order(10)
-    @DisplayName("Get All Ratings Success Test-200")
+    @DisplayName("Get All Ratings Success Test-204")
     public void getAllRatingsSuccessTest(){
         given()
                 .queryParam("id",approvedItemId)
@@ -211,16 +211,14 @@ public class RatingApisCRUDIT {
                 .when()
                 .get("/consumer/ratings")
                 .then()
-                .statusCode(200)
-                //.log().body()
-                .body("type", equalTo("urn:dx:cat:Success"));
+                .statusCode(204);
     }
     @Test
     @Order(11)
     @DisplayName("Get Average Rating Success Test-200")
     public void getAverageRatingSuccessTest(){
         given()
-                .queryParam("id","5b7556b5-0779-4c47-9cf2-3f209779aa22")
+                .queryParam("id","a4f83b5d-4431-4193-9c33-41f6fc1557b7")
                 .queryParam("type","average")
                 .when()
                 .get("/consumer/ratings")

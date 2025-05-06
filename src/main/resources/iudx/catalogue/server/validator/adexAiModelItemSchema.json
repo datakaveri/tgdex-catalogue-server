@@ -19,17 +19,23 @@
       ],
       "accessPolicy": "RESTRICTED",
       "label": "Test-Crop Disease Detection Model",
+      "shortDescription": "Detects diseases in crop leaves using image classification.",
       "description": "An test AI model for detecting crop disease with the help of infected leaf images.",
       "organizationType": "Private",
       "department": "Agriculture and Co-operation",
       "modelType": "ImageClassifier",
-      "fileFormat": "ipynb"
+      "fileFormat": "ipynb",
+      "industry": "Agriculture",
+      "uploadedBy": "john.doe@datakaveri.org",
+      "license": "MIT",
+      "fileSize": "15MB"
     }
   ],
   "required": [
     "name",
     "type",
     "label",
+    "shortDescription",
     "description",
     "tags",
     "provider",
@@ -37,7 +43,11 @@
     "organizationType",
     "department",
     "modelType",
-    "fileFormat"
+    "fileFormat",
+    "industry",
+    "uploadedBy",
+    "license",
+    "fileSize"
   ],
   "properties": {
     "name": {
@@ -153,6 +163,22 @@
       "title": "The fileFormat schema",
       "description": "File format of the model",
       "examples": ["ipynb", "pkl", "onnx"]
+    },
+    "industry": {
+      "type": "string",
+      "title": "The industry schema"
+    },
+    "uploadedBy": {
+      "type": "string",
+      "title": "The uploadedBy schema"
+    },
+    "license": {
+      "type": "string",
+      "title": "The license schema"
+    },
+    "fileSize": {
+      "type": "string",
+      "title": "The fileSize schema"
     },
     "itemStatus": {
       "type": "string",

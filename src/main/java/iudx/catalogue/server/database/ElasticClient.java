@@ -289,6 +289,33 @@ public final class ElasticClient {
               result.put("resourceGroupAndProvider", resourceGroupAndProvider);
               responseMsg.addResult(result);
             }
+            if (options == AGGREGATION_LIST) {
+              // Fetch all aggregations from the response JSON
+              JsonObject aggregations = responseJson.getJsonObject(AGGREGATIONS);
+
+              // Loop through each aggregation in the aggregations object
+              for (String aggregationKey : aggregations.fieldNames()) {
+                JsonObject aggregation = aggregations.getJsonObject(aggregationKey);
+
+                // If the aggregation contains "buckets", process them
+                if (aggregation.containsKey(BUCKETS)) {
+                  JsonArray buckets = aggregation.getJsonArray(BUCKETS);
+
+                  // Create a list to hold the keys of this aggregation's buckets
+                  JsonArray aggregationKeys = new JsonArray();
+                  for (int i = 0; i < buckets.size(); i++) {
+                    JsonObject bucket = buckets.getJsonObject(i);
+                    aggregationKeys.add(bucket.getString(KEY)); // Add the key of the bucket
+                  }
+
+                  // Create a new JsonObject to represent the aggregation as key-value pair
+                  JsonObject result = new JsonObject();
+                  result.put(aggregationKey, aggregationKeys);  // aggregationKey as the field name
+                  responseMsg.addResult(result);
+                }
+              }
+            }
+
           } else {
             responseMsg.addResult();
           }
@@ -567,6 +594,25 @@ public final class ElasticClient {
                               + FILTER_PATH_AGGREGATION);
     queryRequest.setJsonEntity(query);
     Future<JsonObject> future = searchAsync(queryRequest, AGGREGATION_ONLY);
+    future.onComplete(resultHandler);
+    return this;
+  }
+
+  /**
+   * aggregationsAsync - Wrapper around elasticsearch async search requests.
+   *
+   * @param query Query
+   * @param resultHandler JsonObject result {@link AsyncResult}
+   * @TODO XPack Security
+   */
+  public ElasticClient listAggregationsAsync(String query,
+                                            Handler<AsyncResult<JsonObject>> resultHandler) {
+
+    Request queryRequest = new Request(REQUEST_GET, index
+        + "/_search"
+        + FILTER_PATH_AGGREGATIONS);
+    queryRequest.setJsonEntity(query);
+    Future<JsonObject> future = searchAsync(queryRequest, AGGREGATION_LIST);
     future.onComplete(resultHandler);
     return this;
   }

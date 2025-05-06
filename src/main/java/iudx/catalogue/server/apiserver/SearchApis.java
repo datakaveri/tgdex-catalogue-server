@@ -20,6 +20,7 @@ import iudx.catalogue.server.database.DatabaseService;
 import iudx.catalogue.server.geocoding.GeocodingService;
 import iudx.catalogue.server.nlpsearch.NLPSearchService;
 import iudx.catalogue.server.util.Api;
+import iudx.catalogue.server.validator.ValidatorService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -30,7 +31,8 @@ public final class SearchApis {
   private DatabaseService dbService;
   private GeocodingService geoService;
   private NLPSearchService nlpService;
-  private Api api;
+  private ValidatorService validatorService;
+  private final Api api;
 
   private static final Logger LOGGER = LogManager.getLogger(SearchApis.class);
 
@@ -45,11 +47,12 @@ public final class SearchApis {
    * @param  geoService the geocoding service to be set
    * @param nlpService the NLPService to be set
    */
-  public void setService(DatabaseService dbService,
-                         GeocodingService geoService, NLPSearchService nlpService) {
+  public void setService(DatabaseService dbService, GeocodingService geoService,
+                         NLPSearchService nlpService, ValidatorService validatorService) {
     this.dbService = dbService;
     this.geoService = geoService;
     this.nlpService = nlpService;
+    this.validatorService = validatorService;
   }
 
   public void setDbService(DatabaseService dbService) {
@@ -73,7 +76,7 @@ public final class SearchApis {
    */
   public void searchHandler(RoutingContext routingContext) {
 
-    String path =  routingContext.normalisedPath();
+    String path = routingContext.normalizedPath();
 
     HttpServerRequest request = routingContext.request();
     HttpServerResponse response = routingContext.response();
@@ -127,11 +130,11 @@ public final class SearchApis {
 
     } else {
       response.setStatusCode(400)
-                  .end(new RespBuilder()
-                              .withType(TYPE_INVALID_GEO_VALUE)
-                              .withTitle(TITLE_INVALID_GEO_VALUE)
-                              .withDetail(TITLE_INVALID_QUERY_PARAM_VALUE)
-                              .getResponse());
+          .end(new RespBuilder()
+              .withType(TYPE_INVALID_GEO_VALUE)
+              .withTitle(TITLE_INVALID_GEO_VALUE)
+              .withDetail(TITLE_INVALID_QUERY_PARAM_VALUE)
+              .getResponse());
       return;
     }
 
@@ -200,6 +203,163 @@ public final class SearchApis {
                     .withDetail(TITLE_INVALID_QUERY_PARAM_VALUE)
                     .getResponse());
     }
+
+  }
+
+  /**
+   * Processes the attribute, geoSpatial, and text search  POST requests and returns the results
+   * from the
+   * database.
+   *
+   * @param routingContext Handles web request in Vert.x web
+   */
+  public void postSearchHandler(RoutingContext routingContext) {
+    HttpServerRequest request = routingContext.request();
+    HttpServerResponse response = routingContext.response();
+    response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
+
+    JsonObject requestBody = routingContext.body().asJsonObject();
+
+    /* HTTP request instance/host details */
+    String instanceId = request.getHeader(HEADER_INSTANCE);
+
+    LOGGER.debug("Info: routed to search/count");
+    LOGGER.debug("Info: instance;" + instanceId);
+
+    /* validating proper actual query parameters from request */
+    if ((!requestBody.containsKey(SEARCH_CRITERIA)
+        || requestBody.getJsonArray(SEARCH_CRITERIA).isEmpty())
+        && (!requestBody.containsKey(GEOPROPERTY)
+        || !requestBody.containsKey(GEORELATION)
+        || !requestBody.containsKey(GEOMETRY)
+        || !requestBody.containsKey(COORDINATES))
+        && !requestBody.containsKey(Q_VALUE)
+        && (!requestBody.containsKey(TIME_REL)
+        || !requestBody.containsKey(TIME))
+        && (!requestBody.containsKey(RANGE_REL)
+        || !requestBody.containsKey(RANGE))) {
+
+      LOGGER.error("Fail: Invalid Syntax");
+      response.setStatusCode(400)
+          .end(new RespBuilder()
+              .withType(TYPE_INVALID_SYNTAX)
+              .withTitle(TITLE_INVALID_SYNTAX)
+              .withDetail("Mandatory field(s) not provided")
+              .getResponse());
+      return;
+
+    }
+
+    boolean hasValidFilter = false;
+
+    /* ATTRIBUTE filter */
+    if (requestBody.getJsonArray(SEARCH_CRITERIA) != null
+        && !requestBody.getJsonArray(SEARCH_CRITERIA).isEmpty()) {
+      requestBody.put(SEARCH_TYPE, requestBody.getString(SEARCH_TYPE, "") + SEARCH_CRITERIA);
+      hasValidFilter = true;
+    }
+
+    /* GEO filter */
+    if (GEOMETRIES.contains(requestBody.getString(GEOMETRY))
+        && GEORELS.contains(requestBody.getString(GEORELATION))
+        && GEO_PROPERTY.equals(requestBody.getString(GEOPROPERTY))) {
+      requestBody.put(SEARCH_TYPE, requestBody.getString(SEARCH_TYPE, "") + SEARCH_TYPE_GEO);
+      hasValidFilter = true;
+    }
+
+    /* TEXT filter */
+    if (requestBody.getString(Q_VALUE) != null && !requestBody.getString(Q_VALUE).isBlank()) {
+      requestBody.put(SEARCH_TYPE, requestBody.getString(SEARCH_TYPE, "") + SEARCH_TYPE_TEXT);
+      hasValidFilter = true;
+    }
+
+    /* TEMPORAL filter */
+    if (requestBody.getString(TIME_REL) != null && !requestBody.getString(TIME_REL).isBlank()) {
+      requestBody.put(SEARCH_TYPE, requestBody.getString(SEARCH_TYPE, "") + SEARCH_TYPE_TEMPORAL);
+      hasValidFilter = true;
+    }
+
+    /* RANGE filter */
+    if (requestBody.getString(RANGE_REL) != null && !requestBody.getString(RANGE_REL).isBlank()) {
+      requestBody.put(SEARCH_TYPE, requestBody.getString(SEARCH_TYPE, "") + SEARCH_TYPE_RANGE);
+      hasValidFilter = true;
+    }
+
+    /* TAG filter */
+    if (requestBody.containsKey(FILTER) && requestBody.getJsonArray(FILTER) != null) {
+      requestBody.put(SEARCH_TYPE, requestBody.getString(SEARCH_TYPE, "") + RESPONSE_FILTER);
+      hasValidFilter = true;
+    }
+
+    /* If none of the filters are valid, respond with 400 */
+    if (!hasValidFilter) {
+      LOGGER.error("Fail: Invalid Syntax");
+      response.setStatusCode(400)
+          .end(new RespBuilder()
+              .withType(TYPE_INVALID_SYNTAX)
+              .withTitle(TITLE_INVALID_SYNTAX)
+              .withDetail("Mandatory field(s) not provided")
+              .getResponse());
+      return;
+    }
+
+    requestBody.put(HEADER_INSTANCE, instanceId);
+
+    validatorService.validateSearchQuery(requestBody, validateHandler -> {
+      if (validateHandler.failed()) {
+        LOGGER.error("Fail: Search/Count; Invalid request query parameters");
+        LOGGER.debug(validateHandler.cause());
+        response
+            .setStatusCode(400)
+            .end(validateHandler.cause().getLocalizedMessage());
+      } else {
+        String path = routingContext.normalizedPath();
+        if (path.equals(api.getRouteSearch())) {
+          dbService.searchQuery(requestBody, handler -> {
+            if (handler.succeeded()) {
+              JsonObject resultJson = handler.result();
+              String status = resultJson.getString(STATUS);
+              if (status.equalsIgnoreCase(SUCCESS)) {
+                LOGGER.info("Success: search query");
+                response.setStatusCode(200);
+              } else if (status.equalsIgnoreCase(PARTIAL_CONTENT)) {
+                LOGGER.info("Success: search query");
+                response.setStatusCode(206);
+              } else {
+                LOGGER.error("Fail: search query");
+                response.setStatusCode(400);
+              }
+              response.end(resultJson.toString());
+            } else if (handler.failed()) {
+              LOGGER.error("Fail: Search;" + handler.cause().getMessage());
+              response.setStatusCode(400).end(handler.cause().getMessage());
+            }
+          });
+        } else {
+          dbService.countQuery(requestBody, handler -> {
+            if (handler.succeeded()) {
+              JsonObject resultJson = handler.result();
+              String status = resultJson.getString(STATUS);
+              if (status.equalsIgnoreCase(SUCCESS)) {
+                LOGGER.info("Success: count query");
+                response.setStatusCode(200);
+              } else if (status.equalsIgnoreCase(PARTIAL_CONTENT)) {
+                LOGGER.info("Success: count query");
+                response.setStatusCode(206);
+              } else {
+                LOGGER.error("Fail: count query");
+                response.setStatusCode(400);
+              }
+              response.end(resultJson.toString());
+            } else if (handler.failed()) {
+              LOGGER.error("Fail: Count;" + handler.cause().getMessage());
+              response.setStatusCode(400)
+                  .end(handler.cause().getMessage());
+            }
+          });
+        }
+      }
+    });
 
   }
 

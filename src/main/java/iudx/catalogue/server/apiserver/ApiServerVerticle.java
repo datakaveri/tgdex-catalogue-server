@@ -166,7 +166,7 @@ public class ApiServerVerticle extends AbstractVerticle {
 
     NLPSearchService nlpsearchService = NLPSearchService.createProxy(vertx, NLP_SERVICE_ADDRESS);
 
-    searchApis.setService(dbService, geoService, nlpsearchService);
+    searchApis.setService(dbService, geoService, nlpsearchService, validationService);
 
     AuditingService auditingService = AuditingService.createProxy(vertx, AUDITING_SERVICE_ADDRESS);
     crudApis.setAuditingService(auditingService);
@@ -346,6 +346,14 @@ public class ApiServerVerticle extends AbstractVerticle {
             routingContext -> {
               searchApis.searchHandler(routingContext);
             });
+    router
+        .post(api.getRouteSearch())
+        .produces(MIME_APPLICATION_JSON)
+        .failureHandler(exceptionhandler)
+        .handler(
+            routingContext -> {
+              searchApis.postSearchHandler(routingContext);
+            });
 
     /* NLP Search */
     router
@@ -374,6 +382,13 @@ public class ApiServerVerticle extends AbstractVerticle {
         .handler(
             routingContext -> {
               listApis.listItemsHandler(routingContext);
+            });
+    router
+        .post(api.getRouteListMulItems())
+        .produces(MIME_APPLICATION_JSON)
+        .handler(
+            routingContext -> {
+              listApis.listItemsPostHandler(routingContext);
             });
 
     //  Routes for relationships

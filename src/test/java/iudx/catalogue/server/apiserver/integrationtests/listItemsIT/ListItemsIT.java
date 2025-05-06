@@ -1,6 +1,8 @@
 package iudx.catalogue.server.apiserver.integrationtests.listItemsIT;
 
 import io.restassured.response.Response;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import iudx.catalogue.server.apiserver.integrationtests.RestAssuredConfiguration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -9,6 +11,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.restassured.RestAssured.given;
+import static iudx.catalogue.server.util.Constants.DEPARTMENT;
+import static iudx.catalogue.server.util.Constants.FIELD;
+import static iudx.catalogue.server.util.Constants.FILE_FORMAT;
+import static iudx.catalogue.server.util.Constants.FILTER;
+import static iudx.catalogue.server.util.Constants.ITEM_TYPE_DATA_BANK;
+import static iudx.catalogue.server.util.Constants.ORGANIZATION_TYPE;
+import static iudx.catalogue.server.util.Constants.SEARCH_CRITERIA;
+import static iudx.catalogue.server.util.Constants.TAGS;
+import static iudx.catalogue.server.util.Constants.TYPE;
+import static iudx.catalogue.server.util.Constants.VALUES;
 import static org.hamcrest.Matchers.is;
 
 /**
@@ -194,4 +206,33 @@ public class ListItemsIT {
                 .statusCode(400)
                 .body("type", is("urn:dx:cat:InvalidSyntax"));
     }
+    @Test
+    @DisplayName("Testing listMultipleItems for itemType with filter - 200 Success")
+    void listMultipleItemsWithItemTypeAndFilter() {
+        JsonObject requestBody = new JsonObject()
+            .put(SEARCH_CRITERIA, new JsonArray()
+                .add(new JsonObject()
+                    .put(FIELD, TYPE)
+                    .put(VALUES, new JsonArray().add(ITEM_TYPE_DATA_BANK))
+                )
+            )
+            .put(FILTER, new JsonArray()
+                .add(TAGS)
+                .add(DEPARTMENT)
+                .add(ORGANIZATION_TYPE)
+                .add(FILE_FORMAT)
+            );
+
+        Response response = given()
+            .header("Content-Type", "application/json")
+            .body(requestBody.toString())
+            .when()
+            .post("/list")
+            .then()
+            .statusCode(200)
+            .body("type", is("urn:dx:cat:Success"))
+            .extract()
+            .response();
+    }
+
 }
