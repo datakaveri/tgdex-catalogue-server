@@ -220,6 +220,7 @@ public final class ListApis {
           case ORGANIZATION_TYPE:
           case FILE_FORMAT:
           case DATA_READINESS:
+          case MODEL_TYPE:
             type.add(itemType);
             break;
           case OWNER:
