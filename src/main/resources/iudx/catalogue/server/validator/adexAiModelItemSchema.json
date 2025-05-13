@@ -126,7 +126,7 @@
       "title": "The access policy schema",
       "default": "",
       "examples": ["SECURE", "pii"],
-      "pattern": "^(RESTRICTED|OPEN|PII|restricted|open|pii)$"
+      "pattern": "^(RESTRICTED|OPEN|PII|PRIVATE|restricted|open|pii|private)$"
     },
     "label": {
       "$id": "#/properties/label",
@@ -146,7 +146,7 @@
       "type": "string",
       "title": "The organizationType schema",
       "description": "Type of organization providing the model",
-      "examples": ["Private", "Government"]
+      "examples": ["Private", "Public", "Academic Institution"]
     },
     "department": {
       "type": "string",

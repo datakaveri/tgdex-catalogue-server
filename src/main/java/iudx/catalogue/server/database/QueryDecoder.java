@@ -248,8 +248,8 @@ public final class QueryDecoder {
     }
 
     /* Construct the query for post request for attribute based search */
-    if (searchType.matches(SEARCH_CRITERIA_ATTRIBUTE_SEARCH_REGEX)) {
-      LOGGER.debug("Info: Attribute search block; {}", request);
+    if (searchType.matches(SEARCH_CRITERIA_REGEX)) {
+      LOGGER.debug("Info: Search Criteria search block; {}", request);
 
       match = true;
 
@@ -261,133 +261,95 @@ public final class QueryDecoder {
           JsonObject criterion = searchCriteriaArray.getJsonObject(i);
           String field = criterion.getString(FIELD);
           JsonArray values = criterion.getJsonArray(VALUES);
+          String criterionSearchType = criterion.getString(SEARCH_TYPE, TERM);
 
-          JsonArray shouldQuery = new JsonArray();
-          for (int j = 0; j < values.size(); j++) {
-            String matchQuery;
+          switch (criterionSearchType) {
+            case TERM: {
+              JsonArray shouldQuery = new JsonArray();
+              for (int j = 0; j < values.size(); j++) {
+                String matchQuery;
 
-            // fields like tags, description or location (no .keyword needed)
-            if (TAGS.equals(field) || DESCRIPTION_ATTR.equals(field)
-                || field.startsWith(LOCATION)) {
-              matchQuery = MATCH_QUERY.replace("$1", field)
-                  .replace("$2", values.getString(j));
-              shouldQuery.add(new JsonObject(matchQuery));
+                // raw field matches (e.g. tags, description, location)
+                if (TAGS.equals(field) || DESCRIPTION_ATTR.equals(field)
+                    || field.startsWith(LOCATION)) {
+                  matchQuery = MATCH_QUERY.replace("$1", field)
+                      .replace("$2", values.getString(j));
+                  shouldQuery.add(new JsonObject(matchQuery));
 
-              if (request.containsKey(FUZZY) && "true".equals(request.getString(FUZZY))
-                  && (TAGS.equals(field) || DESCRIPTION_ATTR.equals(field))) {
-                matchQuery = FUZZY_MATCH_QUERY.replace("$1", field)
-                    .replace("$2", values.getString(j));
-                shouldQuery.add(new JsonObject(matchQuery));
+                  if ("true".equals(request.getString(FUZZY))
+                      && (TAGS.equals(field) || DESCRIPTION_ATTR.equals(field))) {
+                    matchQuery = FUZZY_MATCH_QUERY.replace("$1", field)
+                        .replace("$2", values.getString(j));
+                    shouldQuery.add(new JsonObject(matchQuery));
+                  }
+                } else {
+                  // check if field ends with .keyword or not
+                  if (field.endsWith(KEYWORD_KEY)) {
+                    matchQuery = MATCH_QUERY.replace("$1", field)
+                        .replace("$2", values.getString(j));
+                  } else {
+                    matchQuery = MATCH_QUERY.replace("$1", field + KEYWORD_KEY)
+                        .replace("$2", values.getString(j));
+                  }
+                  shouldQuery.add(new JsonObject(matchQuery));
+
+                  if ("true".equals(request.getString(FUZZY))
+                      && (LABEL.equals(field) || INSTANCE.equals(field))) {
+                    matchQuery = FUZZY_MATCH_QUERY.replace("$1", field).replace("$2",
+                        values.getString(j));
+                    shouldQuery.add(new JsonObject(matchQuery));
+                  }
+                }
               }
-            } else {
-              // check if field already has .keyword
-              if (field.endsWith(KEYWORD_KEY)) {
-                matchQuery = MATCH_QUERY.replace("$1", field)
-                    .replace("$2", values.getString(j));
-              } else {
-                matchQuery = MATCH_QUERY.replace("$1", field + KEYWORD_KEY)
-                    .replace("$2", values.getString(j));
-              }
-              shouldQuery.add(new JsonObject(matchQuery));
+              mustQuery.add(new JsonObject(SHOULD_QUERY.replace("$1", shouldQuery.toString())));
+              break;
+            }
 
-              if ("true".equals(request.getString(FUZZY))
-                  && (LABEL.equals(field) || INSTANCE.equals(field))) {
-                matchQuery = FUZZY_MATCH_QUERY.replace("$1", field).replace("$2",
-                    values.getString(j));
-                shouldQuery.add(new JsonObject(matchQuery));
+            case BETWEEN_RANGE:
+            case BEFORE_RANGE:
+            case AFTER_RANGE:
+            case BETWEEN_TEMPORAL:
+            case BEFORE_TEMPORAL:
+            case AFTER_TEMPORAL: {
+              JsonObject rangeObj = new JsonObject();
+              JsonObject rangeFieldObj = new JsonObject();
+
+              if (criterionSearchType.startsWith(BETWEEN)) {
+                if (values.size() == 2) {
+                  rangeFieldObj.put(GREATER_THAN_EQUALS, values.getValue(0));
+                  rangeFieldObj.put(LESS_THAN_EQUALS, values.getValue(1));
+                } else {
+                  return new JsonObject().put(ERROR, new RespBuilder()
+                      .withType(TYPE_INVALID_PROPERTY_VALUE)
+                      .withTitle(TITLE_INVALID_PROPERTY_VALUE)
+                      .withDetail("Expected 2 values for between-type search")
+                      .getJsonResponse());
+                }
+              } else if (criterionSearchType.startsWith(BEFORE)) {
+                rangeFieldObj.put(LESS_THAN_EQUALS, values.getValue(0));
+              } else if (criterionSearchType.startsWith(AFTER)) {
+                rangeFieldObj.put(GREATER_THAN_EQUALS, values.getValue(0));
               }
+
+              rangeObj.put(field, rangeFieldObj);
+              mustQuery.add(new JsonObject().put(RANGE, rangeObj));
+              break;
+            }
+
+            default: {
+              return new JsonObject().put(ERROR, new RespBuilder()
+                  .withType(TYPE_INVALID_PROPERTY_VALUE)
+                  .withTitle(TITLE_INVALID_PROPERTY_VALUE)
+                  .withDetail("Unsupported searchType: " + criterionSearchType)
+                  .getJsonResponse());
             }
           }
-
-          mustQuery.add(new JsonObject(SHOULD_QUERY.replace("$1", shouldQuery.toString())));
         }
       } else {
         return new JsonObject().put(ERROR, new RespBuilder()
             .withType(TYPE_INVALID_PROPERTY_VALUE)
             .withTitle(TITLE_INVALID_PROPERTY_VALUE)
             .withDetail("Invalid Property Value: Empty searchCriteria")
-            .getJsonResponse());
-      }
-    }
-
-    /* Construct the query for range based search */
-    if (searchType.matches(RANGE_SEARCH_REGEX)) {
-      LOGGER.debug("Info: Range search block");
-
-      match = true;
-
-      if (request.containsKey(RANGE_REL) && !request.getString(RANGE_REL).isBlank()
-          && request.containsKey(RANGE)) {
-
-        String rangeRel = request.getString(RANGE_REL);
-        int rangeValue = Integer.parseInt(request.getString(RANGE));
-        String field = request.getString(ATTRIBUTE_KEY);
-
-        Integer endRangeValue = null;
-        if (rangeRel.equalsIgnoreCase(BETWEEN)
-            || rangeRel.equalsIgnoreCase(DURING)) {
-          if (request.containsKey(END_RANGE) && !request.getString(END_RANGE).isBlank()) {
-            endRangeValue = Integer.parseInt(request.getString(END_RANGE));
-          } else {
-            return new JsonObject().put(ERROR, new RespBuilder()
-                .withType(TYPE_BAD_RANGE_QUERY)
-                .withTitle(TITLE_BAD_RANGE_QUERY)
-                .withDetail("End range value is required for 'between' or 'during' relationships.")
-                .getJsonResponse());
-          }
-        }
-
-        try {
-          JsonObject numericRangeQuery = constructRangeQuery(field, rangeRel,
-              rangeValue, endRangeValue);
-          mustQuery.add(numericRangeQuery);
-        } catch (IllegalArgumentException e) {
-          return new JsonObject().put(ERROR, new RespBuilder()
-              .withType(TYPE_BAD_RANGE_QUERY)
-              .withTitle(TITLE_BAD_RANGE_QUERY)
-              .withDetail(DETAIL_INVALID_RANGEREL)
-              .getJsonResponse());
-        }
-
-      } else {
-        return new JsonObject().put(ERROR, new RespBuilder()
-            .withType(TYPE_BAD_RANGE_QUERY)
-            .withTitle(TITLE_BAD_RANGE_QUERY)
-            .withDetail(DETAIL_MISSING_RANGEREL)
-            .getJsonResponse());
-      }
-    }
-
-    /* Construct the query for range based search */
-    if (searchType.matches(TEMPORAL_SEARCH_REGEX)) {
-      LOGGER.debug("Info: temporal search block");
-
-      match = true;
-      /* validating temporal search attributes */
-      if (request.containsKey(TIME_REL) && !request.getString(TIME_REL).isBlank()
-          && request.containsKey(TIME)) {
-
-        String timeRel = request.getString(TIME_REL);
-        String time = request.getString(TIME);
-        String endTime = request.getString(END_TIME);
-
-        try {
-          String field = request.getString(ATTRIBUTE_KEY);
-          JsonObject temporalRangeQuery =
-              constructRangeQuery(field, timeRel, time, endTime);
-          mustQuery.add(temporalRangeQuery);
-        } catch (IllegalArgumentException e) {
-          return new JsonObject().put(ERROR, new RespBuilder()
-              .withType(TYPE_BAD_TEMPORAL_QUERY)
-              .withTitle(TITLE_BAD_TEMPORAL_QUERY)
-              .withDetail(DETAIL_INVALID_TIMEREL)
-              .getJsonResponse());
-        }
-      } else {
-        return new JsonObject().put(ERROR, new RespBuilder()
-            .withType(TYPE_BAD_RANGE_QUERY)
-            .withTitle(TITLE_BAD_RANGE_QUERY)
-            .withDetail(DETAIL_MISSING_RANGEREL)
             .getJsonResponse());
       }
     }
@@ -466,39 +428,6 @@ public final class QueryDecoder {
       }
       return elasticQuery.put(QUERY_KEY, boolQuery);
     }
-  }
-
-  private JsonObject constructRangeQuery(String fieldName, String relation, Object value,
-                                         Object endValue) {
-    JsonObject rangeQuery = new JsonObject();
-    JsonObject fieldRange = new JsonObject();
-
-    switch (relation.toLowerCase()) {
-      case BEFORE:
-      case LESS_THAN:
-        fieldRange.put(LESS_THAN, value);
-        break;
-      case AFTER:
-      case GREATER_THAN:
-        fieldRange.put(GREATER_THAN, value);
-        break;
-      case BETWEEN:
-      case DURING:
-        fieldRange.put(GREATER_THAN_EQUALS, value);
-        fieldRange.put(LESS_THAN_EQUALS, endValue);
-        break;
-      case LESS_THAN_EQUALS:
-        fieldRange.put(LESS_THAN_EQUALS, value);
-        break;
-      case GREATER_THAN_EQUALS:
-        fieldRange.put(GREATER_THAN_EQUALS, value);
-        break;
-      default:
-        throw new IllegalArgumentException("Invalid relation: " + relation);
-    }
-
-    rangeQuery.put(RANGE, new JsonObject().put(fieldName, fieldRange));
-    return rangeQuery;
   }
 
   /**

@@ -178,7 +178,7 @@
       "title": "The access policy schema",
       "default": "",
       "examples": ["RESTRICTED", "PII"],
-      "pattern": "^(RESTRICTED|OPEN|PII|restricted|open|pii)$"
+      "pattern": "^(RESTRICTED|OPEN|PII|PRIVATE|restricted|open|pii|private)$"
     },
     "label": {
       "type": "string",

@@ -140,6 +140,14 @@ public class Constants {
   public static final String END_RANGE = "endRange";
   public static final String RANGE_REL = "rangerel";
   public static final String ATTRIBUTE_KEY = "attribute";
+  public static final String TIME_ATTRIBUTE = "timeAttribute";
+  public static final String RANGE_ATTRIBUTE = "rangeAttribute";
+  public static final String BETWEEN_RANGE = "betweenRange";
+  public static final String AFTER_RANGE = "afterRange";
+  public static final String BEFORE_RANGE = "beforeRange";
+  public static final String BETWEEN_TEMPORAL = "betweenTemporal";
+  public static final String AFTER_TEMPORAL = "afterTemporal";
+  public static final String BEFORE_TEMPORAL = "beforeTemporal";
 
   /** SearchTypes. */
   public static final String SEARCH_TYPE = "searchType";

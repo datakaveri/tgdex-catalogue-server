@@ -71,7 +71,8 @@ public class QueryMapper {
         try {
           Matcher matcher = regPatternMatchString.matcher(entry.getValue());
           if (matcher.find() && !excepAttribute.contains(paramKey)) {
-            String replacedValue = paramValue.replaceAll("[\\w]+[^\\,]*(?:\\.*[\\w])", "\"$0\"");
+            String replacedValue = paramValue.replaceAll("[\\w]+[^\\,]*(?:\\.*[\\w])",
+                "\"$0\"");
             jsonBody.put(paramKey, new JsonArray(replacedValue));
           } else if (excepAttribute.contains(paramKey)) {
             try {
@@ -86,15 +87,6 @@ public class QueryMapper {
           return null;
         }
       }
-    }
-
-    /* adding search type for temporal search */
-    if (jsonBody.containsKey(TIME_REL)) {
-      jsonBody.put(SEARCH_TYPE, jsonBody.getString(SEARCH_TYPE, "") + SEARCH_TYPE_TEMPORAL);
-    }
-
-    if (jsonBody.containsKey(RANGE_REL)) {
-      jsonBody.put(SEARCH_TYPE, jsonBody.getString(SEARCH_TYPE, "") + SEARCH_TYPE_RANGE);
     }
 
     /* adding search type for geo related search */
@@ -225,7 +217,7 @@ public class QueryMapper {
 
     /* Validating AttributeSearch limits */
     if (searchType.contains(SEARCH_TYPE_ATTRIBUTE)) {
-      LOGGER.error("Validating attribute search query params;");
+      LOGGER.debug("Validating attribute search query params;");
 
       Pattern valuePattern = Pattern.compile("^[a-zA-Z0-9]([\\w-._:\\/() ]*[a-zA-Z0-9])?$");
 
@@ -268,113 +260,6 @@ public class QueryMapper {
       }
     }
 
-    /* Validating Temporal Search limits */
-    if (searchType.contains(SEARCH_TYPE_TEMPORAL)) {
-      String timeRel = requestBody.getString(TIME_REL);
-
-      if (timeRel.equalsIgnoreCase(DURING) || timeRel.equalsIgnoreCase(BETWEEN)) {
-        String startTime = requestBody.getString(TIME);
-        String endTime = requestBody.getString(END_TIME);
-        if (startTime == null || endTime == null) {
-          LOGGER.error("Error: Missing time or endTime for temporal relation");
-          return errResponse
-              .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
-              .put(DESC, "Both time and endTime must be provided for temporal relation");
-        }
-
-        if (isValidTimeFormat(startTime) || isValidTimeFormat(endTime)) {
-          LOGGER.error("Error: Invalid time format");
-          return errResponse
-              .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
-              .put(DESC, "Invalid time format for temporal relation");
-        }
-        // Check if startTime is before endTime for DURING or BETWEEN relations
-        if (timeRel.equalsIgnoreCase(BETWEEN) && !isStartBeforeEnd(startTime, endTime)) {
-          LOGGER.error("Error: startTime must be before endTime for BETWEEN relation");
-          return errResponse
-              .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
-              .put(DESC, "startTime must be before endTime for BETWEEN relation");
-        }
-      } else if (timeRel.equalsIgnoreCase("before")
-          || timeRel.equalsIgnoreCase("after")) {
-        String referenceTime = requestBody.getString(TIME);
-
-        if (referenceTime == null) {
-          LOGGER.error("Error: Missing time for 'before' or 'after' temporal relation");
-          return errResponse
-              .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
-              .put(DESC, "'time' must be provided for 'before' or 'after' temporal relation");
-        }
-
-        if (isValidTimeFormat(referenceTime)) {
-          LOGGER.error("Error: Invalid time format for 'before' or 'after' relation");
-          return errResponse
-              .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
-              .put(DESC, "Invalid time format for 'before' or 'after' relation");
-        }
-      }
-    }
-
-    /* Validating Range Search limits */
-    if (searchType.contains(SEARCH_TYPE_RANGE)) {
-      LOGGER.error("Validating range query params;");
-      if (!requestBody.containsKey(ATTRIBUTE_KEY)) {
-        LOGGER.error("Error: Missing attribute for range query");
-        return errResponse
-            .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
-            .put(DESC, "'attribute' must be provided to search on for range relation");
-      }
-      String rangeRel = requestBody.getString(RANGE_REL);
-      if (rangeRel.equalsIgnoreCase(DURING) || rangeRel.equalsIgnoreCase(BETWEEN)) {
-
-        if (!requestBody.containsKey(RANGE) || !requestBody.containsKey(END_RANGE)) {
-          LOGGER.error("Error: Missing range or endRange for range relation");
-          return errResponse
-              .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
-              .put(DESC, "Both range and endRange must be provided for range relation "
-                  + "during/between");
-        }
-
-        String rangeVal = requestBody.getString(RANGE);
-        String endRangeVal = requestBody.getString(END_RANGE);
-
-        if (!isNumeric(rangeVal) || !isNumeric(endRangeVal)) {
-          LOGGER.error("Error: Non-numeric value in range or endRange");
-          return errResponse
-              .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
-              .put(DESC, "Range and endRange must be valid numbers");
-        }
-
-        int startRange = Integer.parseInt(rangeVal);
-        int endRange = Integer.parseInt(endRangeVal);
-
-        if (startRange > endRange) {
-          LOGGER.error("Error: startRange must be before endRange for BETWEEN relation");
-          return errResponse
-              .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
-              .put(DESC, "startRange must be before endRange for BETWEEN relation");
-        }
-      } else if (rangeRel.equalsIgnoreCase(BEFORE) || rangeRel.equalsIgnoreCase(AFTER)
-          || rangeRel.equalsIgnoreCase(LESS_THAN) || rangeRel.equalsIgnoreCase(GREATER_THAN)
-          || rangeRel.equalsIgnoreCase(LESS_THAN_EQUALS)
-          || rangeRel.equalsIgnoreCase(GREATER_THAN_EQUALS)) {
-
-        if (!requestBody.containsKey(RANGE)) {
-          LOGGER.error("Error: Missing range for 'before' or 'after' range relation");
-          return errResponse
-              .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
-              .put(DESC, "'range' must be provided for 'before' or 'after' relation");
-        }
-        String rangeVal = requestBody.getString(RANGE);
-        if (!isNumeric(rangeVal)) {
-          LOGGER.error("Error: Non-numeric value in range");
-          return errResponse
-              .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
-              .put(DESC, "Range must be valid numbers");
-        }
-      }
-    }
-
     /* Validating ResponseFilter limits */
     if (searchType.contains(RESPONSE_FILTER)
         && requestBody.getJsonArray(FILTER, new JsonArray()).size() > FILTER_VALUE_SIZE) {
@@ -410,27 +295,6 @@ public class QueryMapper {
     }
 
     return new JsonObject().put(STATUS, SUCCESS);
-  }
-
-  private static boolean isValidTimeFormat(String time) {
-    return !time.matches("^\\d{4}-\\d{2}-\\d{2}T(0[1-9]|1[0-2]):[0-5]\\d:[0-5]\\d\\+\\d{4}$");
-  }
-
-  private static boolean isStartBeforeEnd(String startTime, String endTime) {
-    //compare startTime and endTime
-    return startTime.compareTo(endTime) < 0;
-  }
-
-  private static boolean isNumeric(String str) {
-    if (str == null || str.isBlank()) {
-      return false;
-    }
-    try {
-      Integer.parseInt(str);
-      return true;
-    } catch (NumberFormatException e) {
-      return false;
-    }
   }
 
 }

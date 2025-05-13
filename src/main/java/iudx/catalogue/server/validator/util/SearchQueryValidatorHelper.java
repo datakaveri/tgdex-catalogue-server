@@ -1,39 +1,6 @@
 package iudx.catalogue.server.validator.util;
 
-import static iudx.catalogue.server.util.Constants.BBOX;
-import static iudx.catalogue.server.util.Constants.BETWEEN;
-import static iudx.catalogue.server.util.Constants.COORDINATES;
-import static iudx.catalogue.server.util.Constants.COORDINATES_PRECISION;
-import static iudx.catalogue.server.util.Constants.COORDINATES_SIZE;
-import static iudx.catalogue.server.util.Constants.DESC;
-import static iudx.catalogue.server.util.Constants.DURING;
-import static iudx.catalogue.server.util.Constants.END_RANGE;
-import static iudx.catalogue.server.util.Constants.END_TIME;
-import static iudx.catalogue.server.util.Constants.FAILED;
-import static iudx.catalogue.server.util.Constants.FILTER_VALUE_SIZE;
-import static iudx.catalogue.server.util.Constants.GEOMETRY;
-import static iudx.catalogue.server.util.Constants.LINESTRING;
-import static iudx.catalogue.server.util.Constants.MAX_DISTANCE;
-import static iudx.catalogue.server.util.Constants.POINT;
-import static iudx.catalogue.server.util.Constants.POLYGON;
-import static iudx.catalogue.server.util.Constants.PROPERTY;
-import static iudx.catalogue.server.util.Constants.PROPERTY_SIZE;
-import static iudx.catalogue.server.util.Constants.RANGE;
-import static iudx.catalogue.server.util.Constants.RANGE_REL;
-import static iudx.catalogue.server.util.Constants.STATUS;
-import static iudx.catalogue.server.util.Constants.STRING_SIZE;
-import static iudx.catalogue.server.util.Constants.TIME;
-import static iudx.catalogue.server.util.Constants.TIME_REL;
-import static iudx.catalogue.server.util.Constants.TITLE;
-import static iudx.catalogue.server.util.Constants.TITLE_INVALID_PROPERTY_VALUE;
-import static iudx.catalogue.server.util.Constants.TITLE_INVALID_SYNTAX;
-import static iudx.catalogue.server.util.Constants.TYPE;
-import static iudx.catalogue.server.util.Constants.TYPE_BAD_FILTER;
-import static iudx.catalogue.server.util.Constants.TYPE_INTERNAL_SERVER_ERROR;
-import static iudx.catalogue.server.util.Constants.TYPE_INVALID_PROPERTY_VALUE;
-import static iudx.catalogue.server.util.Constants.TYPE_INVALID_SYNTAX;
-import static iudx.catalogue.server.util.Constants.VALUE;
-import static iudx.catalogue.server.util.Constants.VALUE_SIZE;
+import static iudx.catalogue.server.util.Constants.*;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -41,8 +8,9 @@ import io.vertx.core.Handler;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import iudx.catalogue.server.apiserver.util.RespBuilder;
-import iudx.catalogue.server.validator.ValidatorServiceImpl;
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang.StringUtils;
@@ -50,38 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class SearchQueryValidatorHelper {
-  private static final Logger LOGGER = LogManager.getLogger(ValidatorServiceImpl.class);
-
-  public static void handleAttributeSearchValidationResult(
-      Future<String> validationFuture, JsonObject request,
-      Handler<AsyncResult<JsonObject>> handler) {
-    JsonObject errResponse = new JsonObject()
-        .put(STATUS, FAILED)
-        .put(TYPE, TYPE_INVALID_PROPERTY_VALUE);
-    validationFuture
-        .onFailure(x -> {
-          String errorMsg = x.getMessage();
-          LOGGER.error("Fail: Invalid Schema; {}", errorMsg);
-
-          if (errorMsg.contains("is too long")) {
-            if (request.getJsonArray(PROPERTY).size() > 4) {
-              errResponse.put(DESC, "The max number of 'property' should be " + PROPERTY_SIZE);
-            } else if (request.getJsonArray(VALUE).size() > 4) {
-              errResponse.put(DESC, "The max number of 'value' should be " + VALUE_SIZE);
-            } else {
-              errResponse.put(DESC, "Array field exceeded allowed size");
-            }
-          } else if (errorMsg.contains("does not match input string")) {
-            errResponse.put(DESC, "Invalid 'value' format");
-          } else if (errorMsg.contains("has missing required properties")) {
-            errResponse.put(DESC, "Mandatory field(s) not provided; " + errorMsg);
-          } else {
-            errResponse.put(DESC, errorMsg);
-          }
-
-          handler.handle(Future.failedFuture(errResponse.encode()));
-        });
-  }
+  private static final Logger LOGGER = LogManager.getLogger(SearchQueryValidatorHelper.class);
 
   public static void handleGeoSearchValidationResult(
       Future<String> validationFuture, JsonObject request,
@@ -255,87 +192,122 @@ public class SearchQueryValidatorHelper {
     });
   }
 
+  public static boolean isValidDateTimeOrder(String start, String end) {
+    try {
+      // Convert offset like +0530 to +05:30 using regex
+      start = start.replaceAll("([+-]\\d{2})(\\d{2})$", "$1:$2");
+      end = end.replaceAll("([+-]\\d{2})(\\d{2})$", "$1:$2");
 
-  public static void handleTemporalSearchValidationResult(
-      Future<String> validationFuture, JsonObject request,
-      Handler<AsyncResult<JsonObject>> handler) {
-    validationFuture
-        .onSuccess(
-            x -> {
-              String timeRel = request.getString(TIME_REL);
-              String time = request.getString(TIME);
-              String endTime = request.getString(END_TIME);
+      OffsetDateTime startTime = OffsetDateTime.parse(start);
+      OffsetDateTime endTime = OffsetDateTime.parse(end);
 
-              // Only check time ordering if 'during' or 'between' is used
-              if ((timeRel.equals(DURING) || timeRel.equals(BETWEEN))
-                  && time != null && endTime != null
-                  && !(time.compareTo(endTime) < 0)) {
+      if (!startTime.isBefore(endTime)) {
+        LOGGER.error("Temporal check failed: 'endTime' must be after 'startTime'");
+        return false;
+      }
 
-                String message = "'endTime' must be after 'time'";
-                LOGGER.error("Fail: " + message);
-                handler.handle(Future.failedFuture(new JsonArray().add(message).toString()));
-              }
-            })
-        .onFailure(
-            x -> {
-              String errorMsg = x.getMessage();
-              LOGGER.error("Fail: Invalid Schema; {}", errorMsg);
-
-              JsonObject errorResponse = new JsonObject().put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
-                  .put(TITLE, TITLE_INVALID_PROPERTY_VALUE);
-
-              if (errorMsg.contains("has missing required properties")
-                  || errorMsg.contains("failed to match at least one required schema")) {
-                errorResponse.put(DESC, "Mandatory field(s) not provided");
-              } else {
-                errorResponse.put(DESC, errorMsg);
-              }
-
-              handler.handle(
-                  Future.failedFuture(errorResponse.encodePrettily()));
-            });
+      return true;
+    } catch (DateTimeParseException e) {
+      LOGGER.error("Date parsing error: {}", e.getMessage());
+      return false;
+    }
   }
 
-  public static void handleRangeSearchValidationResult(
+  public static boolean isValidRangeOrder(int start, int end) {
+    return start <= end;
+  }
+
+  public static void handleSearchCriteriaResult(
       Future<String> validationFuture, JsonObject request,
       Handler<AsyncResult<JsonObject>> handler) {
+    LOGGER.debug("Post schema validation: " + request);
+
+    JsonObject errorResponse = new JsonObject().put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
+        .put(TITLE, TITLE_INVALID_PROPERTY_VALUE);
+
     validationFuture
-        .onSuccess(x -> {
-          String rangeRel = request.getString(RANGE_REL);
+        .onSuccess(result -> {
+          JsonArray criteriaArray = request.getJsonArray(SEARCH_CRITERIA);
 
-          if (rangeRel.equalsIgnoreCase(DURING) || rangeRel.equalsIgnoreCase(BETWEEN)) {
-            int startRange = request.getInteger(RANGE);
-            int endRange = request.getInteger(END_RANGE);
+          for (int i = 0; i < criteriaArray.size(); i++) {
+            JsonObject criterion = criteriaArray.getJsonObject(i);
+            String searchType = criterion.getString(SEARCH_TYPE);
 
-            if (startRange > endRange) {
-              LOGGER.error("Error: startRange must be before endRange for BETWEEN relation");
-              JsonObject errorResponse = new JsonObject()
-                  .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
-                  .put(DESC, "startRange must be before endRange for BETWEEN relation");
-              handler.handle(Future.failedFuture(errorResponse.encode()));
+            switch (searchType) {
+              case TERM:
+                // No additional post-schema checks for term
+                break;
+
+              case BETWEEN_TEMPORAL:
+                if (criterion.getJsonArray(VALUES).size() != 2) {
+                  String message = "'betweenTemporal' must contain exactly two values";
+                  LOGGER.error("Value count check failed: {}", message);
+                  handler.handle(Future.failedFuture(
+                      errorResponse.put(DESC, message).encode()));
+                  return;
+                }
+                if (!isValidDateTimeOrder(criterion.getJsonArray(VALUES).getString(0),
+                    criterion.getJsonArray(VALUES).getString(1))) {
+                  String message = "'endTime' must be after 'time'";
+                  LOGGER.error("Temporal check failed: {}", message);
+                  handler.handle(Future.failedFuture(
+                      errorResponse.put(DESC, message).encode()));
+                  return;
+                }
+                break;
+
+              case BETWEEN_RANGE:
+                if (criterion.getJsonArray(VALUES).size() != 2) {
+                  String message = "'betweenRange' must contain exactly two values";
+                  LOGGER.error("Value count check failed: {}", message);
+                  handler.handle(Future.failedFuture(
+                      errorResponse.put(DESC, message).encode()));
+                  return;
+                }
+                if (!isValidRangeOrder(
+                    criterion.getJsonArray(VALUES).getInteger(0),
+                    criterion.getJsonArray(VALUES).getInteger(1))) {
+                  String message = "'endRange' must be after 'range'";
+                  LOGGER.error("Range check failed: {}", message);
+                  handler.handle(Future.failedFuture(
+                      errorResponse.put(DESC, message).encode()));
+                  return;
+                }
+                break;
+
+              case BEFORE_TEMPORAL:
+              case AFTER_TEMPORAL:
+              case BEFORE_RANGE:
+              case AFTER_RANGE:
+                if (criterion.getJsonArray(VALUES).size() != 1) {
+                  String message = String.format(
+                      "'%s' must contain exactly one value", searchType);
+                  LOGGER.error("Single value check failed: {}", message);
+                  handler.handle(Future.failedFuture(
+                      errorResponse.put(DESC, message).encode()));
+                  return;
+                }
+                break;
+
+              default:
+                String message = "Unsupported searchType: " + searchType;
+                LOGGER.error(message);
+                handler.handle(Future.failedFuture(
+                    errorResponse.put(DESC, message).encode()));
+                return;
             }
           }
+
+          // If all criteria pass
+          handler.handle(Future.succeededFuture(new JsonObject().put(STATUS, SUCCESS)));
         })
-        .onFailure(x -> {
-          String errorMsg = x.getMessage();
-          LOGGER.error("Fail: Invalid Schema; {}", errorMsg);
-
-          JsonObject errorResponse = new JsonObject().put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
-              .put(TITLE, TITLE_INVALID_PROPERTY_VALUE);
-
-          if (errorMsg.contains("has missing required properties")
-              || errorMsg.contains("failed to match at least one required schema")) {
-            errorResponse.put(DESC, "Mandatory field(s) not provided");
-          } else if (errorMsg.contains(
-              "not found in enum (possible values:" +
-                  " [\"before\",\"after\",\"during\",\"between\"])")) {
-            errorResponse.put(DESC, "Invalid rangerel value; " + errorMsg);
-          } else {
-            errorResponse.put(DESC, errorMsg);
-          }
-
+        .onFailure(err -> {
+          LOGGER.error("Composite schema validation failed: {}", err.getMessage());
+          errorResponse.put(DESC, err.getMessage());
           handler.handle(Future.failedFuture(errorResponse.encode()));
         });
   }
+
+
 }
 
