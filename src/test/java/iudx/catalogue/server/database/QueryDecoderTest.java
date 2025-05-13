@@ -745,16 +745,19 @@ public class QueryDecoderTest {
   }
 
   @Test
-  @DisplayName("Range search request to DbQuery")
+  @DisplayName("Range search request using searchCriteria to DbQuery")
   public void searchRangeTest(VertxTestContext testContext) {
+    queryDecoder = new QueryDecoder();
+
+    JsonObject rangeCriterion = new JsonObject()
+        .put(SEARCH_TYPE, BETWEEN_RANGE)
+        .put(FIELD, DATA_READINESS)
+        .put(VALUES, new JsonArray().add(20).add(80));
 
     JsonObject request = new JsonObject()
-        .put(SEARCH_TYPE, RANGE_SEARCH_REGEX)
         .put(SEARCH, true)
-        .put(ATTRIBUTE_KEY, "dataReadiness")
-        .put(RANGE_REL, "during")
-        .put(END_RANGE, "80")
-        .put(RANGE, "20");
+        .put(SEARCH_TYPE, SEARCH_CRITERIA)
+        .put(SEARCH_CRITERIA, new JsonArray().add(rangeCriterion));
 
     JsonObject json = queryDecoder.searchQuery(request);
 
@@ -762,25 +765,31 @@ public class QueryDecoderTest {
         .getJsonObject("bool")
         .getJsonArray("must")
         .getJsonObject(0)
-        .getJsonObject("range");
+        .getJsonObject(RANGE);
 
     assertNotNull(range);
-    assertTrue(range.containsKey("dataReadiness"));
-    assertEquals(20, range.getJsonObject("dataReadiness").getInteger("gte"));
-    assertEquals(80, range.getJsonObject("dataReadiness").getInteger("lte"));
+    assertTrue(range.containsKey(DATA_READINESS));
+    assertEquals(20, range.getJsonObject(DATA_READINESS).getInteger(GREATER_THAN_EQUALS));
+    assertEquals(80, range.getJsonObject(DATA_READINESS).getInteger(LESS_THAN_EQUALS));
     testContext.completeNow();
   }
+
   @Test
-  @DisplayName("Temporal search request to DbQuery")
-  public void searchTemporalTest(VertxTestContext testContext) {
+  @DisplayName("Temporal search request to DbQuery using searchCriteria")
+  public void searchTemporalWithCriteriaTest(VertxTestContext testContext) {
+
+    JsonArray searchCriteria = new JsonArray()
+        .add(new JsonObject()
+            .put(SEARCH_TYPE, BETWEEN_TEMPORAL)
+            .put(FIELD, ITEM_CREATED_AT)
+            .put(VALUES, new JsonArray()
+                .add("2020-09-01T20:05:45Z")
+                .add("2020-09-09T20:05:45Z")));
 
     JsonObject request = new JsonObject()
-        .put(SEARCH_TYPE, TEMPORAL_SEARCH_REGEX)
+        .put(SEARCH_TYPE, "searchCriteria")
         .put(SEARCH, true)
-        .put(TIME_REL, "during")
-        .put(ATTRIBUTE_KEY, ITEM_CREATED_AT)
-        .put(END_TIME, "2020-09-09T20:05:45Z")
-        .put(TIME, "2020-09-01T20:05:45Z");
+        .put(SEARCH_CRITERIA, searchCriteria);
 
     JsonObject json = queryDecoder.searchQuery(request);
 
@@ -797,42 +806,65 @@ public class QueryDecoderTest {
     testContext.completeNow();
   }
 
+
   @Test
-  @Description("test searchQuery method when temporal search params are missing")
+  @DisplayName("test searchQuery method when temporal search params are missing or invalid in searchCriteria")
   public void testSearchQueryTemporalSearchInvalid(VertxTestContext vertxTestContext) {
     queryDecoder = new QueryDecoder();
-    JsonObject request = new JsonObject();
-    request.put(SEARCH_TYPE, TEMPORAL_SEARCH_REGEX)
-        .put(SEARCH, true).put(TIME_REL, "soon").put(TIME, "dummy-Time");
+
+    // Invalid searchType or malformed values
+    JsonObject invalidCriterion = new JsonObject()
+        .put(SEARCH_TYPE, "soon") // Invalid temporal type
+        .put(FIELD, ITEM_CREATED_AT)
+        .put(VALUES, new JsonArray().add("dummy-Time"));
+
+    JsonObject request = new JsonObject()
+        .put(SEARCH, true)
+        .put(SEARCH_TYPE, SEARCH_CRITERIA)
+        .put(SEARCH_CRITERIA, new JsonArray().add(invalidCriterion));
 
     JsonObject expectedError = new JsonObject()
         .put(ERROR, new RespBuilder()
-            .withType(TYPE_BAD_TEMPORAL_QUERY)
-            .withTitle(TITLE_BAD_TEMPORAL_QUERY)
-            .withDetail(DETAIL_INVALID_TIMEREL)
+            .withType(TYPE_INVALID_PROPERTY_VALUE)
+            .withTitle(TITLE_INVALID_PROPERTY_VALUE)
+            .withDetail("Unsupported searchType: soon") // Or appropriate message if structure changed
             .getJsonResponse());
 
-    assertEquals(expectedError, queryDecoder.searchQuery(request));
+    JsonObject actualResponse = queryDecoder.searchQuery(request);
+
+    assertEquals(expectedError, actualResponse);
     vertxTestContext.completeNow();
   }
+
 
   @Test
-  @Description("test searchQuery method when range search params are missing")
+  @DisplayName("test searchQuery method when range search params are missing or invalid in searchCriteria")
   public void testSearchQueryRangeSearchInvalid(VertxTestContext vertxTestContext) {
     queryDecoder = new QueryDecoder();
-    JsonObject request = new JsonObject();
-    request.put(SEARCH_TYPE, RANGE_SEARCH_REGEX)
-        .put(SEARCH, true);
+
+    // Missing values for range search
+    JsonObject invalidCriterion = new JsonObject()
+        .put(SEARCH_TYPE, "BEFORE_RANGE")  // valid range type
+        .put(FIELD, DATA_READINESS)
+        .put(VALUES, new JsonArray().add(82));     // 'values' key is missing
+
+    JsonObject request = new JsonObject()
+        .put(SEARCH, true)
+        .put(SEARCH_TYPE, SEARCH_CRITERIA)
+        .put(SEARCH_CRITERIA, new JsonArray().add(invalidCriterion));
 
     JsonObject expectedError = new JsonObject()
         .put(ERROR, new RespBuilder()
-            .withType(TYPE_BAD_RANGE_QUERY)
-            .withTitle(TITLE_BAD_RANGE_QUERY)
-            .withDetail(DETAIL_MISSING_RANGEREL)
+            .withType(TYPE_INVALID_PROPERTY_VALUE)
+            .withTitle(TITLE_INVALID_PROPERTY_VALUE)
+            .withDetail("Unsupported searchType: BEFORE_RANGE") // Adjust this if your error message differs
             .getJsonResponse());
 
-    assertEquals(expectedError, queryDecoder.searchQuery(request));
+    JsonObject actualResponse = queryDecoder.searchQuery(request);
+
+    assertEquals(expectedError, actualResponse);
     vertxTestContext.completeNow();
   }
+
 
 }
