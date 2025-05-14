@@ -64,15 +64,12 @@ public class ValidatorServiceImpl implements ValidatorService {
   private Validator mlayerDomainValidator;
   private Validator mlayerGeoQueryValidator;
   private Validator mlayerDatasetValidator;
-  private Validator temporalSearchQueryValidator;
-  private Validator attributeSearchQueryValidator;
   private Validator termValidator;
   private Validator rangeValidator;
   private Validator geoSearchQueryValidator;
   private Validator temporalValidator;
   private Validator textSearchQueryValidator;
   private Validator filterSearchQueryValidator;
-  private Validator rangeSearchQueryValidator;
   private Validator stack4PatchValidator;
   private Validator stackSchema4Post;
 
@@ -106,12 +103,9 @@ public class ValidatorServiceImpl implements ValidatorService {
       mlayerDatasetValidator = new Validator("/mlayerDatasetSchema.json");
       stack4PatchValidator = new Validator("/stackSchema4Patch.json");
       stackSchema4Post = new Validator("/stackSchema4Post.json");
-      temporalSearchQueryValidator = new Validator("/temporalSearchQuerySchema.json");
-      attributeSearchQueryValidator = new Validator("/attributeSearchQuerySchema.json");
       geoSearchQueryValidator = new Validator("/geoSearchQuerySchema.json");
       textSearchQueryValidator = new Validator("/textSearchQuerySchema.json");
       filterSearchQueryValidator = new Validator("/filterSearchQuerySchema.json");
-      rangeSearchQueryValidator = new Validator("/rangeSearchQuerySchema.json");
       rangeValidator = new Validator("/rangeSearchQuerySchema.json");
       temporalValidator = new Validator("/temporalSearchQuerySchema.json");
       termValidator = new Validator("/attributeSearchQuerySchema.json");
