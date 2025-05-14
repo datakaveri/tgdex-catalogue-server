@@ -8,6 +8,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import iudx.catalogue.server.database.ElasticClient;
@@ -658,26 +659,35 @@ public class ValidatorServiceImpl implements ValidatorService {
     LOGGER.debug("Info: Validating attributes limits and  constraints");
     String searchType = request.getString(SEARCH_TYPE, "");
 
+    List<Future<JsonObject>> validations = new ArrayList<>();
+
     if (searchType.contains(SEARCH_TYPE_TEXT)) {
-      this.validateTextSearchQuery(request, handler);
+      Promise<JsonObject> p = Promise.promise();
+      this.validateTextSearchQuery(request, p);
+      validations.add(p.future());
     }
-    if (searchType.contains(SEARCH_CRITERIA)) {
-      this.validateSearchCriteria(request, handler);
+    if (searchType.contains(SEARCH_TYPE_CRITERIA)) {
+      Promise<JsonObject> p = Promise.promise();
+      this.validateSearchCriteria(request, p);
+      validations.add(p.future());
     }
     if (searchType.contains(SEARCH_TYPE_GEO)) {
-      this.validateGeoSearchQuery(request, handler);
+      Promise<JsonObject> p = Promise.promise();
+      this.validateGeoSearchQuery(request, p);
+      validations.add(p.future());
     }
     if (searchType.contains(RESPONSE_FILTER)) {
-      this.validateFilterSearchQuery(request, handler);
+      Promise<JsonObject> p = Promise.promise();
+      this.validateFilterSearchQuery(request, p);
+      validations.add(p.future());
     }
-    isValidSchema
-        .onFailure(
-            x -> {
-              LOGGER.error("Fail: Invalid Schema");
-              LOGGER.error(x.getMessage());
-              handler.handle(
-                  Future.failedFuture(x.getLocalizedMessage()));
-            });
+
+    Future.all(validations)
+        .onFailure(err -> {
+          LOGGER.error("Fail: Invalid Schema: {}", err.getMessage());
+          handler.handle(Future.failedFuture(err.getLocalizedMessage()));
+        });
+
     // Additional validation logic for instance, limit, and
     // offset fields (similar to your previous implementation)
     // Validating the 'instance' field
@@ -715,8 +725,8 @@ public class ValidatorServiceImpl implements ValidatorService {
 
   public ValidatorService validateSearchCriteria(JsonObject request,
                                                  Handler<AsyncResult<JsonObject>> handler) {
-    JsonArray criteriaArray = request.getJsonArray(SEARCH_CRITERIA);
-    List<Future> validationFutures = new ArrayList<>();
+    JsonArray criteriaArray = request.getJsonArray(SEARCH_CRITERIA_KEY);
+    List<Future<String>> validationFutures = new ArrayList<>();
 
     for (int i = 0; i < criteriaArray.size(); i++) {
       JsonObject criterion = criteriaArray.getJsonObject(i);
@@ -762,12 +772,12 @@ public class ValidatorServiceImpl implements ValidatorService {
     }
 
     // At least one validation failed
-    isValidSchema = CompositeFuture.all(validationFutures)
+    Future.all(validationFutures)
         .compose(cf -> {
           // All schema validations passed
-          Future<String> successFuture = Future.succeededFuture(SUCCESS);
-          SearchQueryValidatorHelper.handleSearchCriteriaResult(successFuture, request, handler);
-          return successFuture;
+          isValidSchema = Future.succeededFuture(SUCCESS);
+          SearchQueryValidatorHelper.handleSearchCriteriaResult(isValidSchema, request, handler);
+          return isValidSchema;
         })
         .recover(err -> {
           JsonObject errorMsg = new JsonObject()

@@ -228,8 +228,8 @@ public final class SearchApis {
     LOGGER.debug("Info: instance;" + instanceId);
 
     /* validating proper actual query parameters from request */
-    if ((!requestBody.containsKey(SEARCH_CRITERIA)
-        || requestBody.getJsonArray(SEARCH_CRITERIA).isEmpty())
+    if ((!requestBody.containsKey(SEARCH_CRITERIA_KEY)
+        || requestBody.getJsonArray(SEARCH_CRITERIA_KEY).isEmpty())
         && (!requestBody.containsKey(GEOPROPERTY)
         || !requestBody.containsKey(GEORELATION)
         || !requestBody.containsKey(GEOMETRY)
@@ -250,9 +250,9 @@ public final class SearchApis {
     boolean hasValidFilter = false;
 
     /* SEARCH_CRITERIA filter (attribute, temporal, range) */
-    if (requestBody.getJsonArray(SEARCH_CRITERIA) != null
-        && !requestBody.getJsonArray(SEARCH_CRITERIA).isEmpty()) {
-      requestBody.put(SEARCH_TYPE, requestBody.getString(SEARCH_TYPE, "") + SEARCH_CRITERIA);
+    if (requestBody.getJsonArray(SEARCH_CRITERIA_KEY) != null
+        && !requestBody.getJsonArray(SEARCH_CRITERIA_KEY).isEmpty()) {
+      requestBody.put(SEARCH_TYPE, requestBody.getString(SEARCH_TYPE, "") + SEARCH_TYPE_CRITERIA);
       hasValidFilter = true;
     }
 

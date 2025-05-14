@@ -253,9 +253,9 @@ public final class QueryDecoder {
 
       match = true;
 
-      if (request.containsKey(SEARCH_CRITERIA)
-          && !request.getJsonArray(SEARCH_CRITERIA).isEmpty()) {
-        JsonArray searchCriteriaArray = request.getJsonArray(SEARCH_CRITERIA);
+      if (request.containsKey(SEARCH_CRITERIA_KEY)
+          && !request.getJsonArray(SEARCH_CRITERIA_KEY).isEmpty()) {
+        JsonArray searchCriteriaArray = request.getJsonArray(SEARCH_CRITERIA_KEY);
 
         for (int i = 0; i < searchCriteriaArray.size(); i++) {
           JsonObject criterion = searchCriteriaArray.getJsonObject(i);
@@ -660,7 +660,7 @@ public final class QueryDecoder {
     LOGGER.debug("Info: Reached list multiple items; " + request.toString());
 
     String instanceId = request.getString(INSTANCE);
-    JsonArray filters = request.getJsonArray(SEARCH_CRITERIA);  // Now filters is an array of
+    JsonArray filters = request.getJsonArray(SEARCH_CRITERIA_KEY);  // Now filters is an array of
     // filter objects
     Integer limit = request.getInteger(LIMIT,
         FILTER_PAGINATION_SIZE - request.getInteger(OFFSET, 0));

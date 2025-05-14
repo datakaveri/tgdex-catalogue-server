@@ -168,9 +168,8 @@ public class SearchQueryValidatorHelper {
       Handler<AsyncResult<JsonObject>> handler) {
 
     validationFuture.onFailure(x -> {
-      LOGGER.error("Fail: Invalid Schema");
       String errorMsg = x.getMessage();
-      LOGGER.error(errorMsg);
+      LOGGER.error("Fail: Invalid Schema: " + errorMsg);
 
       String errorDesc;
       if (errorMsg.contains("is too long")) {
@@ -220,14 +219,13 @@ public class SearchQueryValidatorHelper {
   public static void handleSearchCriteriaResult(
       Future<String> validationFuture, JsonObject request,
       Handler<AsyncResult<JsonObject>> handler) {
-    LOGGER.debug("Post schema validation: " + request);
 
     JsonObject errorResponse = new JsonObject().put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
         .put(TITLE, TITLE_INVALID_PROPERTY_VALUE);
 
     validationFuture
         .onSuccess(result -> {
-          JsonArray criteriaArray = request.getJsonArray(SEARCH_CRITERIA);
+          JsonArray criteriaArray = request.getJsonArray(SEARCH_CRITERIA_KEY);
 
           for (int i = 0; i < criteriaArray.size(); i++) {
             JsonObject criterion = criteriaArray.getJsonObject(i);

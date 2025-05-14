@@ -100,7 +100,6 @@ public class Constants {
 
   public static final String PROPERTY = "property";
   public static final String VALUE = "value";
-  public static final String SEARCH_CRITERIA = "searchCriteria";
 
   /** GeoRels. */
   public static final String GEOREL_WITHIN = "within";
@@ -155,9 +154,10 @@ public class Constants {
   public static final String SEARCH_TYPE_TEXT = "textSearch_";
   public static final String SEARCH_TYPE_ATTRIBUTE = "attributeSearch_";
   public static final String SEARCH_TYPE_TAGS = "tagsSearch_";
-  public static final String SEARCH_TYPE_TEMPORAL = "temporalSearch_";
-  public static final String SEARCH_TYPE_RANGE = "rangeSearch_";
   public static final String RESPONSE_FILTER = "responseFilter_";
+  public static final String SEARCH_TYPE_CRITERIA = "searchCriteria_";  // used in SEARCH_TYPE value
+  public static final String SEARCH_CRITERIA_KEY = "searchCriteria";    // used in requestBody key
+
 
   public static final String MESSAGE = "detail";
   public static final String RESULTS = "results";
