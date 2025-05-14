@@ -762,23 +762,25 @@ public class ValidatorServiceImpl implements ValidatorService {
           return this;
       }
 
-      validationFutures.add(validationFuture);
+      // Wrap each validation future to handle individual failure
+      Future<String> wrappedFuture = validationFuture.recover(err -> {
+        // Fail-fast on any individual failure
+        JsonObject errorMsg = new JsonObject()
+            .put(STATUS, FAILED)
+            .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
+            .put(DESC, err.getMessage());
+        handler.handle(Future.failedFuture(errorMsg.encode()));
+        return Future.failedFuture(err); // stop execution
+      });
+
+      validationFutures.add(wrappedFuture);
     }
 
-    // At least one validation failed
-    Future.all(validationFutures)
-        .compose(cf -> {
-          // All schema validations passed
+    // All validations passed
+    CompositeFuture.all(new ArrayList<>(validationFutures))
+        .onSuccess(res -> {
           isValidSchema = Future.succeededFuture(SUCCESS);
           SearchQueryValidatorHelper.handleSearchCriteriaResult(isValidSchema, request, handler);
-          return isValidSchema;
-        })
-        .recover(err -> {
-          JsonObject errorMsg = new JsonObject()
-              .put(STATUS, FAILED)
-              .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
-              .put(DESC, err.getMessage());
-          return Future.failedFuture(errorMsg.encode());
         });
 
     return this;
