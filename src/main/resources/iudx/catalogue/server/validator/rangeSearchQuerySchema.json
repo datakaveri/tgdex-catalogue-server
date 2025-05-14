@@ -1,38 +1,19 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "RangeSearchQuerySchema",
+  "title": "Range Search Schema",
   "type": "object",
-  "required": ["rangerel", "attribute", "range"],
+  "required": ["field", "searchType", "values"],
   "properties": {
-    "rangerel": {
-      "type": "string",
-      "enum": [
-        "before", "after", "lessThan", "greaterThan",
-        "lessThanEquals", "greaterThanEquals",
-        "during", "between"
-      ]
+    "field": { "type": "string" },
+    "searchType": {
+      "enum": ["betweenRange", "beforeRange", "afterRange"]
     },
-    "range": {
-      "type": "integer"
-    },
-    "endRange": {
-      "type": "integer"
-    },
-    "attribute": {
-      "type": "string"
+    "values": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "items": { "type": "number" }
     }
   },
-  "anyOf": [
-    {
-      "not": {
-        "properties": {
-          "rangerel": { "enum": ["between", "during"] }
-        }
-      }
-    },
-    {
-      "required": ["endRange"]
-    }
-  ],
-  "additionalProperties": true
+  "additionalProperties": false
 }

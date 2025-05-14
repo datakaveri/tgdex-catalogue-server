@@ -316,6 +316,338 @@ paths:
           label: complex search
           source: |
             curl --location -g --request GET 'https://example-cat.com/iudx/cat/v1/search?geoproperty=location&georel=within&geometry=Polygon&coordinates=[[[75.9,14.5],[72,13],[73,20],[75.9,14.5]]]&filter=[tags,id,location.geometry.coordinates]'
+    post:
+      tags:
+        - Discovery
+      description: |
+        Unified catalogue search query for discovering entities that meet complex criteria. The `/search` endpoint supports a rich combination of property-based (`term`), range-based, and temporal-based searches using a common `searchCriteria` array format.
+
+        #### 📌 `searchCriteria` Format (Unified)
+        Each entry in `searchCriteria` must define:
+        - `searchType`: Determines the type of search (e.g., `term`, `betweenRange`, `beforeTemporal`, etc.)
+        - `field`: Field to search on (e.g., `type`, `dataReadiness`, `itemCreatedAt`)
+        - `values`: Array of values (length depends on `searchType`)
+
+        #### ✅ Supported `searchType` Values and Value Expectations:
+        | `searchType`         | Description                                 | Expected `values` Length |
+        |----------------------|---------------------------------------------|---------------------------|
+        | `term`               | Property-based (exact/approx match)         | ≥ 1 values (OR logic)     |
+        | `betweenRange`       | Numeric field in a value range              | 2 values (start, end)     |
+        | `beforeRange`        | Numeric field before a value                | 1 value                   |
+        | `afterRange`         | Numeric field after a value                 | 1 value                   |
+        | `betweenTemporal`    | Timestamp field between two dates           | 2 ISO datetime strings    |
+        | `beforeTemporal`     | Timestamp before a given date               | 1 ISO datetime string     |
+        | `afterTemporal`      | Timestamp after a given date                | 1 ISO datetime string     |
+
+        #### 🧠 Term Search (Property-based)
+        Property search is allowed only on a predefined set of properties from the DX Schema Vocabulary, applicable to all subClasses of [IUDXEntity](https://voc.iudx.org.in/IUDXEntity).
+
+        - Exact match: Supported for fields like `id`, `resourceGroup`, `provider`, 
+        `resourceServer`, `type`, `department`, `organizationType`, `modelType`. <br>
+
+        Example:
+        ```json
+        {
+          "searchCriteria": [
+            {
+              "searchType": "term",
+              "field": "type",
+              "values": ["adex:DataBank"]
+            },
+            {
+              "searchType": "term",
+              "field": "department",
+              "values": ["Health", "Environment"]
+            }
+          ]
+        }
+        ```
+
+        #### 📈 Range Search (Numeric)
+        Filters based on numeric values and supports various relational conditions.
+        - Supported `searchType` values:
+          - "betweenRange" → values: [min, max]
+          - "beforeRange" → values: [value] (less than)
+          - "afterRange" → values: [value] (greater than)
+        Example:
+        ```json
+        {
+          "searchType": "betweenRange",
+          "field": "dataReadiness",
+          "values": [50, 80]
+        }
+        ```
+
+        #### 🕒 Temporal Search
+        Filters based on ISO 8601 timestamps for temporal fields.
+        - Supported `searchType` values:
+          - "betweenTemporal" → values: ["startTime", "endTime"]
+          - "beforeTemporal" → values: ["timestamp"]
+          - "afterTemporal" → values: ["timestamp"]
+        Timestamps must be in ISO 8601 format (`YYYY-MM-DDTHH:mm:ss±hhmm`).
+        Example:
+        ```json
+        {
+          "searchType": "beforeTemporal",
+          "field": "itemCreatedAt",
+          "values": ["2025-04-30T00:00:00+0530"]
+        }
+        ```
+
+        #### Text Search
+        A full-text fuzzy search over indexed fields.
+        - Use the `q` field in the root body.
+        - Optional flags: `autoComplete`, `fuzzy`.
+
+        #### Complex Search
+        Multiple search types—text, property-based (`term`), temporal, and numeric range—can be combined together in a single request using the `searchCriteria` array. Each object in `searchCriteria` must include a `searchType`, the `field` to query, and the appropriate `values` for that type.
+
+        Text-based search can be combined with structured filters. It supports full-text fuzzy matching across indexed fields.
+
+        #### Supported fields for complex search:
+
+        - `q`: A free-form text string to perform full-text search across indexed fields.
+        - `fuzzy`: (Optional, boolean) Enables approximate/fuzzy matching.
+        - `autoComplete`: (Optional, boolean) Enables search-as-you-type behavior.
+
+        #### Supported `searchType` values in `searchCriteria`:
+
+        - `term`: Property-based filtering using exact or fuzzy match. Accepts one or more 
+        values. (OR logic on values.)
+        - `betweenTemporal`: Requires exactly **two** ISO 8601 datetime strings — interpreted as start and end time.
+        - `beforeTemporal`: Requires exactly **one** ISO 8601 datetime string — filters entries before the given time.
+        - `afterTemporal`: Requires exactly **one** ISO 8601 datetime string — filters entries after the given time.
+        - `betweenRange`: Requires exactly **two** numeric values — interpreted as lower and upper bounds.
+        - `beforeRange`: Requires exactly **one** numeric value — filters entries below the threshold.
+        - `afterRange`: Requires exactly **one** numeric value — filters entries above the threshold.
+
+        This unified format supports rich multi-dimensional filtering with both structured and unstructured (text) data.
+
+        #### Example:
+        ```json
+        {
+          "q": "satellite",
+          "fuzzy": true,
+          "autoComplete": true,
+          "searchCriteria": [
+            {
+              "searchType": "term",
+              "field": "type",
+              "values": ["adex:DataBank"]
+            },
+            {
+              "searchType": "betweenTemporal",
+              "field": "itemCreatedAt",
+              "values": ["2024-01-01T00:00:00+0530", "2025-01-01T00:00:00+0530"]
+            },
+            {
+               "searchType": "afterRange",
+               "field": "dataReadiness",
+               "values": [70]
+            }
+          ]
+        }
+        ```
+
+        #### Limits and Filters
+        - Results can be paginated using `limit` and `offset`.  
+          For example, `limit=100&offset=10` returns 100 results starting from the 11th.
+        - A subset of properties can be returned using the `filter` parameter.  
+          For example, `filter=[id]` returns only the `id` field for each document.
+        - The sum of `offset` and `limit` must be `<= 10000`.
+      operationId: search
+      parameters:
+        - name: instance
+          in: header
+          description: |
+            DX instance on which this query is to be made. Don't mention this if search on entire catalogue is to be made. Else mentioning a specific instance name here restricts search only to that instance.
+          required: false
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/SearchCriteriaRequest'
+                - $ref: '#/components/schemas/AutocompleteFuzzyTextSearchRequest'
+                - $ref: '#/components/schemas/ComplexSearchRequest'
+      responses:
+        '200':
+          description: All the query parameters yielded results.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/successResponseForAutocompleteFuzzyTextSearch'
+                  - $ref: '#/components/schemas/successResponseForSearchByItemType'
+                  - $ref: '#/components/schemas/successResponseForRangeSearch'
+                  - $ref: '#/components/schemas/successResponseForTemporalSearch'
+                  - $ref: '#/components/schemas/successResponseForComplexSearch'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/errorResponseForDiscovery'
+              examples:
+                Invalid Geo Value:
+                  value:
+                    type: 'urn:dx:cat:InvalidGeoValue'
+                    "title": "Geoquery value error"
+                    "detail": "Invalid value for a query param"
+                Invalid Syntax:
+                  value:
+                    "type": "urn:dx:cat:InvalidSyntax"
+                    "title": "Invalid Syntax"
+                    "detail": "Invalid value for a query param"
+                Invalid Syntax 1:
+                  value:
+                    "type": "urn:dx:cat:InvalidSyntax"
+                    "title": "Invalid Syntax"
+                    "detail": "Mandatory field(s) not provided"
+                Precision validation:
+                  value:
+                    "title": "failed"
+                    "type": "urn:dx:cat:InvalidPropertyValue"
+                    "detail": "The max point of 'coordinates' precision is 6"
+                Coordinate pair:
+                  value:
+                    "title": "failed"
+                    "type": "urn:dx:cat:InvalidPropertyValue"
+                    "detail": "The max number of 'coordinates' value is 10"
+                Max Distance limit:
+                  value:
+                    "title": "failed"
+                    "type": "urn:dx:cat:InvalidPropertyValue"
+                    "detail": "The 'maxDistance' should range between 0-10000m"
+                Coordinates value limit:
+                  value:
+                    "title": "failed"
+                    "type": "urn:dx:cat:InvalidPropertyValue"
+                    "detail": "Unable to parse 'coordinates'; value is Infinity"
+                Invalid request - Max string size:
+                  value:
+                    "title": "failed"
+                    "type": "urn:dx:cat:InvalidPropertyValue"
+                    "detail": "The max string(q) size supported is 100"
+                Bad filter:
+                  value:
+                    "title": "failed"
+                    "type": "urn:dx:cat:BadFilter"
+                    "detail": "The max number of 'filter' should be 10"
+                Exceed limit|offset value:
+                  value:
+                    "title": "failed"
+                    "type": "urn:dx:cat:InvalidPropertyValue"
+                    "detail": "The limit + offset should be between 1 to 10000"
+      servers:
+        - url: 'https://example-cat.com/iudx/cat/v1'
+          description: Production Instance
+      x-codeSamples:
+        - lang: cURL
+          label: search by item type
+          source: |
+            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "searchCriteria": [
+                {
+                  "searchType": "term",
+                  "field": "type",
+                  "values": ["adex:AiModel"]
+                }
+              ],
+              "filter": ["id"],
+              "limit": 100,
+              "offset": 0
+            }'
+        - lang: cURL
+          label: search by text
+          source: |
+            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "q": "sat",
+              "autoComplete": true,
+              "fuzzy": true,
+              "filter": ["id", "label", "name", "description", "tags"],
+              "limit": 100,
+              "offset": 0
+            }'
+        - lang: cURL
+          label: Temporal search
+          source: |
+            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "searchCriteria": [
+                {
+                  "searchType": "betweenTemporal",
+                  "field": "itemCreatedAt",
+                  "values": ["2025-03-20T04:00:00+0530", "2025-05-02T09:15:27+0530"]
+                },
+                {
+                  "searchType": "term",
+                  "field": "type",
+                  "values": ["adex:AiModel"]
+                }
+              ],
+              "filter": ["id","tags","itemCreatedAt"],
+              "limit": 50,
+              "offset": 0
+            }'
+        - lang: cURL
+          label: Range search
+          source: |
+            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "searchCriteria": [
+                {
+                  "searchType": "beforeRange",
+                  "field": "dataReadiness",
+                  "values": [85]
+                },
+                {
+                  "searchType": "term",
+                  "field": "type",
+                  "values": ["adex:DataBank"]
+                }
+              ],
+              "filter": ["id","dataReadiness","tags"],
+              "limit": 25,
+              "offset": 0
+            }'
+        - lang: cURL
+          label: complex search
+          source: |
+            curl --location --request POST 'https://example-cat.com/iudx/cat/v1/search' \
+            --header 'Content-Type: application/json' \
+            --data '{
+            "searchCriteria": [
+              {
+                "searchType": "term",
+                "field": "type",
+                "values": ["adex:DataBank"]
+              },
+              {
+                "searchType": "term",
+                "field": "department",
+                "values": ["Environment Forests Science and Technology"]
+              },
+              {
+                "searchType": "betweenTemporal",
+                "field": "itemCreatedAt",
+                "values": ["2024-04-20T04:00:00+0530", "2025-05-02T09:15:27+0530"]
+              },
+              {
+                "searchType": "betweenRange",
+                "field": "dataReadiness",
+                "values": [80, 84]
+              }
+            ],
+            "filter": ["id", "type", "department", "itemCreatedAt", "dataReadiness"]
+            }'
   /count:
     get:
       tags:
@@ -533,19 +865,27 @@ paths:
         - name: type
           in: path
           description: |
-            If entites, then type must be resource, resourceGroup, resourceServer, provider, cos, owner. If
-            properties then only tags is supported. Additionally all instances can also be listed
-            as `instance`.
+            If entities, then type must be resource, resourceGroup, resourceServer, provider, 
+            cos, owner. If properties then only tags, department, organizationType, fileFormat, 
+            dataReadiness are supported. Additionally all instances can also be listed as 
+            `instance`.
           required: true
           schema:
             enum:
               - tags
+              - department
+              - organizationType
+              - fileFormat
+              - dataReadiness
               - resourceServer
               - resourceGroup
               - instance
               - provider
               - cos
               - owner
+              - aiModel
+              - dataBank
+              - apps
             minLength: 4
             maxLength: 50
       responses:
@@ -559,9 +899,16 @@ paths:
                   - $ref: '#/components/schemas/listTypesOwner'
                   - $ref: '#/components/schemas/listTypesCos'
                   - $ref: '#/components/schemas/listTags'
+                  - $ref: '#/components/schemas/listDepartment'
+                  - $ref: '#/components/schemas/listOrganizationType'
+                  - $ref: '#/components/schemas/listFileFormat'
+                  - $ref: '#/components/schemas/listDataReadiness'
                   - $ref: '#/components/schemas/listResourceGroup'
                   - $ref: '#/components/schemas/listResourceServer'
                   - $ref: '#/components/schemas/listProviders'
+                  - $ref: '#/components/schemas/listAiModel'
+                  - $ref: '#/components/schemas/listDataBank'
+                  - $ref: '#/components/schemas/listApps'
         '400':
           description: Bad Request
           content:
@@ -576,6 +923,22 @@ paths:
           label: list by tags
           source: |
             curl --location --request GET 'https://example-cat.com/iudx/cat/v1/list/tags'
+        - lang: cURL
+          label: list by department
+          source: |
+            curl --location --request GET 'https://example-cat.com/iudx/cat/v1/list/department'
+        - lang: cURL
+          label: list by organizationType
+          source: |
+            curl --location --request GET 'https://example-cat.com/iudx/cat/v1/list/organizationType'
+        - lang: cURL
+          label: list by fileFormat
+          source: |
+            curl --location --request GET 'https://example-cat.com/iudx/cat/v1/list/fileFormat'
+        - lang: cURL
+          label: list by dataReadiness
+          source: |
+            curl --location --request GET 'https://example-cat.com/iudx/cat/v1/list/dataReadiness'
         - lang: cURL
           label: list by instance
           source: |
@@ -600,6 +963,135 @@ paths:
           label: by owner
           source: |
             curl --location --request GET 'https://example-cat.com/iudx/cat/v1/list/owner'
+        - lang: cURL
+          label: by aiModel
+          source: |
+            curl --location --request GET 'https://example-cat.com/iudx/cat/v1/list/aiModel'
+        - lang: cURL
+          label: by dataBank
+          source: |
+            curl --location --request GET 'https://example-cat.com/iudx/cat/v1/list/dataBank'
+        - lang: cURL
+          label: by apps
+          source: |
+            curl --location --request GET 'https://example-cat.com/iudx/cat/v1/list/apps'
+  '/list':
+    post:
+      tags:
+        - List
+      summary: List available filter values
+      description: |
+        Retrieve available filter values for specified indexed fields (e.g., tags, department, fileFormat, etc.) based on optional search criteria. 
+        This API is intended to assist user interfaces by listing current values from the catalogue, based on indexed fields in Elasticsearch.
+      operationId: listAvailableFilters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                searchCriteria:
+                  type: array
+                  description: Criteria used to narrow down filters (e.g., type of entity).
+                  items:
+                    type: object
+                    required:
+                      - field
+                      - values
+                    properties:
+                      field:
+                        type: string
+                        example: type
+                        description: Indexed field name to filter by.
+                      values:
+                        type: array
+                        items:
+                          type: string
+                        example: [ "adex:DataBank" ]
+                filter:
+                  type: array
+                  description: List of indexed fields for which values should be listed.
+                  items:
+                    type: string
+                  example: [ "tags", "department", "fileFormat" ]
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:cat:Success
+                  title:
+                    type: string
+                    example: Success
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties:
+                        type: array
+                        items:
+                          type: string
+                    example:
+                      - tags:
+                          - Transport
+                          - Community Health
+                          - Corporate
+                          - Geospatial
+                          - HR Analytics
+                          - Healthcare
+                          - Maternal Health
+                          - Network
+                          - Performance
+                          - Railway
+                          - Satellite
+                      - department:
+                          - Industries and Commerce
+                          - Environment Forests Science and Technology
+                          - Health Medical and Family Welfare
+                          - Home
+                      - fileFormat:
+                          - pdf
+                          - csv
+        '400':
+          description: Bad Request – Malformed request or unsupported filters.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    example: urn:dx:cat:InvalidSyntax
+                  title:
+                    type: string
+                    example: Invalid Syntax
+                  detail:
+                    type: string
+                    example: "Wrong Item Type"
+      servers:
+        - url: 'https://example-cat.com/iudx/cat/v1'
+          description: Production Instance
+      x-codeSamples:
+        - lang: cURL
+          label: list indexed filter values
+          source: |
+            curl --location 'https://example-cat.com/iudx/cat/v1/list' \
+            --header 'Content-Type: application/json' \
+            --data '{
+              "searchCriteria": [
+                {
+                  "field": "type",
+                  "values": ["adex:DataBank"]
+                }
+              ],
+              "filter": ["tags", "department", "organizationType", "fileFormat", "dataReadiness"]
+            }'
   /item:
     post:
       tags:
@@ -630,7 +1122,7 @@ paths:
                 - $ref: '#/components/schemas/exampleEntityResource'
                 - $ref: '#/components/schemas/exampleEntityAIModel'
                 - $ref: '#/components/schemas/exampleEntityDataBank'
-                - $ref: '#/components/schemas/exampleEntityAdexApps'
+                - $ref: '#/components/schemas/exampleEntityPotentialApps'
       responses:
         '201':
           description: Successfully inserted
@@ -646,7 +1138,7 @@ paths:
                   - $ref: '#/components/schemas/successResponseForCreateResourceEntity'
                   - $ref: '#/components/schemas/successResponseForCreateAIModelEntity'
                   - $ref: '#/components/schemas/successResponseForCreateDataBankResourceEntity'
-                  - $ref: '#/components/schemas/successResponseForCreateAdexAppsEntity'
+                  - $ref: '#/components/schemas/successResponseForCreatePotentialAppsEntity'
         '400':
           description: Invalid document
           content:
@@ -728,6 +1220,28 @@ paths:
            - itemStatus
         
         6. iudx:Owner
+           - id
+           - name
+           - type (1st element in array non-modifiable)
+           - itemStatus
+        
+        7. adex:DataBank
+           - id
+           - provider
+           - resourceGroup
+           - resourceServer
+           - name 
+           - type (1st element in array non-modifiable)
+           - itemStatus
+        
+        8. adex:AiModel
+           - id
+           - name
+           - provider
+           - type (1st element in array non-modifiable)
+           - itemStatus
+        
+        9. adex:Apps
            - id
            - name
            - type (1st element in array non-modifiable)
@@ -3395,6 +3909,211 @@ components:
           - pune
           - stqc
           - surat
+    AutocompleteFuzzyTextSearchRequest:
+      type: object
+      properties:
+        q:
+          type: string
+          description: The search query string for autocomplete.
+        autoComplete:
+          type: boolean
+          description: Enables autocomplete suggestions.
+        fuzzy:
+          type: boolean
+          description: Enables fuzzy matching for the search query.
+        filter:
+          type: array
+          items:
+            type: string
+          description: List of properties to include in the response (e.g., id, label, name, description, tags).
+        limit:
+          type: integer
+          description: Limit the number of records returned in the response.
+          minimum: 1
+        offset:
+          type: integer
+          description: Offset from where the next batch of results should be returned.
+          minimum: 0
+      required:
+        - q
+      example:
+        q: "sat"
+        autoComplete: true
+        fuzzy: true
+        filter:
+          - "id"
+          - "label"
+          - "name"
+          - "description"
+          - "tags"
+        limit: 100
+        offset: 0
+    SearchCriteriaRequest:
+      type: object
+      properties:
+        searchCriteria:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchCriteria'
+          description: List of property-based search criteria.
+          limit:
+            type: integer
+            description: Limit number of records in search response.
+            minimum: 1
+          offset:
+            type: integer
+            description: Offset from where the next batch of results should be returned.
+            minimum: 0
+          filter:
+            in: query
+            description: Filter properties to display. This is an array of strings.
+            schema:
+              type: array
+              maxItems: 10
+              items:
+                type: string
+      required:
+        - searchCriteria
+    TextSearchRequest:
+      type: object
+      properties:
+        q:
+          type: string
+          description: The search query string.
+        fuzzy:
+          type: boolean
+          description: Enables fuzzy matching.
+        autoComplete:
+          type: boolean
+          description: Enables autocomplete suggestions.
+        limit:
+          type: integer
+          description: Limit number of records in search response.
+          minimum: 1
+        offset:
+          type: integer
+          description: Offset from where the next batch of results should be returned.
+          minimum: 0
+        filter:
+          in: query
+          description: Filter properties to display. This is an array of strings.
+          schema:
+            type: array
+            maxItems: 10
+            items:
+              type: string
+      required:
+        - q
+    ComplexSearchRequest:
+      type: object
+      properties:
+        q:
+          type: string
+          description: The search query string.
+        fuzzy:
+          type: boolean
+          description: Enables fuzzy matching.
+        autoComplete:
+          type: boolean
+          description: Enables autocomplete suggestions.
+        searchCriteria:
+          type: array
+          items:
+            $ref: '#/components/schemas/SearchCriteria'
+          description: List of property-based search criteria.
+        limit:
+          type: integer
+          description: Limit number of records in search response.
+          minimum: 1
+        offset:
+          type: integer
+          description: Offset from where the next batch of results should be returned.
+          minimum: 0
+        filter:
+          in: query
+          description: Filter properties to display. This is an array of strings.
+          schema:
+            type: array
+            maxItems: 10
+            items:
+              type: string
+      required:
+        - q
+        - searchCriteria
+    SearchCriteria:
+      type: object
+      required:
+        - field
+        - searchType
+        - values
+      properties:
+        field:
+          type: string
+          description: Name of the property to filter.
+        searchType:
+          type: string
+          enum:
+            - term
+            - betweenTemporal
+            - beforeTemporal
+            - afterTemporal
+            - betweenRange
+            - beforeRange
+            - afterRange
+          description: |
+            Type of search to apply. Valid types:
+            - term: Property match
+            - betweenTemporal: ISO datetime range
+            - beforeTemporal: Before datetime
+            - afterTemporal: After datetime
+            - betweenRange: Numeric range
+            - beforeRange: Less than value
+            - afterRange: Greater than value
+        values:
+          type: array
+          items:
+            type: string
+          description: |
+            Values for the selected `searchType`. Required value format:
+            - `term`: One or more strings
+            - `betweenTemporal`: Two ISO date-time strings
+            - `beforeTemporal` / `afterTemporal`: One ISO date-time string
+            - `betweenRange`: Two numbers
+            - `beforeRange` / `afterRange`: One number
+    SearchResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          example: urn:dx:cat:Success
+        title:
+          type: string
+          example: Success
+        results:
+          type: array
+          items:
+            type: object
+            description: Search result item.
+      required:
+        - type
+        - title
+        - results
+    ErrorResponse:
+      type: object
+      properties:
+        type:
+          type: string
+          example: urn:dx:cat:InvalidRequest
+        title:
+          type: string
+          example: Invalid Request
+        detail:
+          type: string
+          example: The request payload is invalid.
+      required:
+        - type
+        - title
+        - detail
     listTypesErrorResponse:
       type: object
       title: Response for bad request
@@ -3447,6 +4166,111 @@ components:
           - "Platform"
           - "Resource"
           - "Server"
+    listDepartment:
+      type: object
+      title: Response for list department
+      description: API response when item type is department
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have
+            been triggered.
+        title:
+          description: A human readable title to the message response.
+        results:
+          type: array
+          description: Results which matched the query. This is an array of objects.
+          items:
+            type: object
+      required:
+        - type
+      example:
+        type: "urn:dx:cat:Success"
+        title: "Success"
+        results:
+          department:
+            - "Agriculture and Co-operation"
+            - "Environment, Forests, Science and Technology"
+            - "Higher Education"
+    listOrganizationType:
+      type: object
+      title: Response for list organizationType
+      description: API response when item type is organizationType
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have
+            been triggered.
+        title:
+          description: A human readable title to the message response.
+        results:
+          type: array
+          description: Results which matched the query. This is an array of objects.
+          items:
+            type: object
+      required:
+        - type
+      example:
+        type: "urn:dx:cat:Success"
+        title: "Success"
+        results:
+          organizationType:
+            - "Public"
+            - "Private"
+    listFileFormat:
+      type: object
+      title: Response for list fileFormat
+      description: API response when item type is fileFormat
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have
+            been triggered.
+        title:
+          description: A human readable title to the message response.
+        results:
+          type: array
+          description: Results which matched the query. This is an array of objects.
+          items:
+            type: object
+      required:
+        - type
+      example:
+        type: "urn:dx:cat:Success"
+        title: "Success"
+        results:
+          fileFormat:
+            - "csv"
+            - "pdf"
+    listDataReadiness:
+      type: object
+      title: Response for list dataReadiness
+      description: API response when item type is tags
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have
+            been triggered.
+        title:
+          description: A human readable title to the message response.
+        results:
+          type: array
+          description: Results which matched the query. This is an array of objects.
+          items:
+            type: object
+      required:
+        - type
+      example:
+        type: "urn:dx:cat:Success"
+        title: "Success"
+        results:
+          dataReadiness:
+            - "80"
+            - "85"
     listTypesOwner:
       type: object
       title: Response for list owner
@@ -3664,6 +4488,103 @@ components:
         results:
           - "0c0b1f45-7a5e-42a2-968d-27ec80649382"
           - "0e9f58de-8052-48c5-9e69-faa285c8b483"
+    listAiModel:
+      type: object
+      title: Response for list AiModel
+      description: List AiModel
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have
+            been triggered.
+        title:
+          description: A human-readable title for the message response.
+        totalHits:
+          type: integer
+          description: Total number of documents that matched the query.
+          format: int32
+        results:
+          type: array
+          description: Results that matched the query. This is an array of provider IDs.
+          items:
+            type: string
+      required:
+        - type
+        - totalHits
+        - results
+      example:
+        type: "urn:dx:cat:Success"
+        title: "Success"
+        totalHits: 3
+        results:
+          - "2b1a2e8d-45f4-43a1-9e8e-d1f8ad1002bb"
+          - "a4e3b98f-d073-4a2f-8587-e8d1718f2a89"
+          - "d7d34f8d-8cd4-4a68-8a4d-3b7fc5e8bb13"
+    listDataBank:
+      type: object
+      title: Response for list dataBank
+      description: List DataBank
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have
+            been triggered.
+        title:
+          description: A human-readable title for the message response.
+        totalHits:
+          type: integer
+          description: Total number of documents that matched the query.
+          format: int32
+        results:
+          type: array
+          description: Results that matched the query. This is an array of provider IDs.
+          items:
+            type: string
+      required:
+        - type
+        - totalHits
+        - results
+      example:
+        type: "urn:dx:cat:Success"
+        title: "Success"
+        totalHits: 2
+        results:
+          - "28653cd7-9715-47d5-b12b-9d725ecfcad0"
+          - "32cf54e7-be31-474c-ae4c-3d41e556dd2d"
+    listApps:
+      type: object
+      title: Response for list apps
+      description: List Apps
+      properties:
+        type:
+          type: string
+          description: |
+            URN type of the response indicating if the query was successful or if any errors have
+            been triggered.
+        title:
+          description: A human-readable title for the message response.
+        totalHits:
+          type: integer
+          description: Total number of documents that matched the query.
+          format: int32
+        results:
+          type: array
+          description: Results that matched the query. This is an array of provider IDs.
+          items:
+            type: string
+      required:
+        - type
+        - totalHits
+        - results
+      example:
+        type: "urn:dx:cat:Success"
+        title: "Success"
+        totalHits: 2
+        results:
+          - "a4e2f75c-91b7-4b6e-9de1-78f6c9f84e63"
+          - "b57f5f7e-596f-4c4f-9128-5d4d2454b141"
     invalidIdErrorResponse:
       type: object
       title: Invalid ID
@@ -4133,6 +5054,8 @@ components:
         label:
           type: string
           maxLength: 512
+        shortDescription:
+          type: string
         description:
           type: string
         tags:
@@ -4144,40 +5067,56 @@ components:
           pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
         accessPolicy:
           type: string
-          pattern: '^(RESTRICTED|OPEN|PII|restricted|open|pii)$'
+          pattern: '^(RESTRICTED|OPEN|PRIVATE|restricted|open|private)$'
         organizationType:
           type: string
-          enum: [ 'Private', 'Government' ]
+          enum: [ 'Private', 'Public', 'Academic Institution' ]
         department:
           type: string
         modelType:
           type: string
         fileFormat:
           type: string
-        required:
-          - type
-          - name
-          - label
-          - description
-          - tags
-          - provider
-          - accessPolicy
-          - organizationType
-          - department
-          - modelType
-          - fileFormat
+        industry:
+          type: string
+        uploadedBy:
+          type: string
+        license:
+          type: string
+        fileSize:
+          type: string
+      required:
+        - type
+        - name
+        - label
+        - shortDescription
+        - description
+        - tags
+        - provider
+        - accessPolicy
+        - organizationType
+        - department
+        - modelType
+        - fileFormat
+        - industry
+        - uploadedBy
+        - license
+        - fileSize
       example:
         '@context': 'https://voc.iudx.org.in/'
-        id: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+        id: '8b95ab80-2aaf-4636-a65e-7f2563d0d371'
         type:
           - 'adex:AiModel'
         name: 'ai-model-crop'
         label: 'Test-Crop Disease Detection Model'
+        shortDescription: 'Detects diseases in crop leaves using image classification.'
         description: 'A test AI model for detecting crop disease with the help of infected leaf images.'
         tags:
           - ai
           - ml
           - model
+          - aimodel
+          - mlmodel
           - ai-model
           - ml-model
           - machine
@@ -4191,10 +5130,14 @@ components:
         department: 'Agriculture and Co-operation'
         modelType: 'ImageClassifier'
         fileFormat: 'ipynb'
+        industry: 'Agriculture'
+        uploadedBy: 'john.doe@datakaveri.org'
+        license: 'MIT'
+        fileSize: '15MB'
     exampleEntityWIdDataBankResource:
       type: object
-      title: data bank resource entity
-      description: payload for update item with ID
+      title: Data Bank Resource Entity
+      description: Payload for updating item with ID
       properties:
         '@context':
           type: string
@@ -4208,6 +5151,12 @@ components:
           type: string
         description:
           type: string
+        shortDescription:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
         provider:
           type: string
           format: uuid
@@ -4217,10 +5166,6 @@ components:
         resourceServer:
           type: string
           format: uuid
-        tags:
-          type: array
-          items:
-            type: string
         accessPolicy:
           type: string
         organizationType:
@@ -4228,11 +5173,31 @@ components:
         fileFormat:
           type: string
         dataReadiness:
+          type: integer
+          minimum: 0
+          maximum: 100
+        industry:
+          type: string
+        uploadedBy:
+          type: string
+        geoCoverage:
+          type: string
+        yearRange:
+          type: string
+        verifiedBy:
+          type: string
+        uploadFrequency:
+          type: string
+        license:
           type: string
         department:
           type: string
         resourceType:
           type: string
+          enum:
+            - MESSAGESTREAM
+            - STATIC
+            - API
         adexResourceAPIs:
           type: array
           items:
@@ -4255,10 +5220,11 @@ components:
         - name
         - label
         - description
+        - shortDescription
+        - tags
         - provider
         - resourceGroup
         - resourceServer
-        - tags
         - accessPolicy
         - organizationType
         - fileFormat
@@ -4270,25 +5236,40 @@ components:
         - location
         - dataDescriptor
         - dataSample
+        - industry
+        - uploadedBy
+        - geoCoverage
+        - yearRange
+        - verifiedBy
+        - uploadFrequency
+        - license
       example:
         '@context': 'https://voc.iudx.org.in/'
         type:
           - 'adex:DataBank'
         name: subdistrict-weather-info
         label: Subdistrict Weather Info
-        description: Weather related statistics like rainfall and temperature for subdistricts.
-        provider: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
-        resourceGroup: '96bc97bf-504e-4306-bb49-99d77896cf1d'
-        resourceServer: '{{UUID}}'
+        description: Weather-related statistics like rainfall and temperature for subdistricts.
+        shortDescription: A short description about the item
         tags:
           - environment
           - weather
           - rainfall
           - temperature
+        provider: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+        resourceGroup: '96bc97bf-504e-4306-bb49-99d77896cf1d'
+        resourceServer: '85bc97bf-904f-2306-gb49-89d77896cf2e'
         accessPolicy: RESTRICTED
         organizationType: Private
         fileFormat: .xlsx
-        dataReadiness: More than 80%
+        dataReadiness: 80
+        industry: Climate Research
+        uploadedBy: 'john.doe@datakaveri.org'
+        geoCoverage: Pan India
+        yearRange: '2015-2023'
+        verifiedBy: 'Ministry of Earth Sciences'
+        uploadFrequency: Weekly
+        license: CC-BY 4.0
         department: Department of IT, Electronics and Communication
         resourceType: MESSAGESTREAM
         adexResourceAPIs:
@@ -4325,34 +5306,92 @@ components:
           type: array
           items:
             type: string
-        label:
-          type: string
-          maxLength: 512
-        description:
-          type: string
         tags:
           type: array
           items:
             type: string
+        label:
+          type: string
+          maxLength: 512
+        shortDescription:
+          type: string
+        description:
+          type: string
         organizationType:
           type: string
-          enum: [ 'Private', 'Government' ]
+          enum: [ 'Private', 'Public', 'Academic Institution' ]
         department:
           type: string
+        canBeUsedFor:
+          type: object
+          propertyNames:
+            type: string
+            maxLength: 100
+          additionalProperties:
+            type: string
+            maxLength: 300
+          maxProperties: 5
+        dataInputsAndAiTechniques:
+          type: object
+          properties:
+            Input Data Banks:
+              type: array
+              items:
+                type: string
+                maxLength: 200
+            Expected Output:
+              type: array
+              items:
+                type: string
+                maxLength: 200
+            AI Models:
+              type: array
+              items:
+                type: string
+                maxLength: 200
+            Potential Benefits:
+              type: array
+              items:
+                type: string
+                maxLength: 200
+          required:
+            - Input Data Banks
+            - Expected Output
+            - AI Models
+            - Potential Benefits
+          additionalProperties: false
+        itemStatus:
+          type: string
+          enum: [ 'ACTIVE', 'INACTIVE' ]
+        itemCreatedAt:
+          type: string
+          format: date-time
+        uploadedBy:
+          type: string
+          format: email
+        fileFormat:
+          type: string
+        accessPolicy:
+          type: string
+          enum: [ 'Public', 'Private' ]
       required:
-        - type
         - name
-        - label
-        - description
+        - type
         - tags
+        - label
+        - shortDescription
+        - description
         - organizationType
         - department
+        - uploadedBy
+        - fileFormat
+        - accessPolicy
+        - canBeUsedFor
+        - dataInputsAndAiTechniques
       example:
         type:
           - 'adex:Apps'
         name: 'crop-disease-app'
-        label: 'Test-Crop Disease Detection Model'
-        description: 'A test potential application item for detecting crop disease with the help of infected leaf images.'
         tags:
           - ai
           - ml
@@ -4364,8 +5403,32 @@ components:
           - machine learning
           - training
           - algorithm
+        label: 'Test-Crop Disease Detection Model'
+        shortDescription: 'A test potential application item for detecting crop disease'
+        description: 'A test potential application item for detecting crop disease with the help of infected leaf images.'
         organizationType: 'Private'
         department: 'Agriculture and Co-operation'
+        uploadedBy: 'cdpg@datakaveri.org'
+        fileFormat: 'xlsx'
+        accessPolicy: 'Public'
+        canBeUsedFor:
+          cropMonitoring: 'Detect and classify diseases in crops using image input'
+          yieldOptimization: 'Improve crop yield by early detection of diseases'
+        dataInputsAndAiTechniques:
+          Input Data Banks:
+            - 'Annotated Leaf Image Dataset'
+            - 'Crop Type Classification Data'
+          Expected Output:
+            - 'Disease Type'
+            - 'Confidence Score'
+            - 'Recommended Treatment'
+          AI Models:
+            - 'Convolutional Neural Networks'
+            - 'Transfer Learning'
+          Potential Benefits:
+            - 'Early detection of crop diseases'
+            - 'Reduction in crop loss'
+            - 'Better planning and resource allocation'
     updateItemResponse:
       type: object
       title: Response for update Item
@@ -5127,7 +6190,7 @@ components:
               description: Tags associated with the AI Model item
             accessPolicy:
               type: string
-              pattern: "^(RESTRICTED|OPEN|PII|restricted|open|pii)$"
+              pattern: "^(RESTRICTED|OPEN|PRIVATE|restricted|open|private)$"
               description: Access policy for the model
             label:
               type: string
@@ -5157,43 +6220,57 @@ components:
               format: date-time
               description: Creation timestamp of the model item
           required:
-            - '@context'
-            - id
-            - type
             - name
-            - provider
-            - tags
-            - accessPolicy
+            - type
             - label
+            - shortDescription
             - description
+            - tags
+            - provider
+            - accessPolicy
             - organizationType
             - department
             - modelType
             - fileFormat
-            - itemStatus
-            - itemCreatedAt
+            - industry
+            - uploadedBy
+            - license
+            - fileSize
       example:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         detail: 'Success: Item created'
         results:
-          '@context': "https://voc.iudx.org.in/"
-          id: "bc87aba4-0dcf-4c07-b9e4-55bdf683ae2a"
+          '@context': 'https://voc.iudx.org.in/'
+          id: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+          ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
           type:
-            - "adex:AiModel"
-          name: "ai-model-crop"
-          provider: "8fe8d1dd-ae51-4ff8-b995-13bce85d9d88"
+            - 'adex:AiModel'
+          name: 'ai-model-crop'
+          label: 'Test-Crop Disease Detection Model'
+          shortDescription: 'Detects diseases in crop leaves using image classification.'
+          description: 'A test AI model for detecting crop disease with the help of infected leaf images.'
           tags:
-            - "ai"
-            - "ml"
-            - "model"
-          accessPolicy: "RESTRICTED"
-          label: "Test-Crop Disease Detection Model"
-          description: "An test AI model for detecting crop disease with the help of infected leaf images."
-          organizationType: "Private"
-          department: "Agriculture and Co-operation"
-          modelType: "ImageClassifier"
-          fileFormat: "ipynb"
+            - ai
+            - ml
+            - model
+            - ai-model
+            - ml-model
+            - machine
+            - learning
+            - machine learning
+            - training
+            - algorithm
+          provider: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+          accessPolicy: 'RESTRICTED'
+          organizationType: 'Private'
+          department: 'Agriculture and Co-operation'
+          modelType: 'ImageClassifier'
+          fileFormat: 'ipynb'
+          industry: 'Agriculture'
+          uploadedBy: 'john.doe@datakaveri.org'
+          license: 'MIT'
+          fileSize: '15MB'
           itemStatus: "ACTIVE"
           itemCreatedAt: "2024-01-05T02:09:10+0530"
     successResponseForCreateDataBankResourceEntity:
@@ -5255,6 +6332,7 @@ components:
             - name
             - type
             - label
+            - shortDescription
             - description
             - tags
             - provider
@@ -5271,6 +6349,13 @@ components:
             - location
             - dataDescriptor
             - dataSample
+            - industry
+            - uploadedBy
+            - geoCoverage
+            - yearRange
+            - verifiedBy
+            - uploadFrequency
+            - license
       example:
         type: 'urn:dx:cat:Success'
         title: 'Success'
@@ -5280,7 +6365,10 @@ components:
           type:
             - "adex:DataBank"
           id: "e27a1f6c-6a1b-45b8-a9f5-0c7424d1f0d1"
+          ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
+          name: 'subdistrict-weather-info'
           label: 'Weather insights for subdistricts'
+          shortDescription: 'A short description about the dataset'
           description: 'Dataset providing weather information such as temperature and rainfall for subdistricts across a state.'
           tags:
             - environment
@@ -5292,8 +6380,8 @@ components:
           resourceServer: '{{UUID}}'
           accessPolicy: 'RESTRICTED'
           organizationType: 'Private'
-          fileFormat: '.xlsx'
-          dataReadiness: 'More than 80%'
+          fileFormat: 'xlsx'
+          dataReadiness: 85
           department: 'Department of IT, Electronics and Communication'
           resourceType: 'MESSAGESTREAM'
           adexResourceAPIs:
@@ -5302,6 +6390,13 @@ components:
           iudxResourceAPIs:
             - 'TEMPORAL'
             - 'ATTR'
+          industry: 'Climate Research'
+          uploadedBy: 'john.doe@datakaveri.org'
+          geoCoverage: 'Karnataka'
+          yearRange: '2015-2023'
+          verifiedBy: 'Ministry of Earth Sciences'
+          uploadFrequency: 'Weekly'
+          license: 'CC-BY 4.0'
           location:
             type: 'Place'
             address: 'Subdistrict HQ, Karnataka'
@@ -5323,12 +6418,26 @@ components:
               unitCode: 'MMT'
               unitText: 'Millimeter'
               dataSchema: 'float'
+            observationDateTime:
+              type: [ 'iudx:ObservationDateTime' ]
+              description: 'Datetime of weather observation'
+              dataSchema: 'datetime'
           dataSample:
-            SomeKey: 'SomeValue'
+            districtCode: 'KA-01'
+            subDistrictCode: 'KA-01-001'
+            precipitation: 5.2
+            airTemperature:
+              maxOverTime: 33.5
+              minOverTime: 22.1
+            relativeHumidity:
+              maxOverTime: 90.2
+              minOverTime: 45.3
             observationDateTime: '2023-02-03T08:30:00+05:30'
-    successResponseForCreateAdexAppsEntity:
+          itemStatus: "ACTIVE"
+          itemCreatedAt: "2024-01-05T02:09:10+0530"
+    successResponseForCreatePotentialAppsEntity:
       type: object
-      title: ADeX App Entity
+      title: Potential Applications Entity
       description: An ADeX Potential Application item is successfully created
       properties:
         type:
@@ -5389,33 +6498,66 @@ components:
               format: date-time
               description: Creation timestamp of the application item
           required:
-            - type
             - name
+            - type
             - tags
             - label
+            - shortDescription
             - description
             - organizationType
             - department
+            - uploadedBy
+            - fileFormat
+            - accessPolicy
+            - canBeUsedFor
+            - dataInputsAndAiTechniques
       example:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         detail: 'Success: Item created'
         results:
           '@context': "https://voc.iudx.org.in/"
-          id: "d4fbe5b2-04b0-4a0a-a865-9fef27a5c48e"
+          id: 'f2c6a437-8109-4a2c-8923-efc2a9e6df1d'
           type:
-            - "adex:Apps"
-          name: "agri-disease-detection"
+            - 'adex:Apps'
+          name: 'crop-disease-detector-app'
+          label: 'Crop Disease Detection Application'
+          shortDescription: 'An AI-powered application to detect crop diseases early using leaf imagery.'
+          description: 'A potential application designed to detect crop diseases from infected leaf images using AI/ML models. It supports early intervention and yield optimization by analyzing input data and recommending treatments.'
           tags:
-            - "ai"
-            - "ml"
-            - "crop"
-            - "disease"
-            - "learning"
-          label: "Crop Disease Detection App"
-          description: "An application for detecting crop diseases using AI-based models trained on infected leaf images."
-          organizationType: "Private"
-          department: "Agriculture and Co-operation"
+            - ai
+            - ml
+            - model
+            - ai-model
+            - ml-model
+            - machine
+            - learning
+            - machine learning
+            - training
+            - algorithm
+          organizationType: 'Private'
+          department: 'Agriculture and Co-operation'
+          uploadedBy: 'cdpg@datakaveri.org'
+          fileFormat: 'xlsx'
+          accessPolicy: 'Public'
+          canBeUsedFor:
+            cropMonitoring: 'Detect and classify diseases in crops using image input'
+            yieldOptimization: 'Improve crop yield by early detection of diseases'
+          dataInputsAndAiTechniques:
+            Input Data Banks:
+              - 'Annotated Leaf Image Dataset'
+              - 'Crop Type Classification Data'
+            Expected Output:
+              - 'Disease Type'
+              - 'Confidence Score'
+              - 'Recommended Treatment'
+            AI Models:
+              - 'Convolutional Neural Networks'
+              - 'Transfer Learning'
+            Potential Benefits:
+              - 'Early detection of crop diseases'
+              - 'Reduction in crop loss'
+              - 'Better planning and resource allocation'
           itemStatus: "ACTIVE"
           itemCreatedAt: "2024-01-05T02:09:10+0530"
     successResponseForUpdateOwnerEntity:
@@ -5673,8 +6815,7 @@ components:
       properties:
         type:
           type: string
-          description: |
-            URN type of the response indicating if the query was successful or if any errors have been triggered
+          description: URN type of the response indicating if the query was successful or if any errors have been triggered
         title:
           type: string
           description: A human-readable title for the message response
@@ -5684,97 +6825,108 @@ components:
         results:
           type: object
           properties:
-            "@context":
+            '@context':
               type: string
               format: uri
-              description: JSON-LD context URI
+            id:
+              type: string
+              pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
+            name:
+              type: string
+              pattern: '^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$'
+              maxLength: 512
             type:
               type: array
               items:
                 type: string
-              description: Type tags from the ADeX vocabulary
-            id:
-              type: string
-              pattern: "^[a-zA-Z0-9\\-]{36}$"
-              description: Unique identifier of the model item
-            name:
+            label:
               type: string
               maxLength: 512
-              pattern: "^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$"
-              description: Name of the model
-            provider:
+            shortDescription:
               type: string
-              maxLength: 36
-              pattern: "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
-              description: UUID of the provider
+            description:
+              type: string
             tags:
               type: array
               items:
                 type: string
-              description: Tags related to the model
+            provider:
+              type: string
+              pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
             accessPolicy:
               type: string
-              pattern: "^(RESTRICTED|OPEN|PII|restricted|open|pii)$"
-              description: Access policy for the model
-            label:
-              type: string
-              maxLength: 512
-              description: User-friendly label for the model
-            description:
-              type: string
-              description: Detailed description of the model
+              pattern: '^(RESTRICTED|OPEN|PRIVATE|restricted|open|private)$'
             organizationType:
               type: string
-              description: Type of organization providing the model
+              enum: [ 'Private', 'Public', 'Academic Institution' ]
             department:
               type: string
-              description: Department name
             modelType:
               type: string
-              description: Type of model (e.g., ImageClassifier, TimeSeriesPredictor)
             fileFormat:
               type: string
-              description: File format of the model
-            itemStatus:
+            industry:
               type: string
-              enum: [ "ACTIVE", "INACTIVE" ]
-              description: Current status of the model
-            itemCreatedAt:
+            uploadedBy:
               type: string
-              format: date-time
-              description: Creation timestamp of the model item
-      required:
-        - type
+            license:
+              type: string
+            fileSize:
+              type: string
+          required:
+            - type
+            - name
+            - label
+            - shortDescription
+            - description
+            - tags
+            - provider
+            - accessPolicy
+            - organizationType
+            - department
+            - modelType
+            - fileFormat
+            - industry
+            - uploadedBy
+            - license
+            - fileSize
       example:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         detail: 'Success: Item updated successfully'
         results:
-          "@context": "https://voc.iudx.org.in/"
-          type: [ "adex:AiModel" ]
-          id: "6e58c916-f6c1-448d-acea-756f3272bc57"
-          name: "ai-model-crop"
-          provider: "337545aa-1fa5-4ca0-bf3d-072144dec5b6"
+          '@context': 'https://voc.iudx.org.in/'
+          id: '8b95ab80-2aaf-4636-a65e-7f2563d0d371'
+          type:
+            [ 'adex:AiModel' ]
+          name: 'ai-model-crop'
+          label: 'Test-Crop Disease Detection Model'
+          shortDescription: 'Detects diseases in crop leaves using image classification.'
+          description: 'A test AI model for detecting crop disease with the help of infected leaf images.'
           tags:
-            - "ai"
-            - "ml"
-            - "model"
-            - "aimodel"
-            - "mlmodel"
-            - "ai-model"
-            - "ml-model"
-            - "machine"
-            - "learning"
-            - "machine learning"
-            - "training"
-            - "algorithm"
-          accessPolicy: "RESTRICTED"
-          label: "Test-Crop Disease Detection Model"
-          description: "An test AI model for detecting crop disease with the help of infected leaf images."
-          organizationType: "Private"
-          department: "Agriculture and Co-operation"
-          modelType: "ImageClassifier"
-          fileFormat: "ipynb"
+            - ai
+            - ml
+            - model
+            - aimodel
+            - mlmodel
+            - ai-model
+            - ml-model
+            - machine
+            - learning
+            - machine learning
+            - training
+            - algorithm
+          provider: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+          accessPolicy: 'RESTRICTED'
+          organizationType: 'Private'
+          department: 'Agriculture and Co-operation'
+          modelType: 'ImageClassifier'
+          fileFormat: 'ipynb'
+          industry: 'Agriculture'
+          uploadedBy: 'john.doe@datakaveri.org'
+          ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
+          license: 'MIT'
+          fileSize: '15MB'
           itemStatus: "ACTIVE"
           itemCreatedAt: "2024-01-07T04:53:31+0530"
     successResponseForUpdateDataBankEntity:
@@ -5794,7 +6946,7 @@ components:
         results:
           type: object
           properties:
-            "@context":
+            '@context':
               type: string
             type:
               type: array
@@ -5802,81 +6954,152 @@ components:
                 type: string
             name:
               type: string
-            provider:
+            label:
+              type: string
+            description:
+              type: string
+            shortDescription:
               type: string
             tags:
               type: array
               items:
                 type: string
-            accessPolicy:
+            provider:
               type: string
+              format: uuid
             resourceGroup:
+              type: string
+              format: uuid
+            resourceServer:
+              type: string
+              format: uuid
+            accessPolicy:
               type: string
             organizationType:
               type: string
             fileFormat:
               type: string
             dataReadiness:
+              type: integer
+              minimum: 0
+              maximum: 100
+            industry:
+              type: string
+            uploadedBy:
+              type: string
+            geoCoverage:
+              type: string
+            yearRange:
+              type: string
+            verifiedBy:
+              type: string
+            uploadFrequency:
+              type: string
+            license:
               type: string
             department:
               type: string
             resourceType:
               type: string
+              enum:
+                - MESSAGESTREAM
+                - STATIC
+                - API
             adexResourceAPIs:
+              type: array
+              items:
+                type: string
+            iudxResourceAPIs:
               type: array
               items:
                 type: string
             location:
               type: object
+              additionalProperties: true
             dataDescriptor:
               type: object
+              additionalProperties: true
             dataSample:
               type: object
-            id:
-              type: string
-            itemStatus:
-              type: string
-            itemCreatedAt:
-              type: string
+              additionalProperties: true
           required:
             - type
-      required:
-        - type
+            - name
+            - label
+            - description
+            - shortDescription
+            - tags
+            - provider
+            - resourceGroup
+            - resourceServer
+            - accessPolicy
+            - organizationType
+            - fileFormat
+            - dataReadiness
+            - department
+            - resourceType
+            - adexResourceAPIs
+            - iudxResourceAPIs
+            - location
+            - dataDescriptor
+            - dataSample
+            - industry
+            - uploadedBy
+            - geoCoverage
+            - yearRange
+            - verifiedBy
+            - uploadFrequency
+            - license
       example:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         results:
-          "@context": "https://voc.iudx.org.in/"
+          '@context': 'https://voc.iudx.org.in/'
           type:
-            - "adex:DataBank"
-          name: "subdistrict-weather-info"
-          provider: "337545aa-1fa5-4ca0-bf3d-072144dec5b6"
+            - 'adex:DataBank'
+          name: subdistrict-weather-info
+          label: Subdistrict Weather Info
+          description: Weather-related statistics like rainfall and temperature for subdistricts.
+          shortDescription: A short description about the item
           tags:
-            - "environment"
-            - "weather"
-            - "rainfall"
-            - "temperature"
-          accessPolicy: "RESTRICTED"
-          resourceGroup: "96bc97bf-504e-4306-bb49-99d77896cf1d"
-          organizationType: "Private"
-          fileFormat: ".xlsx"
-          dataReadiness: "More than 80%"
-          department: "Department of IT, Electronics and Communication"
-          resourceType: "MESSAGESTREAM"
+            - environment
+            - weather
+            - rainfall
+            - temperature
+          provider: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+          resourceGroup: '96bc97bf-504e-4306-bb49-99d77896cf1d'
+          resourceServer: '85bc97bf-904f-2306-gb49-89d77896cf2e'
+          ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
+          accessPolicy: RESTRICTED
+          organizationType: Private
+          fileFormat: .xlsx
+          dataReadiness: 80
+          industry: Climate Research
+          uploadedBy: 'john.doe@datakaveri.org'
+          geoCoverage: Pan India
+          yearRange: '2015-2023'
+          verifiedBy: 'Ministry of Earth Sciences'
+          uploadFrequency: Weekly
+          license: CC-BY 4.0
+          department: Department of IT, Electronics and Communication
+          resourceType: MESSAGESTREAM
           adexResourceAPIs:
-            - "TEMPORAL"
-            - "ATTR"
+            - TEMPORAL
+            - ATTR
+          iudxResourceAPIs:
+            - TEMPORAL
+            - LOCATION
           location:
-            SomeKey: "SomeValue"
+            latitude: 12.9716
+            longitude: 77.5946
           dataDescriptor:
-            SomeKey: "SomeValue"
+            schema: Custom schema here
           dataSample:
-            SomeKey: "SomeValue"
-            observationDateTime: "2023-02-03T08:30:00+05:30"
-          id: "6e58c916-f6c1-448d-acea-756f3272bc57"
+            temperature: 24
+            rainfall: 5
+            observationDateTime: '2023-02-03T08:30:00+05:30'
           itemStatus: "ACTIVE"
           itemCreatedAt: "2024-01-07T04:53:31+0530"
-        detail: "Success: Item updated successfully"
     successResponseForUpdateAdexAppsEntity:
       type: object
       title: ADeX Potential Application Entity
@@ -5895,52 +7118,102 @@ components:
         results:
           type: object
           properties:
-            "@context":
+            '@context':
               type: string
               format: uri
-              description: JSON-LD context URI
+            id:
+              type: string
+              pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
+            name:
+              type: string
+              pattern: '^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$'
+              maxLength: 512
             type:
               type: array
               items:
                 type: string
-              description: Type tags from the ADeX vocabulary
-            id:
-              type: string
-              pattern: "^[a-zA-Z0-9\\-]{36}$"
-              description: Unique identifier of the application item
-            name:
-              type: string
-              maxLength: 512
-              pattern: "^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$"
-              description: Name of the potential application
             tags:
               type: array
               items:
                 type: string
-              description: Tags related to the application
             label:
               type: string
               maxLength: 512
-              description: User-friendly label for the application
+            shortDescription:
+              type: string
             description:
               type: string
-              description: Detailed description of the application
             organizationType:
               type: string
-              description: Type of organization providing the application
+              enum: [ 'Private', 'Public', "Academic Institution" ]
             department:
               type: string
-              description: Department name
+            canBeUsedFor:
+              type: object
+              propertyNames:
+                type: string
+                maxLength: 100
+              additionalProperties:
+                type: string
+                maxLength: 300
+              maxProperties: 5
+            dataInputsAndAiTechniques:
+              type: object
+              properties:
+                Input Data Banks:
+                  type: array
+                  items:
+                    type: string
+                    maxLength: 200
+                Expected Output:
+                  type: array
+                  items:
+                    type: string
+                    maxLength: 200
+                AI Models:
+                  type: array
+                  items:
+                    type: string
+                    maxLength: 200
+                Potential Benefits:
+                  type: array
+                  items:
+                    type: string
+                    maxLength: 200
+              required:
+                - Input Data Banks
+                - Expected Output
+                - AI Models
+                - Potential Benefits
+              additionalProperties: false
             itemStatus:
               type: string
-              enum: [ "ACTIVE", "INACTIVE" ]
-              description: Current status of the application
+              enum: [ 'ACTIVE', 'INACTIVE' ]
             itemCreatedAt:
               type: string
               format: date-time
-              description: Creation timestamp of the application item
-      required:
-        - type
+            uploadedBy:
+              type: string
+              format: email
+            fileFormat:
+              type: string
+            accessPolicy:
+              type: string
+              enum: [ 'Public', 'Private' ]
+          required:
+            - name
+            - type
+            - tags
+            - label
+            - shortDescription
+            - description
+            - organizationType
+            - department
+            - uploadedBy
+            - fileFormat
+            - accessPolicy
+            - canBeUsedFor
+            - dataInputsAndAiTechniques
       example:
         type: 'urn:dx:cat:Success'
         title: 'Success'
@@ -5949,24 +7222,44 @@ components:
           "@context": "https://voc.iudx.org.in/"
           type: [ "adex:Apps" ]
           id: "8b95ab80-2aaf-4636-a65e-7f2563d0d371"
-          name: "some-name"
+          name: 'crop-disease-app'
           tags:
-            - "ai"
-            - "ml"
-            - "model"
-            - "aimodel"
-            - "mlmodel"
-            - "ai-model"
-            - "ml-model"
-            - "machine"
-            - "learning"
-            - "machine learning"
-            - "training"
-            - "algorithm"
-          label: "Test-Crop Disease Detection Model"
-          description: "An test potential application item for detecting crop disease with the help of infected leaf images."
-          organizationType: "Private"
-          department: "Agriculture and Co-operation"
+            - ai
+            - ml
+            - model
+            - ai-model
+            - ml-model
+            - machine
+            - learning
+            - machine learning
+            - training
+            - algorithm
+          label: 'Test-Crop Disease Detection Model'
+          shortDescription: 'A test potential application item for detecting crop disease'
+          description: 'A test potential application item for detecting crop disease with the help of infected leaf images.'
+          organizationType: 'Private'
+          department: 'Agriculture and Co-operation'
+          uploadedBy: 'cdpg@datakaveri.org'
+          fileFormat: 'xlsx'
+          accessPolicy: 'Public'
+          canBeUsedFor:
+            cropMonitoring: 'Detect and classify diseases in crops using image input'
+            yieldOptimization: 'Improve crop yield by early detection of diseases'
+          dataInputsAndAiTechniques:
+            Input Data Banks:
+              - 'Annotated Leaf Image Dataset'
+              - 'Crop Type Classification Data'
+            Expected Output:
+              - 'Disease Type'
+              - 'Confidence Score'
+              - 'Recommended Treatment'
+            AI Models:
+              - 'Convolutional Neural Networks'
+              - 'Transfer Learning'
+            Potential Benefits:
+              - 'Early detection of crop diseases'
+              - 'Reduction in crop loss'
+              - 'Better planning and resource allocation'
           itemStatus: "ACTIVE"
           itemCreatedAt: "2024-01-07T04:53:31+0530"
     successResponseForGetOwnerEntity:
@@ -6265,7 +7558,7 @@ components:
               description: Tags describing the model
             accessPolicy:
               type: string
-              pattern: "^(RESTRICTED|OPEN|PII|restricted|open|pii)$"
+              pattern: "^(RESTRICTED|OPEN|PRIVATE|restricted|open|private)$"
               description: Access policy for the model
             label:
               type: string
@@ -6301,33 +7594,38 @@ components:
         title: 'Success'
         detail: 'Success: Item fetched successfully'
         results:
-          "@context": "https://voc.iudx.org.in/"
+          '@context': 'https://voc.iudx.org.in/'
+          id: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+          ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
           type:
-            - "adex:AiModel"
-          id: "6e58c916-f6c1-448d-acea-756f3272bc57"
-          name: "ai-model-crop"
-          provider: "8fe8d1dd-ae51-4ff8-b995-13bce85d9d88"
+            - 'adex:AiModel'
+          name: 'ai-model-crop'
+          label: 'Test-Crop Disease Detection Model'
+          shortDescription: 'Detects diseases in crop leaves using image classification.'
+          description: 'A test AI model for detecting crop disease with the help of infected leaf images.'
           tags:
-            - "ai"
-            - "ml"
-            - "model"
-            - "aimodel"
-            - "mlmodel"
-            - "ai-model"
-            - "ml-model"
-            - "machine"
-            - "learning"
-            - "training"
-            - "algorithm"
-          accessPolicy: "RESTRICTED"
-          label: "Test-Crop Disease Detection Model"
-          description: "An test AI model for detecting crop disease with the help of infected leaf images."
-          organizationType: "Private"
-          department: "Agriculture and Co-operation"
-          modelType: "ImageClassifier"
-          fileFormat: "ipynb"
+            - ai
+            - ml
+            - model
+            - ai-model
+            - ml-model
+            - machine
+            - learning
+            - machine learning
+            - training
+            - algorithm
+          provider: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
+          accessPolicy: 'RESTRICTED'
+          organizationType: 'Private'
+          department: 'Agriculture and Co-operation'
+          modelType: 'ImageClassifier'
+          fileFormat: 'ipynb'
+          industry: 'Agriculture'
+          uploadedBy: 'john.doe@datakaveri.org'
+          license: 'MIT'
+          fileSize: '15MB'
           itemStatus: "ACTIVE"
-          itemCreatedAt: "2024-01-07T04:53:31+0530"
+          itemCreatedAt: "2024-01-05T02:09:10+0530"
     successResponseForGetDataBankEntity:
       type: object
       title: DataBank Entity
@@ -6351,33 +7649,80 @@ components:
         type: 'urn:dx:cat:Success'
         title: 'Success'
         results:
-          "@context": "https://voc.iudx.org.in/"
+          '@context': "https://voc.iudx.org.in/"
           type:
             - "adex:DataBank"
-          name: "subdistrict-weather-info"
-          provider: "337545aa-1fa5-4ca0-bf3d-072144dec5b6"
+          id: "e27a1f6c-6a1b-45b8-a9f5-0c7424d1f0d1"
+          ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
+          name: 'subdistrict-weather-info'
+          label: 'Weather insights for subdistricts'
+          shortDescription: 'A short description about the dataset'
+          description: 'Dataset providing weather information such as temperature and rainfall for subdistricts across a state.'
           tags:
-            - "environment"
-            - "weather"
-            - "rainfall"
-            - "temperature"
-          accessPolicy: "RESTRICTED"
-          resourceGroup: "96bc97bf-504e-4306-bb49-99d77896cf1d"
-          organizationType: "Private"
-          fileFormat: ".xlsx"
-          dataReadiness: "More than 80%"
-          department: "Department of IT, Electronics and Communication"
-          resourceType: "MESSAGESTREAM"
+            - environment
+            - weather
+            - rainfall
+            - temperature
+          provider: '{{UUID}}'
+          resourceGroup: '{{UUID}}'
+          resourceServer: '{{UUID}}'
+          accessPolicy: 'RESTRICTED'
+          organizationType: 'Private'
+          fileFormat: 'xlsx'
+          dataReadiness: 85
+          department: 'Department of IT, Electronics and Communication'
+          resourceType: 'MESSAGESTREAM'
           adexResourceAPIs:
-            - "TEMPORAL"
-            - "ATTR"
+            - 'TEMPORAL'
+            - 'ATTR'
+          iudxResourceAPIs:
+            - 'TEMPORAL'
+            - 'ATTR'
+          industry: 'Climate Research'
+          uploadedBy: 'john.doe@datakaveri.org'
+          geoCoverage: 'Karnataka'
+          yearRange: '2015-2023'
+          verifiedBy: 'Ministry of Earth Sciences'
+          uploadFrequency: 'Weekly'
+          license: 'CC-BY 4.0'
           location:
-            SomeKey: "SomeValue"
+            type: 'Place'
+            address: 'Subdistrict HQ, Karnataka'
+            geometry:
+              type: 'Polygon'
+              coordinates:
+                - - [ 77.5946, 12.9716 ]
+                  - [ 77.5956, 12.9726 ]
+                  - [ 77.5966, 12.9736 ]
+                  - [ 77.5946, 12.9716 ]
           dataDescriptor:
-            SomeKey: "SomeValue"
+            '@context': 'https://voc.iudx.org.in/'
+            type: [ 'adex:DataDescriptor' ]
+            dataDescriptorLabel: 'Subdistrict weather structure'
+            description: 'Structure defining data attributes for weather observations'
+            precipitation:
+              type: [ 'adex:Precipitation' ]
+              description: 'Rainfall in mm'
+              unitCode: 'MMT'
+              unitText: 'Millimeter'
+              dataSchema: 'float'
+            observationDateTime:
+              type: [ 'iudx:ObservationDateTime' ]
+              description: 'Datetime of weather observation'
+              dataSchema: 'datetime'
           dataSample:
-            SomeKey: "SomeValue"
-            observationDateTime: "2023-02-03T08:30:00+05:30"
+            districtCode: 'KA-01'
+            subDistrictCode: 'KA-01-001'
+            precipitation: 5.2
+            airTemperature:
+              maxOverTime: 33.5
+              minOverTime: 22.1
+            relativeHumidity:
+              maxOverTime: 90.2
+              minOverTime: 45.3
+            observationDateTime: '2023-02-03T08:30:00+05:30'
+          itemStatus: "ACTIVE"
+          itemCreatedAt: "2024-01-05T02:09:10+0530"
         detail: "Success: Item fetched Successfully"
     successResponseForGetAdexAppsEntity:
       type: object
@@ -6403,29 +7748,50 @@ components:
         title: 'Success'
         detail: 'Success: Item fetched Successfully'
         results:
-          "@context": "https://voc.iudx.org.in/"
+          '@context': "https://voc.iudx.org.in/"
+          id: 'f2c6a437-8109-4a2c-8923-efc2a9e6df1d'
           type:
-            - "adex:Apps"
-          name: "crop-disease-detector"
+            - 'adex:Apps'
+          name: 'crop-disease-detector-app'
+          label: 'Crop Disease Detection Application'
+          shortDescription: 'An AI-powered application to detect crop diseases early using leaf imagery.'
+          description: 'A potential application designed to detect crop diseases from infected leaf images using AI/ML models. It supports early intervention and yield optimization by analyzing input data and recommending treatments.'
           tags:
-            - "ai"
-            - "ml"
-            - "model"
-            - "aimodel"
-            - "mlmodel"
-            - "ai-model"
-            - "ml-model"
-            - "machine"
-            - "learning"
-            - "machine learning"
-            - "training"
-            - "algorithm"
-          label: "Crop Disease Detection Model"
-          description: "A model that helps detect crop diseases using infected leaf images."
-          organizationType: "Private"
-          department: "Agriculture and Co-operation"
+            - ai
+            - ml
+            - model
+            - ai-model
+            - ml-model
+            - machine
+            - learning
+            - machine learning
+            - training
+            - algorithm
+          organizationType: 'Private'
+          department: 'Agriculture and Co-operation'
+          uploadedBy: 'cdpg@datakaveri.org'
+          fileFormat: 'xlsx'
+          accessPolicy: 'Public'
+          canBeUsedFor:
+            cropMonitoring: 'Detect and classify diseases in crops using image input'
+            yieldOptimization: 'Improve crop yield by early detection of diseases'
+          dataInputsAndAiTechniques:
+            Input Data Banks:
+              - 'Annotated Leaf Image Dataset'
+              - 'Crop Type Classification Data'
+            Expected Output:
+              - 'Disease Type'
+              - 'Confidence Score'
+              - 'Recommended Treatment'
+            AI Models:
+              - 'Convolutional Neural Networks'
+              - 'Transfer Learning'
+            Potential Benefits:
+              - 'Early detection of crop diseases'
+              - 'Reduction in crop loss'
+              - 'Better planning and resource allocation'
           itemStatus: "ACTIVE"
-          itemCreatedAt: "2024-06-15T10:25:00+05:30"
+          itemCreatedAt: "2024-01-05T02:09:10+0530"
     successResponseForTagSearch:
       type: object
       title: Tag Search
@@ -7310,6 +8676,118 @@ components:
             resourceServer: "49cf5c76-09de-11ee-be56-0242ac120002"
             ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
             cos: "637e32b6-9a6c-396f-914c-9db5d1a222b0"
+    successResponseForAutocompleteFuzzyTextSearch:
+      type: object
+      title: search by text
+      properties:
+        type:
+          type: string
+          description: URN type of the response indicating if the query was successful or if any errors have been triggered.
+        title:
+          type: string
+          description: A human-readable title for the message response.
+        totalHits:
+          type: integer
+          description: The total number of hits for the search.
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Resource identifier.
+              label:
+                type: string
+                description: Label of the resource.
+              name:
+                type: string
+                description: Name of the resource.
+              description:
+                type: string
+                description: Description of the resource.
+              tags:
+                type: array
+                items:
+                  type: string
+                description: List of tags associated with the resource.
+            required:
+              - id
+              - label
+              - name
+              - description
+              - tags
+      required:
+        - type
+        - title
+        - totalHits
+        - results
+      example:
+        type: "urn:dx:cat:Success"
+        title: "Success"
+        totalHits: 5
+        results:
+          - id: "32cf54e7-be31-474c-ae4c-3d41e556dd2d"
+            label: "Satellite-Derived Geospatial Layers"
+            name: "satellite-derived-geospatial-layers"
+            description: "The Satellite-Derived Geospatial Layers dataset provides high-resolution satellite imagery and geospatial data..."
+            tags:
+              - "Satellite"
+              - "Geospatial"
+          - id: "9c0737d6-17df-484f-a7f8-aa472002eae5"
+            label: "Corporate Employee Performance Data"
+            name: "corporate-employee-performance-data"
+            description: "The Corporate Employee Performance Data set is a comprehensive collection of performance metrics, key performance indicators (KPIs)..."
+            tags:
+              - "Corporate"
+              - "HR Analytics"
+              - "Performance"
+          - id: "f7c3489d-6a58-44a2-97f6-2dbd49291b3b"
+            label: "AI-Based Traffic Congestion Prediction"
+            name: "AI-Based Traffic Congestion Prediction"
+            description: "The AI-Based Traffic Congestion Prediction tool is an advanced solution aimed at alleviating urban traffic issues..."
+            tags:
+              - "ai"
+              - "ml"
+              - "model"
+              - "aimodel"
+              - "mlmodel"
+              - "smart cities"
+              - "traffic"
+              - "congestion"
+              - "urban planning"
+              - "transportation"
+              - "optimization"
+          - id: "a4e2f75c-91b7-4b6e-9de1-78f6c9f84e63"
+            label: "AI-Powered High-Risk Pregnancy Detection"
+            name: "AI-Powered High-Risk Pregnancy Detection"
+            description: "The AI-Powered High-Risk Pregnancy Detection model leverages artificial intelligence to analyze antenatal records and identify pregnancies at high risk..."
+            tags:
+              - "ai"
+              - "ml"
+              - "model"
+              - "aimodel"
+              - "mlmodel"
+              - "ai-model"
+              - "ml-model"
+              - "machine learning"
+              - "pregnancy detection"
+              - "healthcare"
+              - "maternal health"
+              - "high-risk pregnancy"
+          - id: "2b1a2e8d-45f4-43a1-9e8e-d1f8ad1002bb"
+            label: "School Dropout Risk Prediction Model"
+            name: "school-dropout-risk-prediction-model"
+            description: "The School Dropout Risk Prediction Model is an advanced AI-powered tool designed to predict the likelihood of students dropping out of school..."
+            tags:
+              - "ai"
+              - "ml"
+              - "model"
+              - "aimodel"
+              - "mlmodel"
+              - "education"
+              - "risk prediction"
+              - "student analytics"
     successResponseForSearchByText:
       type: object
       title: Search by Text
@@ -7609,6 +9087,244 @@ components:
             id_bck: "datakaveri.org/04a15c9960ffda227e9546f3f46e629e1fe4132b/rs.iudx.org.in/pune-env-flood/FWR055"
             ownerUserId: "b2c27f3f-2524-4a84-816e-91f9ab23f837"
             cos: "637e32b6-9a6c-396f-914c-9db5d1a222b0"
+    successResponseForComplexSearch:
+      type: object
+      title: Complex search
+      properties:
+        type:
+          type: string
+          description: URN type of the response indicating if the query was successful or if any errors have been triggered
+        title:
+          type: string
+          description: A human-readable title for the message response
+        totalHits:
+          type: integer
+          description: The total number of hits for the search
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: array
+                items: string
+                description: List of resource types
+              id:
+                type: string
+                description: Resource identifier
+              department:
+                type: string
+                description: Department name
+              itemCreatedAt:
+                type: string
+                format: date-time
+                description: Item creation timestamp in ISO 8601 format
+              dataReadiness:
+                type: integer
+                description: Data readiness level
+            required:
+              - type
+              - id
+              - department
+              - itemCreatedAt
+              - dataReadiness
+      required:
+        - type
+        - title
+        - totalHits
+        - results
+      example:
+        type: "urn:dx:cat:Success"
+        title: "Success"
+        totalHits: 1
+        results:
+          - type:
+              - "adex:DataBank"
+            id: "32cf54e7-be31-474c-ae4c-3d41e556dd2d"
+            department: "Environment Forests Science and Technology"
+            itemCreatedAt: "2025-04-15T10:30:00Z"
+            dataReadiness: 80
+    successResponseForRangeSearch:
+      type: object
+      title: Range search
+      properties:
+        type:
+          type: string
+          description: URN type of the response indicating if the query was successful or if any errors have been triggered
+        title:
+          type: string
+          description: A human-readable title for the message response
+        totalHits:
+          type: integer
+          description: The total number of hits for the search
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Resource identifier
+              tags:
+                type: array
+                items: string
+                description: List of tags associated with the resource
+              dataReadiness:
+                type: integer
+                description: Data readiness level
+            required:
+              - id
+              - tags
+              - dataReadiness
+      required:
+        - type
+        - title
+        - totalHits
+        - results
+      example:
+        type: "urn:dx:cat:Success"
+        title: "Success"
+        totalHits: 5
+        results:
+          - id: "32cf54e7-be31-474c-ae4c-3d41e556dd2d"
+            tags:
+              - "Satellite"
+              - "Geospatial"
+            dataReadiness: 80
+          - id: "861bc29a-fca7-45b5-b4c8-5b07dc88a594"
+            tags:
+              - "Transport"
+              - "Network"
+            dataReadiness: 80
+          - id: "d09a4b85-3899-4bfc-93f4-430bba8aefb4"
+            tags:
+              - "Maternal Health"
+              - "Healthcare"
+              - "Community Health"
+            dataReadiness: 80
+          - id: "28653cd7-9715-47d5-b12b-9d725ecfcad0"
+            tags:
+              - "Transport"
+              - "Railway"
+            dataReadiness: 80
+          - id: "9c0737d6-17df-484f-a7f8-aa472002eae5"
+            tags:
+              - "Corporate"
+              - "HR Analytics"
+              - "Performance"
+            dataReadiness: 85
+    successResponseForTemporalSearch:
+      type: object
+      title: Temporal search
+      properties:
+        type:
+          type: string
+          description: URN type of the response indicating if the query was successful or if any errors have been triggered
+        title:
+          type: string
+          description: A human-readable title for the message response
+        totalHits:
+          type: integer
+          description: The total number of hits for the search
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Resource identifier
+              tags:
+                type: array
+                items: string
+                description: List of tags associated with the resource
+              itemCreatedAt:
+                type: string
+                format: date-time
+                description: Item creation timestamp in ISO 8601 format
+            required:
+              - id
+              - tags
+              - itemCreatedAt
+      required:
+        - type
+        - title
+        - totalHits
+        - results
+      example:
+        type: "urn:dx:cat:Success"
+        title: "Success"
+        totalHits: 3
+        results:
+          - id: "a4e3b98f-d073-4a2f-8587-e8d1718f2a89"
+            tags:
+              - "ai"
+              - "ml"
+              - "model"
+              - "aimodel"
+              - "grievance classification"
+              - "telugu"
+              - "text classification"
+              - "machine learning"
+            itemCreatedAt: "2025-04-15T10:30:00Z"
+          - id: "d7d34f8d-8cd4-4a68-8a4d-3b7fc5e8bb13"
+            tags:
+              - "ai"
+              - "ml"
+              - "model"
+              - "aimodel"
+              - "mlmodel"
+              - "crop disease detection"
+              - "plant health"
+              - "agriculture"
+            itemCreatedAt: "2025-04-15T10:30:00Z"
+          - id: "2b1a2e8d-45f4-43a1-9e8e-d1f8ad1002bb"
+            tags:
+              - "ai"
+              - "ml"
+              - "model"
+              - "aimodel"
+              - "mlmodel"
+              - "education"
+              - "risk prediction"
+              - "student analytics"
+            itemCreatedAt: "2025-04-15T10:30:00Z"
+    successResponseForSearchByItemType:
+      type: object
+      title: search by item type
+      properties:
+        type:
+          type: string
+          description: URN type of the response indicating if the query was successful or if any errors have been triggered.
+        title:
+          type: string
+          description: A human-readable title for the message response.
+        totalHits:
+          type: integer
+          description: The total number of hits for the search.
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                description: Resource identifier.
+            required:
+              - id
+      required:
+        - type
+        - title
+        - totalHits
+        - results
+      example:
+        type: "urn:dx:cat:Success"
+        title: "Success"
+        totalHits: 3
+        results:
+          - id: "a4e3b98f-d073-4a2f-8587-e8d1718f2a89"
+          - id: "d7d34f8d-8cd4-4a68-8a4d-3b7fc5e8bb13"
+          - id: "2b1a2e8d-45f4-43a1-9e8e-d1f8ad1002bb"
     relSearch1:
       type: object
       title: relSearch1
@@ -8284,20 +10000,29 @@ components:
           pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
         accessPolicy:
           type: string
-          pattern: '^(RESTRICTED|OPEN|PII|restricted|open|pii)$'
+          pattern: '^(RESTRICTED|OPEN|PRIVATE|restricted|open|private)$'
         organizationType:
           type: string
-          enum: [ 'Private', 'Government' ]
+          enum: [ 'Private', 'Public' ]
         department:
           type: string
         modelType:
           type: string
         fileFormat:
           type: string
+        industry:
+          type: string
+        uploadedBy:
+          type: string
+        license:
+          type: string
+        fileSize:
+          type: string
       required:
         - type
         - name
         - label
+        - shortDescription
         - description
         - tags
         - provider
@@ -8306,6 +10031,10 @@ components:
         - department
         - modelType
         - fileFormat
+        - industry
+        - uploadedBy
+        - license
+        - fileSize
       example:
         '@context': 'https://voc.iudx.org.in/'
         id: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
@@ -8313,6 +10042,7 @@ components:
           - 'adex:AiModel'
         name: 'ai-model-crop'
         label: 'Test-Crop Disease Detection Model'
+        shortDescription: 'Detects diseases in crop leaves using image classification.'
         description: 'A test AI model for detecting crop disease with the help of infected leaf images.'
         tags:
           - ai
@@ -8331,6 +10061,10 @@ components:
         department: 'Agriculture and Co-operation'
         modelType: 'ImageClassifier'
         fileFormat: 'ipynb'
+        industry: 'Agriculture'
+        uploadedBy: 'john.doe@datakaveri.org'
+        license: 'MIT'
+        fileSize: '15MB'
     exampleEntityDataBank:
       type: object
       title: Data Bank entity
@@ -8341,11 +10075,15 @@ components:
         id:
           type: string
           format: uuid
+        name:
+          type: string
         type:
           type: array
           items:
             type: string
         label:
+          type: string
+        shortDescription:
           type: string
         description:
           type: string
@@ -8356,11 +10094,14 @@ components:
         provider:
           type: string
           format: uuid
-        accessPolicy:
-          type: string
         resourceGroup:
           type: string
           format: uuid
+        resourceServer:
+          type: string
+          format: uuid
+        accessPolicy:
+          type: string
         organizationType:
           type: string
         fileFormat:
@@ -8385,10 +10126,25 @@ components:
           type: object
         dataSample:
           type: object
+        industry:
+          type: string
+        uploadedBy:
+          type: string
+        geoCoverage:
+          type: string
+        yearRange:
+          type: string
+        verifiedBy:
+          type: string
+        uploadFrequency:
+          type: string
+        license:
+          type: string
       required:
         - name
         - type
         - label
+        - shortDescription
         - description
         - tags
         - provider
@@ -8405,10 +10161,19 @@ components:
         - location
         - dataDescriptor
         - dataSample
+        - industry
+        - uploadedBy
+        - geoCoverage
+        - yearRange
+        - verifiedBy
+        - uploadFrequency
+        - license
       example:
+        name: 'subdistrict-weather-info'
         type:
           - 'adex:DataBank'
         label: 'Weather insights for subdistricts'
+        shortDescription: 'A short description about the dataset'
         description: 'Dataset providing weather information such as temperature and rainfall for subdistricts across a state.'
         tags:
           - environment
@@ -8420,8 +10185,8 @@ components:
         resourceServer: '{{UUID}}'
         accessPolicy: 'RESTRICTED'
         organizationType: 'Private'
-        fileFormat: '.xlsx'
-        dataReadiness: 'More than 80%'
+        fileFormat: 'xlsx'
+        dataReadiness: 85
         department: 'Department of IT, Electronics and Communication'
         resourceType: 'MESSAGESTREAM'
         adexResourceAPIs:
@@ -8430,6 +10195,13 @@ components:
         iudxResourceAPIs:
           - 'TEMPORAL'
           - 'ATTR'
+        industry: 'Climate Research'
+        uploadedBy: 'john.doe@datakaveri.org'
+        geoCoverage: 'Karnataka'
+        yearRange: '2015-2023'
+        verifiedBy: 'Ministry of Earth Sciences'
+        uploadFrequency: 'Weekly'
+        license: 'CC-BY 4.0'
         location:
           type: 'Place'
           address: 'Subdistrict HQ, Karnataka'
@@ -8451,10 +10223,22 @@ components:
             unitCode: 'MMT'
             unitText: 'Millimeter'
             dataSchema: 'float'
+          observationDateTime:
+            type: [ 'iudx:ObservationDateTime' ]
+            description: 'Datetime of weather observation'
+            dataSchema: 'datetime'
         dataSample:
-          SomeKey: 'SomeValue'
+          districtCode: 'KA-01'
+          subDistrictCode: 'KA-01-001'
+          precipitation: 5.2
+          airTemperature:
+            maxOverTime: 33.5
+            minOverTime: 22.1
+          relativeHumidity:
+            maxOverTime: 90.2
+            minOverTime: 45.3
           observationDateTime: '2023-02-03T08:30:00+05:30'
-    exampleEntityAdexApps:
+    exampleEntityPotentialApps:
       type: object
       title: ADeX Apps entity
       description: An example ADeX Apps entity for onboarding (without system-generated fields like itemCreatedAt or itemStatus)
@@ -8476,6 +10260,8 @@ components:
         label:
           type: string
           maxLength: 512
+        shortDescription:
+          type: string
         description:
           type: string
         tags:
@@ -8484,17 +10270,53 @@ components:
             type: string
         organizationType:
           type: string
-          enum: [ 'Private', 'Government' ]
+          enum: [ 'Private', 'Public', 'Academic Institution' ]
         department:
           type: string
+        uploadedBy:
+          type: string
+        fileFormat:
+          type: string
+        accessPolicy:
+          type: string
+        canBeUsedFor:
+          type: object
+          additionalProperties:
+            type: string
+            maxLength: 300
+        dataInputsAndAiTechniques:
+          type: object
+          properties:
+            Input Data Banks:
+              type: array
+              items:
+                type: string
+            Expected Output:
+              type: array
+              items:
+                type: string
+            AI Models:
+              type: array
+              items:
+                type: string
+            Potential Benefits:
+              type: array
+              items:
+                type: string
       required:
         - type
         - name
         - label
+        - shortDescription
         - description
         - tags
         - organizationType
         - department
+        - uploadedBy
+        - fileFormat
+        - accessPolicy
+        - canBeUsedFor
+        - dataInputsAndAiTechniques
       example:
         '@context': 'https://voc.iudx.org.in/'
         id: 'f2c6a437-8109-4a2c-8923-efc2a9e6df1d'
@@ -8502,7 +10324,8 @@ components:
           - 'adex:Apps'
         name: 'crop-disease-detector-app'
         label: 'Crop Disease Detection Application'
-        description: 'A potential application designed to detect crop diseases from infected leaf images using AI/ML models.'
+        shortDescription: 'An AI-powered application to detect crop diseases early using leaf imagery.'
+        description: 'A potential application designed to detect crop diseases from infected leaf images using AI/ML models. It supports early intervention and yield optimization by analyzing input data and recommending treatments.'
         tags:
           - ai
           - ml
@@ -8516,6 +10339,27 @@ components:
           - algorithm
         organizationType: 'Private'
         department: 'Agriculture and Co-operation'
+        uploadedBy: 'cdpg@datakaveri.org'
+        fileFormat: 'xlsx'
+        accessPolicy: 'Public'
+        canBeUsedFor:
+          cropMonitoring: 'Detect and classify diseases in crops using image input'
+          yieldOptimization: 'Improve crop yield by early detection of diseases'
+        dataInputsAndAiTechniques:
+          Input Data Banks:
+            - 'Annotated Leaf Image Dataset'
+            - 'Crop Type Classification Data'
+          Expected Output:
+            - 'Disease Type'
+            - 'Confidence Score'
+            - 'Recommended Treatment'
+          AI Models:
+            - 'Convolutional Neural Networks'
+            - 'Transfer Learning'
+          Potential Benefits:
+            - 'Early detection of crop diseases'
+            - 'Reduction in crop loss'
+            - 'Better planning and resource allocation'
     unAuthorizedAccess:
       type: object
       title: Common to unauthorized access response

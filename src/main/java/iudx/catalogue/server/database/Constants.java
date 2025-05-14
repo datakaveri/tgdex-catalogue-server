@@ -14,11 +14,9 @@ public class Constants {
 
   public static final String TEXTSEARCH_REGEX = "(.*)textSearch(.*)";
   public static final String ATTRIBUTE_SEARCH_REGEX = "(.*)attributeSearch(.*)";
-  public static final String SEARCH_CRITERIA_ATTRIBUTE_SEARCH_REGEX = "(.*)searchCriteria(.*)";
+  public static final String SEARCH_CRITERIA_REGEX = "(.*)searchCriteria(.*)";
 
   public static final String GEOSEARCH_REGEX = "(.*)geoSearch(.*)";
-  public static final String TEMPORAL_SEARCH_REGEX = "(.*)temporalSearch(.*)";
-  public static final String RANGE_SEARCH_REGEX = "(.*)rangeSearch(.*)";
   public static final String RESPONSE_FILTER_GEO = "responseFilter_geoSearch_";
   public static final String RESPONSE_FILTER_REGEX = "(.*)responseFilter(.*)";
 

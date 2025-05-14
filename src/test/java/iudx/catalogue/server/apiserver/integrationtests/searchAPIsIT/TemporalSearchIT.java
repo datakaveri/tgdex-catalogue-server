@@ -2,19 +2,27 @@ package iudx.catalogue.server.apiserver.integrationtests.searchAPIsIT;
 
 import static io.restassured.RestAssured.given;
 import static iudx.catalogue.server.apiserver.util.Constants.APPLICATION_JSON;
-import static iudx.catalogue.server.util.Constants.ATTRIBUTE_KEY;
-import static iudx.catalogue.server.util.Constants.BETWEEN;
-import static iudx.catalogue.server.util.Constants.END_TIME;
-import static iudx.catalogue.server.util.Constants.PROPERTY;
-import static iudx.catalogue.server.util.Constants.TIME;
-import static iudx.catalogue.server.util.Constants.TIME_REL;
-import static iudx.catalogue.server.util.Constants.VALUE;
+import static iudx.catalogue.server.util.Constants.AFTER_TEMPORAL;
+import static iudx.catalogue.server.util.Constants.BEFORE_TEMPORAL;
+import static iudx.catalogue.server.util.Constants.BETWEEN_TEMPORAL;
+import static iudx.catalogue.server.util.Constants.FIELD;
+import static iudx.catalogue.server.util.Constants.ITEM_TYPE_APPS;
+import static iudx.catalogue.server.util.Constants.SEARCH_CRITERIA_KEY;
+import static iudx.catalogue.server.util.Constants.SEARCH_TYPE;
+import static iudx.catalogue.server.util.Constants.SEARCH_TYPE_CRITERIA;
+import static iudx.catalogue.server.util.Constants.TERM;
+import static iudx.catalogue.server.util.Constants.TYPE;
+import static iudx.catalogue.server.util.Constants.TYPE_INVALID_PROPERTY_VALUE;
+import static iudx.catalogue.server.util.Constants.TYPE_SUCCESS;
+import static iudx.catalogue.server.util.Constants.VALUES;
 import static iudx.catalogue.server.validator.Constants.ITEM_CREATED_AT;
 import static org.hamcrest.Matchers.is;
-import io.restassured.response.Response;
-import iudx.catalogue.server.apiserver.integrationtests.RestAssuredConfiguration;
+
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import iudx.catalogue.server.apiserver.integrationtests.RestAssuredConfiguration;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -25,108 +33,149 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(RestAssuredConfiguration.class)
 public class TemporalSearchIT {
 
+  private JsonObject baseTermCriteria(String field, JsonArray values) {
+    JsonObject criterion = new JsonObject()
+        .put(SEARCH_TYPE, TERM)
+        .put(FIELD, field)
+        .put(VALUES, values);
+
+    return new JsonObject()
+        .put(SEARCH_TYPE, SEARCH_TYPE_CRITERIA)
+        .put(SEARCH_CRITERIA_KEY, new JsonArray().add(criterion));
+  }
+
   @Test
-  @DisplayName("Testing Temporal Search - BETWEEN relation - 200 Success")
+  @Order(1)
+  @DisplayName("Temporal Search - BETWEEN - 200 Success")
   void PostTemporalSearchBetween() {
-    JsonObject requestBody = new JsonObject();
-    requestBody.put(TIME_REL, BETWEEN);
-    requestBody.put(TIME, "2025-03-20T04:00:00+0530");
-    requestBody.put(END_TIME, "2025-05-02T09:15:27+0530");
-    requestBody.put(ATTRIBUTE_KEY, ITEM_CREATED_AT);
-    requestBody.put(PROPERTY, "[type]");
-    requestBody.put(VALUE, "[[adex:Apps]]");
+    JsonArray values =
+        new JsonArray().add("2025-03-20T04:00:00+0530").add("2025-05-02T09:15:27+0530");
+    JsonObject criterion = new JsonObject()
+        .put(SEARCH_TYPE, BETWEEN_TEMPORAL)
+        .put(FIELD, ITEM_CREATED_AT)
+        .put(VALUES, values);
 
-    Response response = given()
+    JsonObject requestBody = new JsonObject()
+        .put(SEARCH_CRITERIA_KEY, new JsonArray().add(criterion));
+
+    given()
         .contentType(APPLICATION_JSON)
-        .body(requestBody.toString())
+        .body(requestBody.encode())
         .when()
         .post("/search")
         .then()
         .statusCode(200)
-        .body("type", is("urn:dx:cat:Success"))
-        .extract()
-        .response();
+        .body(TYPE, is(TYPE_SUCCESS));
   }
 
   @Test
-  @DisplayName("Testing Temporal Search - AFTER relation - 200 Success")
+  @Order(2)
+  @DisplayName("Temporal Search - AFTER - 200 Success")
   void PostTemporalSearchAfter() {
-    JsonObject requestBody = new JsonObject();
-    requestBody.put(TIME_REL, "after");
-    requestBody.put(TIME, "2025-03-20T04:00:00+0530");
-    requestBody.put(ATTRIBUTE_KEY, ITEM_CREATED_AT);
-    requestBody.put(PROPERTY, "[type]");
-    requestBody.put(VALUE, "[[adex:Apps]]");
+    JsonArray values = new JsonArray().add("2025-03-20T04:00:00+0530");
+    JsonObject criterion = new JsonObject()
+        .put(SEARCH_TYPE, AFTER_TEMPORAL)
+        .put(FIELD, ITEM_CREATED_AT)
+        .put(VALUES, values);
 
-    Response response = given()
+    JsonObject requestBody = new JsonObject()
+        .put(SEARCH_CRITERIA_KEY, new JsonArray().add(criterion));
+
+    given()
         .contentType(APPLICATION_JSON)
-        .body(requestBody.toString())
+        .body(requestBody.encode())
         .when()
         .post("/search")
         .then()
         .statusCode(200)
-        .body("type", is("urn:dx:cat:Success"))
-        .extract()
-        .response();
+        .body(TYPE, is(TYPE_SUCCESS));
   }
 
   @Test
-  @DisplayName("Testing Temporal Search - BEFORE relation - 200 Success")
+  @Order(3)
+  @DisplayName("Temporal Search - BEFORE - 200 Success")
   void PostTemporalSearchBefore() {
-    JsonObject requestBody = new JsonObject();
-    requestBody.put(TIME_REL, "before");
-    requestBody.put(TIME, "2025-05-02T09:15:27+0530");
-    requestBody.put(ATTRIBUTE_KEY, ITEM_CREATED_AT);
-    requestBody.put(PROPERTY, "[type]");
-    requestBody.put(VALUE, "[[adex:Apps]]");
+    JsonArray values = new JsonArray().add("2025-05-02T09:15:27+0530");
+    JsonObject criterion = new JsonObject()
+        .put(SEARCH_TYPE, BEFORE_TEMPORAL)
+        .put(FIELD, ITEM_CREATED_AT)
+        .put(VALUES, values);
 
-    Response response = given()
+    JsonObject requestBody = new JsonObject()
+        .put(SEARCH_CRITERIA_KEY, new JsonArray().add(criterion));
+
+    given()
         .contentType(APPLICATION_JSON)
-        .body(requestBody.toString())
+        .body(requestBody.encode())
         .when()
         .post("/search")
         .then()
         .statusCode(200)
-        .body("type", is("urn:dx:cat:Success"))
-        .extract()
-        .response();
+        .body(TYPE, is(TYPE_SUCCESS));
   }
 
   @Test
-  @DisplayName("Testing Temporal Search - BETWEEN without endTime - 400 Invalid Request")
+  @Order(4)
+  @DisplayName("Temporal Search - BETWEEN without endTime - 400 Invalid Request")
   void PostTemporalSearchBetweenInvalid() {
-    JsonObject requestBody = new JsonObject();
-    requestBody.put(TIME_REL, BETWEEN);
-    requestBody.put(TIME, "2025-03-20T04:00:00+0530");
-    requestBody.put(ATTRIBUTE_KEY, ITEM_CREATED_AT);
+    JsonArray values = new JsonArray().add("2025-03-20T04:00:00+0530"); // Missing second value
+    JsonObject criterion = new JsonObject()
+        .put(SEARCH_TYPE, BETWEEN_TEMPORAL)
+        .put(FIELD, ITEM_CREATED_AT)
+        .put(VALUES, values);
+
+    JsonObject requestBody = new JsonObject()
+        .put(SEARCH_CRITERIA_KEY, new JsonArray().add(criterion));
 
     given()
         .contentType(APPLICATION_JSON)
-        .body(requestBody)
+        .body(requestBody.encode())
         .when()
         .post("/search")
         .then()
         .statusCode(400)
-        .body("type", is("urn:dx:cat:InvalidSyntax"));
+        .body(TYPE, is(TYPE_INVALID_PROPERTY_VALUE));
   }
 
   @Test
-  @DisplayName("Testing Temporal Search - Invalid timerel value - 400 Invalid Syntax")
+  @Order(5)
+  @DisplayName("Temporal Search - Invalid timerel value - 400 Invalid Syntax")
   void PostTemporalSearchInvalidTimerel() {
-    JsonObject requestBody = new JsonObject();
-    requestBody.put(TIME_REL, "soon");
-    requestBody.put(TIME, "2025-03-20T04:00:00+0530");
-    requestBody.put(ATTRIBUTE_KEY, ITEM_CREATED_AT);
-    requestBody.put(PROPERTY, "[type]");
-    requestBody.put(VALUE, "[[adex:Apps]]");
+    JsonArray values = new JsonArray().add("2025-03-20T04:00:00+05:30");
+    JsonObject criterion = new JsonObject()
+        .put(SEARCH_TYPE, "soonTemporal")
+        .put(FIELD, ITEM_CREATED_AT)
+        .put(VALUES, values);
+
+    JsonObject requestBody = new JsonObject()
+        .put(SEARCH_CRITERIA_KEY, new JsonArray().add(criterion));
 
     given()
         .contentType(APPLICATION_JSON)
-        .body(requestBody)
+        .body(requestBody.encode())
         .when()
         .post("/search")
         .then()
         .statusCode(400)
-        .body("type", is("urn:dx:cat:InvalidSyntax"));
+        .body(TYPE, is(TYPE_INVALID_PROPERTY_VALUE));
   }
+
+  @Test
+  @Order(6)
+  @DisplayName("Term Search - type = adex:Apps - 200 Success")
+  void PostTermSearch() {
+    JsonArray values = new JsonArray().add(ITEM_TYPE_APPS);
+    JsonObject requestBody = baseTermCriteria(TYPE, values);
+
+    given()
+        .contentType(APPLICATION_JSON)
+        .body(requestBody.encode())
+        .when()
+        .post("/search")
+        .then()
+        .statusCode(200)
+        .body(TYPE, is(TYPE_SUCCESS));
+  }
+
 }
+

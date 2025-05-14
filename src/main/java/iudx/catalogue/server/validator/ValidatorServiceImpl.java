@@ -5,8 +5,10 @@ import static iudx.catalogue.server.validator.Constants.*;
 
 import com.github.fge.jsonschema.core.exceptions.ProcessingException;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import iudx.catalogue.server.database.ElasticClient;
@@ -14,8 +16,10 @@ import iudx.catalogue.server.validator.util.SearchQueryValidatorHelper;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -60,12 +64,12 @@ public class ValidatorServiceImpl implements ValidatorService {
   private Validator mlayerDomainValidator;
   private Validator mlayerGeoQueryValidator;
   private Validator mlayerDatasetValidator;
-  private Validator temporalSearchQueryValidator;
-  private Validator attributeSearchQueryValidator;
+  private Validator termValidator;
+  private Validator rangeValidator;
   private Validator geoSearchQueryValidator;
+  private Validator temporalValidator;
   private Validator textSearchQueryValidator;
   private Validator filterSearchQueryValidator;
-  private Validator rangeSearchQueryValidator;
   private Validator stack4PatchValidator;
   private Validator stackSchema4Post;
 
@@ -99,12 +103,12 @@ public class ValidatorServiceImpl implements ValidatorService {
       mlayerDatasetValidator = new Validator("/mlayerDatasetSchema.json");
       stack4PatchValidator = new Validator("/stackSchema4Patch.json");
       stackSchema4Post = new Validator("/stackSchema4Post.json");
-      temporalSearchQueryValidator = new Validator("/temporalSearchQuerySchema.json");
-      attributeSearchQueryValidator = new Validator("/attributeSearchQuerySchema.json");
       geoSearchQueryValidator = new Validator("/geoSearchQuerySchema.json");
       textSearchQueryValidator = new Validator("/textSearchQuerySchema.json");
       filterSearchQueryValidator = new Validator("/filterSearchQuerySchema.json");
-      rangeSearchQueryValidator = new Validator("/rangeSearchQuerySchema.json");
+      rangeValidator = new Validator("/rangeSearchQuerySchema.json");
+      temporalValidator = new Validator("/temporalSearchQuerySchema.json");
+      termValidator = new Validator("/attributeSearchQuerySchema.json");
     } catch (IOException | ProcessingException e) {
       e.printStackTrace();
     }
@@ -649,32 +653,35 @@ public class ValidatorServiceImpl implements ValidatorService {
     LOGGER.debug("Info: Validating attributes limits and  constraints");
     String searchType = request.getString(SEARCH_TYPE, "");
 
+    List<Future<JsonObject>> validations = new ArrayList<>();
+
     if (searchType.contains(SEARCH_TYPE_TEXT)) {
-      this.validateTextSearchQuery(request, handler);
+      Promise<JsonObject> p = Promise.promise();
+      this.validateTextSearchQuery(request, p);
+      validations.add(p.future());
     }
-    if (searchType.contains(SEARCH_CRITERIA)) {
-      this.validateAttributeSearchQuery(request, handler);
+    if (searchType.contains(SEARCH_TYPE_CRITERIA)) {
+      Promise<JsonObject> p = Promise.promise();
+      this.validateSearchCriteria(request, p);
+      validations.add(p.future());
     }
     if (searchType.contains(SEARCH_TYPE_GEO)) {
-      this.validateGeoSearchQuery(request, handler);
-    }
-    if (searchType.contains(SEARCH_TYPE_RANGE)) {
-      this.validateRangeSearchQuery(request, handler);
-    }
-    if (searchType.contains(SEARCH_TYPE_TEMPORAL)) {
-      this.validateTemporalSearchQuery(request, handler);
+      Promise<JsonObject> p = Promise.promise();
+      this.validateGeoSearchQuery(request, p);
+      validations.add(p.future());
     }
     if (searchType.contains(RESPONSE_FILTER)) {
-      this.validateFilterSearchQuery(request, handler);
+      Promise<JsonObject> p = Promise.promise();
+      this.validateFilterSearchQuery(request, p);
+      validations.add(p.future());
     }
-    isValidSchema
-        .onFailure(
-            x -> {
-              LOGGER.error("Fail: Invalid Schema");
-              LOGGER.error(x.getMessage());
-              handler.handle(
-                  Future.failedFuture(String.valueOf(new JsonArray().add(x.getMessage()))));
-            });
+
+    Future.all(validations)
+        .onFailure(err -> {
+          LOGGER.error("Fail: Invalid Schema: {}", err.getMessage());
+          handler.handle(Future.failedFuture(err.getLocalizedMessage()));
+        });
+
     // Additional validation logic for instance, limit, and
     // offset fields (similar to your previous implementation)
     // Validating the 'instance' field
@@ -710,21 +717,72 @@ public class ValidatorServiceImpl implements ValidatorService {
     return this;
   }
 
-  public ValidatorService validateTemporalSearchQuery(JsonObject request,
-                                                      Handler<AsyncResult<JsonObject>> handler) {
-    isValidSchema = temporalSearchQueryValidator.validate(request.toString());
+  public ValidatorService validateSearchCriteria(JsonObject request,
+                                                 Handler<AsyncResult<JsonObject>> handler) {
+    JsonArray criteriaArray = request.getJsonArray(SEARCH_CRITERIA_KEY);
+    List<Future<String>> validationFutures = new ArrayList<>();
 
-    SearchQueryValidatorHelper.handleTemporalSearchValidationResult(isValidSchema, request,
-        handler);
-    return this;
-  }
+    for (int i = 0; i < criteriaArray.size(); i++) {
+      JsonObject criterion = criteriaArray.getJsonObject(i);
+      String searchType = criterion.getString(SEARCH_TYPE);
 
-  public ValidatorService validateAttributeSearchQuery(JsonObject request,
-                                                       Handler<AsyncResult<JsonObject>> handler) {
-    isValidSchema = attributeSearchQueryValidator.validate(request.toString());
+      if (searchType == null || searchType.isBlank()) {
+        JsonObject error = new JsonObject()
+            .put(STATUS, FAILED)
+            .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
+            .put(DESC, "'searchType' is missing or empty in searchCriteria at index " + i);
+        handler.handle(Future.failedFuture(error.encode()));
+        return this;
+      }
 
-    SearchQueryValidatorHelper.handleAttributeSearchValidationResult(isValidSchema, request,
-        handler);
+      Future<String> validationFuture;
+      switch (searchType) {
+        case TERM:
+          validationFuture = termValidator.validate(criterion.encode());
+          break;
+
+        case BETWEEN_RANGE:
+        case BEFORE_RANGE:
+        case AFTER_RANGE:
+          validationFuture = rangeValidator.validate(criterion.encode());
+          break;
+
+        case BETWEEN_TEMPORAL:
+        case BEFORE_TEMPORAL:
+        case AFTER_TEMPORAL:
+          validationFuture = temporalValidator.validate(criterion.encode());
+          break;
+
+        default:
+          JsonObject error = new JsonObject()
+              .put(STATUS, FAILED)
+              .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
+              .put(DESC, "Invalid searchType: " + searchType);
+          handler.handle(Future.failedFuture(error.encode()));
+          return this;
+      }
+
+      // Wrap each validation future to handle individual failure
+      Future<String> wrappedFuture = validationFuture.recover(err -> {
+        // Fail-fast on any individual failure
+        JsonObject errorMsg = new JsonObject()
+            .put(STATUS, FAILED)
+            .put(TYPE, TYPE_INVALID_PROPERTY_VALUE)
+            .put(DESC, err.getMessage());
+        handler.handle(Future.failedFuture(errorMsg.encode()));
+        return Future.failedFuture(err); // stop execution
+      });
+
+      validationFutures.add(wrappedFuture);
+    }
+
+    // All validations passed
+    CompositeFuture.all(new ArrayList<>(validationFutures))
+        .onSuccess(res -> {
+          isValidSchema = Future.succeededFuture(SUCCESS);
+          SearchQueryValidatorHelper.handleSearchCriteriaResult(isValidSchema, request, handler);
+        });
+
     return this;
   }
 
@@ -749,14 +807,6 @@ public class ValidatorServiceImpl implements ValidatorService {
     isValidSchema = filterSearchQueryValidator.validate(request.toString());
 
     SearchQueryValidatorHelper.handleFilterSearchValidationResult(isValidSchema, request, handler);
-    return this;
-  }
-
-  public ValidatorService validateRangeSearchQuery(JsonObject request,
-                                                   Handler<AsyncResult<JsonObject>> handler) {
-    isValidSchema = rangeSearchQueryValidator.validate(request.toString());
-
-    SearchQueryValidatorHelper.handleRangeSearchValidationResult(isValidSchema, request, handler);
     return this;
   }
 }

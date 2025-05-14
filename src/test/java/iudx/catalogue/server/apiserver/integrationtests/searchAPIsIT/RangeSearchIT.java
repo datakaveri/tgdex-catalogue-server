@@ -1,24 +1,14 @@
 package iudx.catalogue.server.apiserver.integrationtests.searchAPIsIT;
 
 import static io.restassured.RestAssured.given;
-import static iudx.catalogue.server.util.Constants.AFTER;
-import static iudx.catalogue.server.util.Constants.ATTRIBUTE_KEY;
-import static iudx.catalogue.server.util.Constants.BEFORE;
-import static iudx.catalogue.server.util.Constants.BETWEEN;
-import static iudx.catalogue.server.util.Constants.DATA_READINESS;
-import static iudx.catalogue.server.util.Constants.ITEM_TYPE_DATA_BANK;
-import static iudx.catalogue.server.util.Constants.PROPERTY;
-import static iudx.catalogue.server.util.Constants.RANGE;
-import static iudx.catalogue.server.util.Constants.RANGE_REL;
-import static iudx.catalogue.server.util.Constants.TYPE_INVALID_PROPERTY_VALUE;
-import static iudx.catalogue.server.util.Constants.VALUE;
+import static iudx.catalogue.server.util.Constants.*;
 import static org.hamcrest.Matchers.is;
 
-import io.restassured.response.Response;
-import iudx.catalogue.server.apiserver.integrationtests.RestAssuredConfiguration;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import iudx.catalogue.server.apiserver.integrationtests.RestAssuredConfiguration;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -28,71 +18,88 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(RestAssuredConfiguration.class)
 public class RangeSearchIT {
 
-  private JsonObject baseRequest(String rangerel, String attribute, Object range) {
-    return new JsonObject()
-        .put(RANGE_REL, rangerel)
-        .put(ATTRIBUTE_KEY, attribute)
-        .put(RANGE, range)
-        .put(PROPERTY, new JsonArray().add("type"))
-        .put(VALUE, new JsonArray().add(new JsonArray().add(ITEM_TYPE_DATA_BANK)));
-  }
-
   @Test
+  @Order(1)
   @DisplayName("Testing Range Search - BEFORE relation - 200 Success")
   void GetRangeSearchBefore() {
-    JsonObject requestBody = baseRequest(BEFORE, DATA_READINESS, 80);
+    JsonObject criterion = new JsonObject()
+        .put(SEARCH_TYPE, BEFORE_RANGE)
+        .put(FIELD, DATA_READINESS)
+        .put(VALUES, new JsonArray().add(80));
+    JsonObject requestBody =
+        new JsonObject()
+            .put(SEARCH_TYPE, SEARCH_TYPE_CRITERIA)
+            .put(SEARCH_CRITERIA_KEY, new JsonArray().add(criterion));
 
-    Response response = given()
+    given()
         .contentType("application/json")
         .body(requestBody.encode())
         .when()
         .post("/search")
         .then()
         .statusCode(200)
-        .body("type", is("urn:dx:cat:Success"))
-        .extract()
-        .response();
+        .body(TYPE, is(TYPE_SUCCESS));
   }
 
   @Test
-  @DisplayName("Testing Range Search - AFTER relation - 200 Success")
+  @Order(2)
+  @DisplayName("Range Search - AFTER relation - 200 Success")
   void GetRangeSearchAfter() {
-    JsonObject requestBody = baseRequest(AFTER, DATA_READINESS, 20);
+    JsonObject criterion = new JsonObject()
+        .put(SEARCH_TYPE, AFTER_RANGE)
+        .put(FIELD, DATA_READINESS)
+        .put(VALUES, new JsonArray().add(20));
+    JsonObject requestBody =
+        new JsonObject()
+            .put(SEARCH_TYPE, SEARCH_TYPE_CRITERIA)
+            .put(SEARCH_CRITERIA_KEY, new JsonArray().add(criterion));
 
-    Response response = given()
+    given()
         .contentType("application/json")
         .body(requestBody.encode())
         .when()
         .post("/search")
         .then()
         .statusCode(200)
-        .body("type", is("urn:dx:cat:Success"))
-        .extract()
-        .response();
+        .body(TYPE, is(TYPE_SUCCESS));
   }
 
   @Test
-  @DisplayName("Testing Range Search - BETWEEN relation - 200 Success")
+  @Order(3)
+  @DisplayName("Range Search - BETWEEN relation - 200 Success")
   void GetRangeSearchBetween() {
-    JsonObject requestBody = baseRequest(BETWEEN, DATA_READINESS, 20)
-        .put("endRange", 80);
+    JsonObject criterion = new JsonObject()
+        .put(SEARCH_TYPE, BETWEEN_RANGE)
+        .put(FIELD, DATA_READINESS)
+        .put(VALUES, new JsonArray().add(20).add(80));
+    JsonObject requestBody =
+        new JsonObject()
+            .put(SEARCH_TYPE, SEARCH_TYPE_CRITERIA)
+            .put(SEARCH_CRITERIA_KEY, new JsonArray().add(criterion));
 
-    Response response = given()
+    given()
         .contentType("application/json")
         .body(requestBody.encode())
         .when()
         .post("/search")
         .then()
         .statusCode(200)
-        .body("type", is("urn:dx:cat:Success"))
-        .extract()
-        .response();
+        .body(TYPE, is(TYPE_SUCCESS));
   }
 
   @Test
-  @DisplayName("Testing Range Search - Invalid range format - 400 Invalid Syntax")
+  @Order(4)
+  @DisplayName("Range Search - Invalid range format (string) - 400")
   void GetRangeSearchInvalidFormat() {
-    JsonObject requestBody = baseRequest(BETWEEN, DATA_READINESS, "20-81");
+
+    JsonObject criterion = new JsonObject()
+        .put(SEARCH_TYPE, BETWEEN_RANGE)
+        .put(FIELD, DATA_READINESS)
+        .put(VALUES, new JsonArray().add("20-81"));
+    JsonObject requestBody =
+        new JsonObject()
+            .put(SEARCH_TYPE, SEARCH_TYPE_CRITERIA)
+            .put(SEARCH_CRITERIA_KEY, new JsonArray().add(criterion));
 
     given()
         .contentType("application/json")
@@ -101,13 +108,21 @@ public class RangeSearchIT {
         .post("/search")
         .then()
         .statusCode(400)
-        .body("type", is("urn:dx:cat:InvalidPropertyValue"));
+        .body(TYPE, is(TYPE_INVALID_PROPERTY_VALUE));
   }
 
   @Test
-  @DisplayName("Testing Range Search - Invalid rangerel value - 400 Invalid Syntax")
+  @Order(5)
+  @DisplayName("Range Search - Invalid searchType - 400")
   void GetRangeSearchInvalidRangerel() {
-    JsonObject requestBody = baseRequest("nearby", DATA_READINESS, 50);
+    JsonObject criterion = new JsonObject()
+        .put(SEARCH_TYPE, "nearbyRange")
+        .put(FIELD, DATA_READINESS)
+        .put(VALUES, new JsonArray().add(50));
+    JsonObject requestBody =
+        new JsonObject()
+            .put(SEARCH_TYPE, SEARCH_TYPE_CRITERIA)
+            .put(SEARCH_CRITERIA_KEY, new JsonArray().add(criterion));
 
     given()
         .contentType("application/json")
@@ -116,6 +131,7 @@ public class RangeSearchIT {
         .post("/search")
         .then()
         .statusCode(400)
-        .body("type", is(TYPE_INVALID_PROPERTY_VALUE));
+        .body(TYPE, is(TYPE_INVALID_PROPERTY_VALUE));
   }
+
 }

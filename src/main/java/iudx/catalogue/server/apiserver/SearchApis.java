@@ -207,7 +207,8 @@ public final class SearchApis {
   }
 
   /**
-   * Processes the attribute, geoSpatial, and text search  POST requests and returns the results
+   * Processes the attribute, temporal, range, geoSpatial, and text search  POST requests and
+   * returns the results
    * from the
    * database.
    *
@@ -227,17 +228,13 @@ public final class SearchApis {
     LOGGER.debug("Info: instance;" + instanceId);
 
     /* validating proper actual query parameters from request */
-    if ((!requestBody.containsKey(SEARCH_CRITERIA)
-        || requestBody.getJsonArray(SEARCH_CRITERIA).isEmpty())
+    if ((!requestBody.containsKey(SEARCH_CRITERIA_KEY)
+        || requestBody.getJsonArray(SEARCH_CRITERIA_KEY).isEmpty())
         && (!requestBody.containsKey(GEOPROPERTY)
         || !requestBody.containsKey(GEORELATION)
         || !requestBody.containsKey(GEOMETRY)
         || !requestBody.containsKey(COORDINATES))
-        && !requestBody.containsKey(Q_VALUE)
-        && (!requestBody.containsKey(TIME_REL)
-        || !requestBody.containsKey(TIME))
-        && (!requestBody.containsKey(RANGE_REL)
-        || !requestBody.containsKey(RANGE))) {
+        && !requestBody.containsKey(Q_VALUE)) {
 
       LOGGER.error("Fail: Invalid Syntax");
       response.setStatusCode(400)
@@ -252,10 +249,10 @@ public final class SearchApis {
 
     boolean hasValidFilter = false;
 
-    /* ATTRIBUTE filter */
-    if (requestBody.getJsonArray(SEARCH_CRITERIA) != null
-        && !requestBody.getJsonArray(SEARCH_CRITERIA).isEmpty()) {
-      requestBody.put(SEARCH_TYPE, requestBody.getString(SEARCH_TYPE, "") + SEARCH_CRITERIA);
+    /* SEARCH_CRITERIA filter (attribute, temporal, range) */
+    if (requestBody.getJsonArray(SEARCH_CRITERIA_KEY) != null
+        && !requestBody.getJsonArray(SEARCH_CRITERIA_KEY).isEmpty()) {
+      requestBody.put(SEARCH_TYPE, requestBody.getString(SEARCH_TYPE, "") + SEARCH_TYPE_CRITERIA);
       hasValidFilter = true;
     }
 
@@ -270,18 +267,6 @@ public final class SearchApis {
     /* TEXT filter */
     if (requestBody.getString(Q_VALUE) != null && !requestBody.getString(Q_VALUE).isBlank()) {
       requestBody.put(SEARCH_TYPE, requestBody.getString(SEARCH_TYPE, "") + SEARCH_TYPE_TEXT);
-      hasValidFilter = true;
-    }
-
-    /* TEMPORAL filter */
-    if (requestBody.getString(TIME_REL) != null && !requestBody.getString(TIME_REL).isBlank()) {
-      requestBody.put(SEARCH_TYPE, requestBody.getString(SEARCH_TYPE, "") + SEARCH_TYPE_TEMPORAL);
-      hasValidFilter = true;
-    }
-
-    /* RANGE filter */
-    if (requestBody.getString(RANGE_REL) != null && !requestBody.getString(RANGE_REL).isBlank()) {
-      requestBody.put(SEARCH_TYPE, requestBody.getString(SEARCH_TYPE, "") + SEARCH_TYPE_RANGE);
       hasValidFilter = true;
     }
 

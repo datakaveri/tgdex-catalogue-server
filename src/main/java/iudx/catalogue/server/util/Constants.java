@@ -100,7 +100,6 @@ public class Constants {
 
   public static final String PROPERTY = "property";
   public static final String VALUE = "value";
-  public static final String SEARCH_CRITERIA = "searchCriteria";
 
   /** GeoRels. */
   public static final String GEOREL_WITHIN = "within";
@@ -125,10 +124,6 @@ public class Constants {
   public static final String Q_VALUE = "q";
   public static final String LIMIT = "limit";
   public static final String OFFSET = "offset";
-  public static final String TIME = "time";
-  public static final String END_TIME = "endTime";
-  public static final String TIME_REL = "timerel";
-  public static final String DURING = "during";
   public static final String BETWEEN = "between";
   public static final String BEFORE = "before";
   public static final String AFTER = "after";
@@ -137,9 +132,12 @@ public class Constants {
   public static final String LESS_THAN_EQUALS = "lte";
   public static final String GREATER_THAN_EQUALS = "gte";
   public static final String RANGE = "range";
-  public static final String END_RANGE = "endRange";
-  public static final String RANGE_REL = "rangerel";
-  public static final String ATTRIBUTE_KEY = "attribute";
+  public static final String BETWEEN_RANGE = "betweenRange";
+  public static final String AFTER_RANGE = "afterRange";
+  public static final String BEFORE_RANGE = "beforeRange";
+  public static final String BETWEEN_TEMPORAL = "betweenTemporal";
+  public static final String AFTER_TEMPORAL = "afterTemporal";
+  public static final String BEFORE_TEMPORAL = "beforeTemporal";
 
   /** SearchTypes. */
   public static final String SEARCH_TYPE = "searchType";
@@ -147,9 +145,10 @@ public class Constants {
   public static final String SEARCH_TYPE_TEXT = "textSearch_";
   public static final String SEARCH_TYPE_ATTRIBUTE = "attributeSearch_";
   public static final String SEARCH_TYPE_TAGS = "tagsSearch_";
-  public static final String SEARCH_TYPE_TEMPORAL = "temporalSearch_";
-  public static final String SEARCH_TYPE_RANGE = "rangeSearch_";
   public static final String RESPONSE_FILTER = "responseFilter_";
+  public static final String SEARCH_TYPE_CRITERIA = "searchCriteria_";  // used in SEARCH_TYPE value
+  public static final String SEARCH_CRITERIA_KEY = "searchCriteria";    // used in requestBody key
+
 
   public static final String MESSAGE = "detail";
   public static final String RESULTS = "results";
