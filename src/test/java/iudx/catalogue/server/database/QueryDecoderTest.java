@@ -756,8 +756,8 @@ public class QueryDecoderTest {
 
     JsonObject request = new JsonObject()
         .put(SEARCH, true)
-        .put(SEARCH_TYPE, SEARCH_CRITERIA)
-        .put(SEARCH_CRITERIA, new JsonArray().add(rangeCriterion));
+        .put(SEARCH_TYPE, SEARCH_TYPE_CRITERIA)
+        .put(SEARCH_CRITERIA_KEY, new JsonArray().add(rangeCriterion));
 
     JsonObject json = queryDecoder.searchQuery(request);
 
@@ -787,9 +787,9 @@ public class QueryDecoderTest {
                 .add("2020-09-09T20:05:45Z")));
 
     JsonObject request = new JsonObject()
-        .put(SEARCH_TYPE, "searchCriteria")
+        .put(SEARCH_TYPE, SEARCH_TYPE_CRITERIA)
         .put(SEARCH, true)
-        .put(SEARCH_CRITERIA, searchCriteria);
+        .put(SEARCH_CRITERIA_KEY, searchCriteria);
 
     JsonObject json = queryDecoder.searchQuery(request);
 
@@ -820,8 +820,8 @@ public class QueryDecoderTest {
 
     JsonObject request = new JsonObject()
         .put(SEARCH, true)
-        .put(SEARCH_TYPE, SEARCH_CRITERIA)
-        .put(SEARCH_CRITERIA, new JsonArray().add(invalidCriterion));
+        .put(SEARCH_TYPE, SEARCH_TYPE_CRITERIA)
+        .put(SEARCH_CRITERIA_KEY, new JsonArray().add(invalidCriterion));
 
     JsonObject expectedError = new JsonObject()
         .put(ERROR, new RespBuilder()
@@ -850,8 +850,8 @@ public class QueryDecoderTest {
 
     JsonObject request = new JsonObject()
         .put(SEARCH, true)
-        .put(SEARCH_TYPE, SEARCH_CRITERIA)
-        .put(SEARCH_CRITERIA, new JsonArray().add(invalidCriterion));
+        .put(SEARCH_TYPE, SEARCH_TYPE_CRITERIA)
+        .put(SEARCH_CRITERIA_KEY, new JsonArray().add(invalidCriterion));
 
     JsonObject expectedError = new JsonObject()
         .put(ERROR, new RespBuilder()

@@ -7,8 +7,10 @@ import static iudx.catalogue.server.util.Constants.BEFORE_TEMPORAL;
 import static iudx.catalogue.server.util.Constants.BETWEEN_TEMPORAL;
 import static iudx.catalogue.server.util.Constants.FIELD;
 import static iudx.catalogue.server.util.Constants.ITEM_TYPE_APPS;
-import static iudx.catalogue.server.util.Constants.SEARCH_CRITERIA;
+import static iudx.catalogue.server.util.Constants.SEARCH_CRITERIA_KEY;
 import static iudx.catalogue.server.util.Constants.SEARCH_TYPE;
+import static iudx.catalogue.server.util.Constants.SEARCH_TYPE_CRITERIA;
+import static iudx.catalogue.server.util.Constants.TERM;
 import static iudx.catalogue.server.util.Constants.TYPE;
 import static iudx.catalogue.server.util.Constants.TYPE_INVALID_PROPERTY_VALUE;
 import static iudx.catalogue.server.util.Constants.TYPE_SUCCESS;
@@ -20,6 +22,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import iudx.catalogue.server.apiserver.integrationtests.RestAssuredConfiguration;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -30,34 +33,30 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(RestAssuredConfiguration.class)
 public class TemporalSearchIT {
 
-  private JsonObject baseTemporalCriteria(String searchType, String field, JsonArray values) {
+  private JsonObject baseTermCriteria(String field, JsonArray values) {
     JsonObject criterion = new JsonObject()
-        .put(SEARCH_TYPE, searchType)
+        .put(SEARCH_TYPE, TERM)
         .put(FIELD, field)
         .put(VALUES, values);
 
     return new JsonObject()
-        .put(SEARCH_TYPE, SEARCH_CRITERIA)
-        .put(SEARCH_CRITERIA, new JsonArray().add(criterion));
-  }
-
-  private JsonObject baseTermCriteria(String field, JsonArray values) {
-    JsonObject criterion = new JsonObject()
-        .put("searchType", "term")
-        .put("field", field)
-        .put("values", values);
-
-    return new JsonObject()
-        .put("searchType", "searchCriteria")
-        .put("searchCriteria", new JsonArray().add(criterion));
+        .put(SEARCH_TYPE, SEARCH_TYPE_CRITERIA)
+        .put(SEARCH_CRITERIA_KEY, new JsonArray().add(criterion));
   }
 
   @Test
+  @Order(1)
   @DisplayName("Temporal Search - BETWEEN - 200 Success")
   void PostTemporalSearchBetween() {
     JsonArray values =
         new JsonArray().add("2025-03-20T04:00:00+0530").add("2025-05-02T09:15:27+0530");
-    JsonObject requestBody = baseTemporalCriteria(BETWEEN_TEMPORAL, ITEM_CREATED_AT, values);
+    JsonObject criterion = new JsonObject()
+        .put(SEARCH_TYPE, BETWEEN_TEMPORAL)
+        .put(FIELD, ITEM_CREATED_AT)
+        .put(VALUES, values);
+
+    JsonObject requestBody = new JsonObject()
+        .put(SEARCH_CRITERIA_KEY, new JsonArray().add(criterion));
 
     given()
         .contentType(APPLICATION_JSON)
@@ -70,10 +69,17 @@ public class TemporalSearchIT {
   }
 
   @Test
+  @Order(2)
   @DisplayName("Temporal Search - AFTER - 200 Success")
   void PostTemporalSearchAfter() {
     JsonArray values = new JsonArray().add("2025-03-20T04:00:00+0530");
-    JsonObject requestBody = baseTemporalCriteria(AFTER_TEMPORAL, ITEM_CREATED_AT, values);
+    JsonObject criterion = new JsonObject()
+        .put(SEARCH_TYPE, AFTER_TEMPORAL)
+        .put(FIELD, ITEM_CREATED_AT)
+        .put(VALUES, values);
+
+    JsonObject requestBody = new JsonObject()
+        .put(SEARCH_CRITERIA_KEY, new JsonArray().add(criterion));
 
     given()
         .contentType(APPLICATION_JSON)
@@ -86,10 +92,17 @@ public class TemporalSearchIT {
   }
 
   @Test
+  @Order(3)
   @DisplayName("Temporal Search - BEFORE - 200 Success")
   void PostTemporalSearchBefore() {
     JsonArray values = new JsonArray().add("2025-05-02T09:15:27+0530");
-    JsonObject requestBody = baseTemporalCriteria(BEFORE_TEMPORAL, ITEM_CREATED_AT, values);
+    JsonObject criterion = new JsonObject()
+        .put(SEARCH_TYPE, BEFORE_TEMPORAL)
+        .put(FIELD, ITEM_CREATED_AT)
+        .put(VALUES, values);
+
+    JsonObject requestBody = new JsonObject()
+        .put(SEARCH_CRITERIA_KEY, new JsonArray().add(criterion));
 
     given()
         .contentType(APPLICATION_JSON)
@@ -102,10 +115,17 @@ public class TemporalSearchIT {
   }
 
   @Test
+  @Order(4)
   @DisplayName("Temporal Search - BETWEEN without endTime - 400 Invalid Request")
   void PostTemporalSearchBetweenInvalid() {
     JsonArray values = new JsonArray().add("2025-03-20T04:00:00+0530"); // Missing second value
-    JsonObject requestBody = baseTemporalCriteria(BETWEEN_TEMPORAL, ITEM_CREATED_AT, values);
+    JsonObject criterion = new JsonObject()
+        .put(SEARCH_TYPE, BETWEEN_TEMPORAL)
+        .put(FIELD, ITEM_CREATED_AT)
+        .put(VALUES, values);
+
+    JsonObject requestBody = new JsonObject()
+        .put(SEARCH_CRITERIA_KEY, new JsonArray().add(criterion));
 
     given()
         .contentType(APPLICATION_JSON)
@@ -118,10 +138,17 @@ public class TemporalSearchIT {
   }
 
   @Test
+  @Order(5)
   @DisplayName("Temporal Search - Invalid timerel value - 400 Invalid Syntax")
   void PostTemporalSearchInvalidTimerel() {
     JsonArray values = new JsonArray().add("2025-03-20T04:00:00+05:30");
-    JsonObject requestBody = baseTemporalCriteria("soonTemporal", ITEM_CREATED_AT, values);
+    JsonObject criterion = new JsonObject()
+        .put(SEARCH_TYPE, "soonTemporal")
+        .put(FIELD, ITEM_CREATED_AT)
+        .put(VALUES, values);
+
+    JsonObject requestBody = new JsonObject()
+        .put(SEARCH_CRITERIA_KEY, new JsonArray().add(criterion));
 
     given()
         .contentType(APPLICATION_JSON)
@@ -134,6 +161,7 @@ public class TemporalSearchIT {
   }
 
   @Test
+  @Order(6)
   @DisplayName("Term Search - type = adex:Apps - 200 Success")
   void PostTermSearch() {
     JsonArray values = new JsonArray().add(ITEM_TYPE_APPS);

@@ -17,7 +17,7 @@ import static iudx.catalogue.server.util.Constants.FILE_FORMAT;
 import static iudx.catalogue.server.util.Constants.FILTER;
 import static iudx.catalogue.server.util.Constants.ITEM_TYPE_DATA_BANK;
 import static iudx.catalogue.server.util.Constants.ORGANIZATION_TYPE;
-import static iudx.catalogue.server.util.Constants.SEARCH_CRITERIA;
+import static iudx.catalogue.server.util.Constants.SEARCH_CRITERIA_KEY;
 import static iudx.catalogue.server.util.Constants.TAGS;
 import static iudx.catalogue.server.util.Constants.TYPE;
 import static iudx.catalogue.server.util.Constants.VALUES;
@@ -210,7 +210,7 @@ public class ListItemsIT {
     @DisplayName("Testing listMultipleItems for itemType with filter - 200 Success")
     void listMultipleItemsWithItemTypeAndFilter() {
         JsonObject requestBody = new JsonObject()
-            .put(SEARCH_CRITERIA, new JsonArray()
+            .put(SEARCH_CRITERIA_KEY, new JsonArray()
                 .add(new JsonObject()
                     .put(FIELD, TYPE)
                     .put(VALUES, new JsonArray().add(ITEM_TYPE_DATA_BANK))

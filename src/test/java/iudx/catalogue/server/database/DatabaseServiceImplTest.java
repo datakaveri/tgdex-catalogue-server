@@ -379,7 +379,7 @@ public class DatabaseServiceImplTest {
   @Description("test list multiple Items when handler succeeded ")
   public void testListMulItems(VertxTestContext vertxTestContext) {
     JsonObject request = new JsonObject();
-    request.put(SEARCH_CRITERIA, new JsonArray().add(
+    request.put(SEARCH_CRITERIA_KEY, new JsonArray().add(
         new JsonObject()
             .put(FIELD, "type")
             .put(VALUES, new JsonArray().add("adex:DataBank"))
@@ -406,7 +406,7 @@ public class DatabaseServiceImplTest {
   @Description("test list multiple Items method")
   public void testListMulItemsFailed(VertxTestContext vertxTestContext) {
     JsonObject request = new JsonObject();
-    request.put(SEARCH_CRITERIA, new JsonArray().add(
+    request.put(SEARCH_CRITERIA_KEY, new JsonArray().add(
         new JsonObject()
             .put(FIELD, "type")
             .put(VALUES, new JsonArray().add("adex:DataBank"))
