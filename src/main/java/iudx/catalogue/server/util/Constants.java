@@ -124,10 +124,6 @@ public class Constants {
   public static final String Q_VALUE = "q";
   public static final String LIMIT = "limit";
   public static final String OFFSET = "offset";
-  public static final String TIME = "time";
-  public static final String END_TIME = "endTime";
-  public static final String TIME_REL = "timerel";
-  public static final String DURING = "during";
   public static final String BETWEEN = "between";
   public static final String BEFORE = "before";
   public static final String AFTER = "after";
@@ -136,11 +132,6 @@ public class Constants {
   public static final String LESS_THAN_EQUALS = "lte";
   public static final String GREATER_THAN_EQUALS = "gte";
   public static final String RANGE = "range";
-  public static final String END_RANGE = "endRange";
-  public static final String RANGE_REL = "rangerel";
-  public static final String ATTRIBUTE_KEY = "attribute";
-  public static final String TIME_ATTRIBUTE = "timeAttribute";
-  public static final String RANGE_ATTRIBUTE = "rangeAttribute";
   public static final String BETWEEN_RANGE = "betweenRange";
   public static final String AFTER_RANGE = "afterRange";
   public static final String BEFORE_RANGE = "beforeRange";

@@ -326,9 +326,9 @@ public final class QueryDecoder {
                       .getJsonResponse());
                 }
               } else if (criterionSearchType.startsWith(BEFORE)) {
-                rangeFieldObj.put(LESS_THAN_EQUALS, values.getValue(0));
-              } else if (criterionSearchType.startsWith(AFTER)) {
-                rangeFieldObj.put(GREATER_THAN_EQUALS, values.getValue(0));
+                rangeFieldObj.put(LESS_THAN, values.getValue(0));
+              } else {
+                rangeFieldObj.put(GREATER_THAN, values.getValue(0));
               }
 
               rangeObj.put(field, rangeFieldObj);
