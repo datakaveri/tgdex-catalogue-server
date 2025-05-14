@@ -571,7 +571,8 @@ public final class QueryDecoder {
       if (request.containsKey(RESOURCE_GRP)) {
         subQuery =
             subQuery
-                + MATCH_QUERY.replace("$1", ID_KEYWORD).replace("$2", request.getString(RESOURCE_GRP))
+                + MATCH_QUERY.replace("$1", ID_KEYWORD)
+                .replace("$2", request.getString(RESOURCE_GRP))
                 + ",";
       }
       if (request.containsKey(PROVIDER)) {
