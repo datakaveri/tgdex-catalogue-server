@@ -1,24 +1,33 @@
 {
 	"info": {
 		"_postman_id": "43215f38-7ce9-4af7-ad83-4796416f8f2c",
-		"name": "AI Sandbox | CAT",
+		"name": "AI Sandbox | CAT | Latest collection",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "29449699"
+		"_exporter_id": "29449699",
+		"_collection_link": "https://kranthi-7706.postman.co/workspace/AI-SandBox-Workspace~7b17c3e8-8468-4272-ac8a-42e14886620a/collection/29449699-43215f38-7ce9-4af7-ad83-4796416f8f2c?action=share&source=collection_link&creator=29449699"
 	},
 	"item": [
 		{
 			"name": "Get Token",
 			"item": [
 				{
-					"name": "Get CONSUMER token for rating apis",
+					"name": "Get Token - provideruser",
 					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"pm.environment.set(\"openToken\", jsonData.results.accessToken);",
-									"postman.setEnvironmentVariable(\"openToken\", jsonData.results.accessToken);"
+									"let json = pm.response.json();",
+									"pm.environment.set(\"orgmem_token\", json.access_token);"
 								],
 								"type": "text/javascript"
 							}
@@ -28,38 +37,41 @@
 						"method": "POST",
 						"header": [
 							{
-								"key": "clientId",
-								"value": "{{consumerClientID}}",
-								"type": "text"
-							},
-							{
-								"key": "clientSecret",
-								"value": "{{consumerClientSecret}}",
-								"type": "text"
-							},
-							{
-								"key": "Cache-Control",
-								"value": "no-cache, no-store, must-revalidate",
-								"type": "text"
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"itemId\": \"rs.iudx.io\",\n  \"itemType\": \"resource_server\",\n  \"role\": \"consumer\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "client_id",
+									"value": ""
+								},
+								{
+									"key": "username",
+									"value": ""
+								},
+								{
+									"key": "password",
+									"value": ""
 								}
-							}
+							]
 						},
 						"url": {
-							"raw": "https://{{auth-url}}/{{dxAuthBasePath}}/token",
-							"protocol": "https",
+							"raw": "{{kc_host}}/realms/{{realm}}/protocol/openid-connect/token",
 							"host": [
-								"{{auth-url}}"
+								"{{kc_host}}"
 							],
 							"path": [
-								"{{dxAuthBasePath}}",
+								"realms",
+								"{{realm}}",
+								"protocol",
+								"openid-connect",
 								"token"
 							]
 						}
@@ -67,147 +79,14 @@
 					"response": []
 				},
 				{
-					"name": "Get DELEGATE token for uploading items",
+					"name": "Get Token - orgadmin",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"pm.environment.set(\"token\", jsonData.results.accessToken);",
-									"postman.setEnvironmentVariable(\"token\", jsonData.results.accessToken);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "clientId",
-								"value": "{{providerClientID}}",
-								"type": "text"
-							},
-							{
-								"key": "clientSecret",
-								"value": "{{providerClientSecret}}",
-								"type": "text"
-							},
-							{
-								"key": "Cache-Control",
-								"value": "no-cache, no-store, must-revalidate",
-								"type": "text"
-							},
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"itemId\": \"rs-test-pm.iudx.io\", \n  \"itemType\": \"resource_server\",\n  \"role\": \"provider\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "https://{{auth-url}}/{{dxAuthBasePath}}/token",
-							"protocol": "https",
-							"host": [
-								"{{auth-url}}"
-							],
-							"path": [
-								"{{dxAuthBasePath}}",
-								"token"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get ADMIN token",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"pm.environment.set(\"adminToken\", jsonData.results.accessToken);",
-									"postman.setEnvironmentVariable(\"adminToken\", jsonData.results.accessToken);"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "clientId",
-								"value": "{{rsAdminClientID}}",
-								"type": "text"
-							},
-							{
-								"key": "clientSecret",
-								"value": "{{rsAdminClientSecret}}",
-								"type": "text"
-							},
-							{
-								"key": "Cache-Control",
-								"value": "no-cache, no-store, must-revalidate",
-								"type": "text"
-							},
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"itemId\": \"rs-test-pm.iudx.io\", \n  \"itemType\": \"resource_server\",\n  \"role\": \"admin\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "https://{{auth-url}}/{{dxAuthBasePath}}/token",
-							"protocol": "https",
-							"host": [
-								"{{auth-url}}"
-							],
-							"path": [
-								"{{dxAuthBasePath}}",
-								"token"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Get Cos ADMIN token",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"pm.environment.set(\"cosAdminToken\", jsonData.results.accessToken);",
-									"postman.setEnvironmentVariable(\"cosAdminToken\", jsonData.results.accessToken);"
+									"let json = pm.response.json();",
+									"pm.environment.set(\"org_admin_token\", json.access_token);"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -215,50 +94,103 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "POST",
 						"header": [
 							{
-								"key": "clientId",
-								"value": "817c6754-20c2-4d2e-8e05-af3ce29d9d2e",
-								"type": "text"
-							},
-							{
-								"key": "clientSecret",
-								"value": "6279c084d799b30ff31a58070a6d34055d3a4886",
-								"type": "text"
-							},
-							{
-								"key": "Cache-Control",
-								"value": "no-cache, no-store, must-revalidate",
-								"type": "text"
-							},
-							{
-								"key": "",
-								"value": "",
-								"type": "text",
-								"disabled": true
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"itemId\": \"1c8a6bfc-abb0-49a7-bcba-77630c8ce4a6\", \n  \"itemType\": \"cos\",\n  \"role\": \"cos_admin\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "client_id",
+									"value": ""
+								},
+								{
+									"key": "username",
+									"value": ""
+								},
+								{
+									"key": "password",
+									"value": ""
 								}
-							}
+							]
 						},
 						"url": {
-							"raw": "https://{{auth-url}}/{{dxAuthBasePath}}/token",
-							"protocol": "https",
+							"raw": "{{kc_host}}/realms/{{realm}}/protocol/openid-connect/token",
 							"host": [
-								"{{auth-url}}"
+								"{{kc_host}}"
 							],
 							"path": [
-								"{{dxAuthBasePath}}",
+								"realms",
+								"{{realm}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Token - Cos admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let json = pm.response.json();",
+									"pm.environment.set(\"cos_token\", json.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								},
+								{
+									"key": "client_id",
+									"value": ""
+								},
+								{
+									"key": "username",
+									"value": ""
+								},
+								{
+									"key": "password",
+									"value": ""
+								}
+							]
+						},
+						"url": {
+							"raw": "{{kc_host}}/realms/{{realm}}/protocol/openid-connect/token",
+							"host": [
+								"{{kc_host}}"
+							],
+							"path": [
+								"realms",
+								"{{realm}}",
+								"protocol",
+								"openid-connect",
 								"token"
 							]
 						}
@@ -273,127 +205,6 @@
 				{
 					"name": "Create Item",
 					"item": [
-						{
-							"name": "Create OWNER item - 201 (success)",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(201);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"    pm.expect(body.results).to.have.property(\"id\");",
-											"    const ID = body.results.id;",
-											"    pm.globals.set(\"owner_id\", ID);",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{cosAdminToken}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"@context\": \"https://voc.iudx.org.in/\",\n    \"type\": [\n        \"iudx:Owner\"\n    ],\n    \"name\": \"AiSandBoxOwnerPM\",\n    \"description\": \"owner item creation for postman collection\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{host}}{{base}}/item/",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item",
-										""
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Create COS item - 201 (success)",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(201);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"    pm.expect(body.results).to.have.property(\"id\");",
-											"    const ID = body.results.id;",
-											"    pm.globals.set(\"cos_id\", ID);",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{cosAdminToken}}"
-									},
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"@context\": \"https://voc.iudx.org.in/\",\n    \"type\": [\n        \"iudx:COS\"\n    ],\n    \"name\": \"AiSandBoxCosPM\",\n    \"owner\": \"{{owner_id}}\",\n    \"description\": \"COS item for postman collection\",\n    \"cosURL\": \"cat-test.iudx.io\",\n    \"cosUI\": \"cat-test.iudx.io\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{host}}{{base}}/item/",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item",
-										""
-									]
-								}
-							},
-							"response": []
-						},
 						{
 							"name": "Create an APPs Item - 201 (success)",
 							"event": [
@@ -427,7 +238,7 @@
 								"header": [
 									{
 										"key": "token",
-										"value": "{{cosAdminToken}}",
+										"value": "{{cos_token}}",
 										"type": "text"
 									},
 									{
@@ -446,136 +257,6 @@
 								"body": {
 									"mode": "raw",
 									"raw": "{\r\n  \"type\": [\"adex:Apps\"],\r\n  \"name\": \"AiSandBoxAppsPM\",\r\n  \"tags\": [\r\n    \"ai\", \"ml\", \"agriculture\", \"planthealth\", \"diseasedetection\",\r\n    \"deep-learning\", \"cnn\", \"image-classification\", \"leaf-analysis\"\r\n  ],\r\n  \"label\": \"Crop Disease Detection using AI\",\r\n  \"description\": \"An AI-based application that detects diseases in crops by analyzing images of leaves. It uses deep learning models to identify symptoms and suggest treatments.\",\r\n  \"shortDescription\": \"Detects crop diseases using AI and leaf image analysis.\",\r\n  \"organizationType\": \"Private\",\r\n  \"department\": \"Agriculture and Co-operation\",\r\n  \"uploadedBy\": \"user@example.com\",\r\n  \"fileFormat\": \"csv\",\r\n  \"accessPolicy\": \"Public\",\r\n  \"canBeUsedFor\": {\r\n    \"Early Risk Stratification\": \"Early detection of disease risk in crops\",\r\n    \"Field-Level Prioritisation\": \"Helps prioritize treatment at field level\"\r\n  },\r\n  \"dataInputsAndAiTechniques\": {\r\n    \"Input Data Banks\": [\"Leaf image datasets\"],\r\n    \"Expected Output\": [\"Disease classification\", \"Treatment suggestions\"],\r\n    \"AI Models\": [\"CNN\", \"ResNet\", \"MobileNet\"],\r\n    \"Potential Benefits\": [\"Improved crop yield\", \"Reduced pesticide usage\"]\r\n  }\r\n}\r\n",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "http://localhost:8081/{{base}}/item/",
-									"protocol": "http",
-									"host": [
-										"localhost"
-									],
-									"port": "8081",
-									"path": [
-										"{{base}}",
-										"item",
-										""
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Create Resource Server Item Entity - 201 (success)",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(201);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"    pm.expect(body.results).to.have.property(\"id\");",
-											"    const ID = body.results.id;",
-											"    pm.globals.set(\"resource_server_id\", ID);",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{cosAdminToken}}"
-									},
-									{
-										"key": "Content-Type",
-										"value": "application/json"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"@context\": \"https://voc.iudx.org.in/\",\n    \"type\": [\n        \"iudx:ResourceServer\"\n    ],\n    \"name\": \"AiSandBoxResourceServerPM\",\n    \"description\": \"Multi tenanted IUDX resource server for postman collection\",\n    \"tags\": [\n        \"IUDX\",\n        \"Resource\",\n        \"Server\",\n        \"Platform\"\n    ],\n    \"cos\": \"{{cos_id}}\",\n    \"owner\": \"{{owner_id}}\",\n    \"resourceServerOrg\": {\n        \"name\": \"iudx\",\n        \"additionalInfoURL\": \"https://iudx.org.in\",\n        \"location\": {\n            \"type\": \"Place\",\n            \"address\": \"IISc, Bangalore\",\n            \"geometry\": {\n                \"type\": \"Point\",\n                \"coordinates\": [\n                    77.570423,\n                    13.013945\n                ]\n            }\n        }\n    },\n    \"resourceServerRegURL\": \"rs-test-pm.iudx.io\",\n    \"resourceAccessModalities\": [\n        {\n            \"type\": [\n                \"iudx:HTTPAccess\"\n            ],\n            \"protocol\": \"http\",\n            \"accessURL\": \"rs\",\n            \"port\": 8080\n        }\n    ],\n    \"location\": {\n        \"type\": \"Place\",\n        \"address\": \"IISc, Bangalore\",\n        \"geometry\": {\n            \"type\": \"Point\",\n            \"coordinates\": [\n                77.570423,\n                13.013945\n            ]\n        }\n    }\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{host}}{{base}}/item/",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item",
-										""
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Create an DX Provider Item - 201 (success)",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {\r",
-											"    pm.response.to.have.status(201);\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response header\", function () {\r",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response body\", function () {    \r",
-											"    const body = pm.response.json();\r",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
-											"    pm.expect(body.results).to.have.property(\"id\");\r",
-											"    const ID = body.results.id;\r",
-											"    pm.globals.set(\"provider_id\", ID);\r",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{adminToken}}",
-										"type": "text"
-									},
-									{
-										"key": "instance",
-										"value": "pune",
-										"type": "text",
-										"disabled": true
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:Provider\"\r\n    ],\r\n    \"name\": \"AiSandBoxProviderPM\",\r\n    \"resourceServer\": \"{{resource_server_id}}\",\r\n    \"description\": \"provider for the postman collection\",\r\n    \"ownerUserId\": \"{{ownerUserId}}\",\r\n    \"providerOrg\": {\r\n        \"name\": \"Datakaveri\",\r\n        \"additionalInfoURL\": \"https://datakaveri.org\",\r\n        \"location\": {\r\n            \"type\": \"Place\",\r\n            \"address\": \"IIsc\",\r\n            \"geometry\": {\r\n                \"type\": \"Point\",\r\n                \"coordinates\": [\r\n                    75.92,\r\n                    14.5\r\n                ]\r\n            }\r\n        }\r\n    }\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -632,77 +313,12 @@
 									},
 									{
 										"key": "token",
-										"value": "{{token}}"
+										"value": "{{org_admin_token}}"
 									}
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"type\": [\n    \"adex:AiModel\"\n  ],\n  \"name\": \"AiSandBoxAiModelPM\",\n  \"description\": \"ai model item for the postman collection\",\n  \"shortDescription\": \"A test AI model item created for Postman integration.\",\n  \"label\": \"ai model item for test only\",\n  \"tags\": [\n    \"ai\",\n    \"crop\",\n    \"crop disease\",\n    \"disease detection\",\n    \"ai model\"\n  ],\n  \"provider\": \"{{provider_id}}\",\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"modelType\": \"ImageClassifier\",\n  \"fileFormat\": \"ipynb\",\n  \"industry\": \"Agriculture\",\n  \"uploadedBy\": \"test.user@datakaveri.org\",\n  \"license\": \"MIT\",\n  \"fileSize\": \"15MB\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{host}}{{base}}/item/",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item",
-										""
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "Create an DX Resource Group Item Entity Copy - 201 (success)",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {\r",
-											"    pm.response.to.have.status(201);\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response header\", function () {\r",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response body\", function () {    \r",
-											"    const body = pm.response.json();\r",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
-											"    pm.expect(body.results).to.have.property(\"id\");\r",
-											"    const ID = body.results.id;\r",
-											"    pm.globals.set(\"resource_group_id\", ID);\r",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{token}}",
-										"type": "text"
-									},
-									{
-										"key": "instance",
-										"value": "pune",
-										"type": "text",
-										"disabled": true
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:ResourceGroup\",\r\n        \"iudx:IssueReporting\"\r\n    ],\r\n    \"name\": \"iudxResourceGroupRT\",\r\n    \"description\": \"resource group item for the postman collection\",\r\n    \"tags\": [\r\n        \"swachhata\",\r\n        \"complaints\",\r\n        \"construction material\",\r\n        \"requests\"\r\n    ],\r\n    \"provider\": \"{{provider_id}}\"\r\n}",
+									"raw": "{\n  \"type\": [\n    \"adex:AiModel\"\n  ],\n  \"name\": \"AiSandBoxAiModelPrivate\",\n  \"description\": \"ai model item for the postman collection\",\n  \"shortDescription\": \"A test AI model item created for Postman integration.\",\n  \"label\": \"ai model item for test only\",\n  \"tags\": [\n    \"ai\",\n    \"crop\",\n    \"crop disease\",\n    \"disease detection\",\n    \"ai model\"\n  ],\n  \"accessPolicy\": \"PRIVATE\",\n  \"organizationId\": \"22ef65f2-0ff8-474c-97e1-0de35a5fd16b\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"modelType\": \"ImageClassifier\",\n  \"fileFormat\": \"ipynb\",\n  \"industry\": \"Agriculture\",\n  \"uploadedBy\": \"test.user@datakaveri.org\",\n  \"license\": \"MIT\",\n  \"fileSize\": \"15MB\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -755,7 +371,7 @@
 								"header": [
 									{
 										"key": "token",
-										"value": "{{token}}",
+										"value": "{{org_admin_token}}",
 										"type": "text"
 									},
 									{
@@ -767,68 +383,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n  \"name\": \"AiSandBoxDataBankPM\",\r\n  \"type\": [\"adex:DataBank\"],\r\n  \"label\": \"Subdistrict Weather Information\",\r\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\r\n  \"description\": \"Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\r\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\r\n  \"provider\": \"{{provider_id}}\",\r\n  \"uploadedBy\": \"Forecast department\",\r\n  \"resourceGroup\": \"{{resource_group_id}}\",\r\n  \"resourceServer\": \"{{resource_server_id}}\",\r\n  \"accessPolicy\": \"RESTRICTED\",\r\n  \"organizationType\": \"Government\",\r\n  \"fileFormat\": \"xlsx\",\r\n  \"dataReadiness\": 80,\r\n  \"department\": \"Department of IT, Electronics and Communication\",\r\n  \"industry\": \"Environmental Monitoring\",\r\n  \"geoCoverage\": \"Karnataka, India\",\r\n  \"yearRange\": \"2021-2024\",\r\n  \"uploadFrequency\": \"Daily\",\r\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\r\n  \"license\": \"CC-BY 4.0\",\r\n  \"resourceType\": \"MESSAGESTREAM\",\r\n  \"adexResourceAPIs\": [\"TEMPORAL\", \"ATTR\"],\r\n  \"iudxResourceAPIs\": [\"ATTR\"],\r\n  \"location\": {\r\n    \"type\": \"Place\",\r\n    \"address\": \"Subdistrict Office, Karnataka, India\",\r\n    \"geometry\": {\r\n      \"type\": \"Polygon\",\r\n      \"coordinates\": [\r\n        [\r\n          [76.895, 12.914],\r\n          [76.896, 12.914],\r\n          [76.896, 12.915],\r\n          [76.895, 12.915],\r\n          [76.895, 12.914]\r\n        ]\r\n      ]\r\n    }\r\n  },\r\n  \"dataDescriptor\": {\r\n    \"@context\": \"https://example.com/context/weather\",\r\n    \"type\": [\"DataDescriptor\"],\r\n    \"dataDescriptorLabel\": \"Subdistrict Level Daily Weather Data\",\r\n    \"description\": \"Contains weather parameters like precipitation and temperature per subdistrict.\",\r\n    \"districtCode\": {\r\n      \"type\": [\"Property\"],\r\n      \"description\": \"Code of the district\",\r\n      \"dataSchema\": \"string\"\r\n    },\r\n    \"subDistrictCode\": {\r\n      \"type\": [\"Property\"],\r\n      \"description\": \"Code of the subdistrict\",\r\n      \"dataSchema\": \"string\"\r\n    },\r\n    \"precipitation\": {\r\n      \"type\": [\"QuantitativeValue\"],\r\n      \"description\": \"Amount of rainfall\",\r\n      \"unitCode\": \"MMT\",\r\n      \"unitText\": \"Millimetres\",\r\n      \"dataSchema\": \"number\"\r\n    },\r\n    \"airTemperature\": {\r\n      \"type\": [\"QuantitativeValue\"],\r\n      \"description\": \"Ambient temperature readings\",\r\n      \"maxOverTime\": {\r\n        \"type\": [\"QuantitativeValue\"],\r\n        \"description\": \"Maximum temperature over the time period\",\r\n        \"dataSchema\": \"number\"\r\n      },\r\n      \"minOverTime\": {\r\n        \"type\": [\"QuantitativeValue\"],\r\n        \"description\": \"Minimum temperature over the time period\",\r\n        \"dataSchema\": \"number\"\r\n      }\r\n    }\r\n  },\r\n  \"dataSample\": {\r\n    \"districtCode\": \"KA-12\",\r\n    \"subDistrictCode\": \"KA-12-SD-05\",\r\n    \"precipitation\": 34.5,\r\n    \"airTemperature\": {\r\n      \"maxOverTime\": 32.4,\r\n      \"minOverTime\": 21.1\r\n    },\r\n    \"observationDateTime\": \"2023-02-03T08:30:00+05:30\"\r\n  }\r\n}\r\n",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{host}}{{base}}/item/",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item",
-										""
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "400 (Invalid Links) - Create an DX Resource Item",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {\r",
-											"    pm.response.to.have.status(400);\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response header\", function () {\r",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response body\", function () {    \r",
-											"    const body = pm.response.json();\r",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:LinkValidationFailed\");\r",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{token}}",
-										"type": "text"
-									},
-									{
-										"key": "instance",
-										"value": "pune",
-										"type": "text",
-										"disabled": true
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:Resource\",\r\n        \"iudx:PointOfInterest\"\r\n    ],\r\n    \"name\": \"wifi-location\",\r\n    \"label\": \"Wi-Fi Locations in Pimpri-Chinchwad City\",\r\n    \"description\": \"The physical coordinates of Wi-Fi system locations in Pimpri-Chinchwad city.\",\r\n    \"tags\": [\r\n        \"Wi-Fi\",\r\n        \"Wi-Fi zone\",\r\n        \"hotspot\",\r\n        \"internet\",\r\n        \"Wi-Fi access\",\r\n        \"Wi-Fi location\",\r\n        \"wireless internet\",\r\n        \"internet access\"\r\n    ],\r\n    \"apdURL\": \"rs.apd.iudx.org.in\",\r\n    \"accessPolicy\": \"SECURE\",\r\n    \"resourceServer\": \"83995e8c-fa80-4241-93c0-e86a66154eb6\",\r\n    \"provider\": \"83995e8c-fa80-4241-93c0-e86a66154eb6\",\r\n    \"resourceGroup\": \"83995e8c-fa80-4241-93c0-e86a66154eb6\"\r\n}",
+									"raw": "{\r\n  \"name\": \"AiSandBoxDataBankPM\",\r\n  \"type\": [\"adex:DataBank\"],\r\n  \"label\": \"Subdistrict Weather Information\",\r\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\r\n  \"description\": \"Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\r\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\r\n  \"uploadedBy\": \"Forecast department\",\r\n  \"accessPolicy\": \"RESTRICTED\",\r\n  \"organizationId\": \"22ef65f2-0ff8-474c-97e1-0de35a5fd16b\",\r\n  \"organizationType\": \"Government\",\r\n  \"fileFormat\": \"xlsx\",\r\n  \"dataReadiness\": 80,\r\n  \"department\": \"Department of IT, Electronics and Communication\",\r\n  \"industry\": \"Environmental Monitoring\",\r\n  \"geoCoverage\": \"Karnataka, India\",\r\n  \"yearRange\": \"2021-2024\",\r\n  \"uploadFrequency\": \"Daily\",\r\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\r\n  \"license\": \"CC-BY 4.0\",\r\n  \"resourceType\": \"MESSAGESTREAM\",\r\n  \"adexResourceAPIs\": [\"TEMPORAL\", \"ATTR\"],\r\n  \"iudxResourceAPIs\": [\"ATTR\"],\r\n  \"location\": {\r\n    \"type\": \"Place\",\r\n    \"address\": \"Subdistrict Office, Karnataka, India\",\r\n    \"geometry\": {\r\n      \"type\": \"Polygon\",\r\n      \"coordinates\": [\r\n        [\r\n          [76.895, 12.914],\r\n          [76.896, 12.914],\r\n          [76.896, 12.915],\r\n          [76.895, 12.915],\r\n          [76.895, 12.914]\r\n        ]\r\n      ]\r\n    }\r\n  },\r\n  \"dataDescriptor\": {\r\n    \"@context\": \"https://example.com/context/weather\",\r\n    \"type\": [\"DataDescriptor\"],\r\n    \"dataDescriptorLabel\": \"Subdistrict Level Daily Weather Data\",\r\n    \"description\": \"Contains weather parameters like precipitation and temperature per subdistrict.\",\r\n    \"districtCode\": {\r\n      \"type\": [\"Property\"],\r\n      \"description\": \"Code of the district\",\r\n      \"dataSchema\": \"string\"\r\n    },\r\n    \"subDistrictCode\": {\r\n      \"type\": [\"Property\"],\r\n      \"description\": \"Code of the subdistrict\",\r\n      \"dataSchema\": \"string\"\r\n    },\r\n    \"precipitation\": {\r\n      \"type\": [\"QuantitativeValue\"],\r\n      \"description\": \"Amount of rainfall\",\r\n      \"unitCode\": \"MMT\",\r\n      \"unitText\": \"Millimetres\",\r\n      \"dataSchema\": \"number\"\r\n    },\r\n    \"airTemperature\": {\r\n      \"type\": [\"QuantitativeValue\"],\r\n      \"description\": \"Ambient temperature readings\",\r\n      \"maxOverTime\": {\r\n        \"type\": [\"QuantitativeValue\"],\r\n        \"description\": \"Maximum temperature over the time period\",\r\n        \"dataSchema\": \"number\"\r\n      },\r\n      \"minOverTime\": {\r\n        \"type\": [\"QuantitativeValue\"],\r\n        \"description\": \"Minimum temperature over the time period\",\r\n        \"dataSchema\": \"number\"\r\n      }\r\n    }\r\n  },\r\n  \"dataSample\": {\r\n    \"districtCode\": \"KA-12\",\r\n    \"subDistrictCode\": \"KA-12-SD-05\",\r\n    \"precipitation\": 34.5,\r\n    \"airTemperature\": {\r\n      \"maxOverTime\": 32.4,\r\n      \"minOverTime\": 21.1\r\n    },\r\n    \"observationDateTime\": \"2023-02-03T08:30:00+05:30\"\r\n  }\r\n}\r\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -948,7 +503,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:Provider\"\r\n    ],\r\n    \"name\": \"uuid-test\",\r\n    \"description\": \"provider id for uuid test\",\r\n    \"providerOrg\": {\r\n        \"name\": \"Datakaveri\",\r\n        \"additionalInfoURL\": \"https://datakaveri.org\",\r\n        \"location\": {\r\n            \"type\": \"Place\",\r\n            \"address\": \"IIsc\",\r\n            \"geometry\": {\r\n                \"type\": \"Point\",\r\n                \"coordinates\": [\r\n                    75.92,\r\n                    14.5\r\n                ]\r\n            }\r\n        }\r\n    },\r\n    \"_summary\": \"uuid-test provider id for uuid test \",\r\n    \"id\": \"2ed6f05f-2f35-3f70-a472-79763fc81\",\r\n    \"ownerUserId\": \"{{ownerUserId}}\"\r\n}",
+									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:Provider\"\r\n    ],\r\n    \"name\": \"uuid-test\",\r\n    \"description\": \"provider id for uuid test\",\r\n    \"providerOrg\": {\r\n        \"name\": \"Datakaveri\",\r\n        \"additionalInfoURL\": \"https://datakaveri.org\",\r\n        \"location\": {\r\n            \"type\": \"Place\",\r\n            \"address\": \"IIsc\",\r\n            \"geometry\": {\r\n                \"type\": \"Point\",\r\n                \"coordinates\": [\r\n                    75.92,\r\n                    14.5\r\n                ]\r\n            }\r\n        }\r\n    },\r\n    \"_summary\": \"uuid-test provider id for uuid test \",\r\n    \"id\": \"2ed6f05f-2f35-3f70-a472-79763fc81\",\r\n    \"ownerUserId\": \"d8e46706-b9db-44e1-a9aa-e40839396b01\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1065,9 +620,15 @@
 							],
 							"request": {
 								"method": "GET",
-								"header": [],
+								"header": [
+									{
+										"key": "token",
+										"value": "{{org_admin_token}}",
+										"type": "text"
+									}
+								],
 								"url": {
-									"raw": "{{host}}{{base}}/item?id={{data_bank_id}}",
+									"raw": "{{host}}{{base}}/item?id={{ai_model_id}}",
 									"host": [
 										"{{host}}{{base}}"
 									],
@@ -1077,7 +638,7 @@
 									"query": [
 										{
 											"key": "id",
-											"value": "{{data_bank_id}}"
+											"value": "{{ai_model_id}}"
 										}
 									]
 								}
@@ -1287,118 +848,6 @@
 					"name": "Update Item",
 					"item": [
 						{
-							"name": "200 (success) - Update OWNER item",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"    pm.expect(body.results).to.have.property(\"id\");",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "PUT",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{cosAdminToken}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"@context\": \"https://voc.iudx.org.in/\",\n    \"type\": [\n        \"iudx:Owner\"\n    ],\n    \"name\": \"IudxOwnerPM\",\n    \"id\": \"{{owner_id}}\",\n    \"description\": \"owner item creation for postman collection\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{host}}{{base}}/item/",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item",
-										""
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "200 (success) - Update Cos item",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"pm.test(\"Check response header\", function () {",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");",
-											"});",
-											"",
-											"pm.test(\"Check response body\", function () {    ",
-											"    const body = pm.response.json();",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");",
-											"    pm.expect(body.results).to.have.property(\"id\");",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "PUT",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{cosAdminToken}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"@context\": \"https://voc.iudx.org.in/\",\n    \"type\": [\n        \"iudx:COS\"\n    ],\n    \"name\": \"IudxCosPM\",\n    \"owner\": \"{{owner_id}}\",\n    \"id\": \"{{cos_id}}\",\n    \"description\": \"COS item for postman collection\",\n    \"cosURL\": \"cat-test.iudx.io\",\n    \"cosUI\": \"cat-test.iudx.io\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{host}}{{base}}/item/",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item",
-										""
-									]
-								}
-							},
-							"response": []
-						},
-						{
 							"name": "200 (success) - Update Apps Item",
 							"event": [
 								{
@@ -1429,139 +878,13 @@
 								"header": [
 									{
 										"key": "token",
-										"value": "{{cosAdminToken}}",
+										"value": "{{cos_token}}",
 										"type": "text"
 									}
 								],
 								"body": {
 									"mode": "raw",
 									"raw": "{\n  \"id\": \"{{adex_apps_id}}\",\n  \"type\": [\n    \"adex:Apps\"\n  ],\n  \"name\": \"AiSandBoxAppsPM\",\n  \"label\": \"Updated - Crop Disease Detection using AI\",\n  \"description\": \"Updated description: This application helps farmers detect crop diseases early using AI and deep learning on mobile-captured leaf images.\",\n  \"tags\": [\n    \"ai\", \"ml\", \"crop-health\", \"updated\", \"smart-farming\"\n  ],\n  \"shortDescription\": \"Detects crop diseases using AI and leaf image analysis.\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"uploadedBy\": \"user@example.com\",\n  \"fileFormat\": \"csv\",\n  \"accessPolicy\": \"Public\",\n  \"canBeUsedFor\": {\n    \"Early Risk Stratification\": \"Early detection of disease risk in crops\",\n    \"Field-Level Prioritisation\": \"Helps prioritize treatment at field level\"\n  },\n  \"dataInputsAndAiTechniques\": {\n    \"Input Data Banks\": [\"Leaf image datasets\"],\n    \"Expected Output\": [\"Disease classification\", \"Treatment suggestions\"],\n    \"AI Models\": [\"CNN\", \"ResNet\", \"MobileNet\"],\n    \"Potential Benefits\": [\"Improved crop yield\", \"Reduced pesticide usage\"]\n  }\n}\n",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{host}}{{base}}/item/",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item",
-										""
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "200 (success) - Update an DX Resource Server Item",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {\r",
-											"    pm.response.to.have.status(200);\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response header\", function () {\r",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response body\", function () {    \r",
-											"    const body = pm.response.json();\r",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
-											"    pm.expect(body.results).to.have.property(\"id\");\r",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "PUT",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{cosAdminToken}}",
-										"type": "text"
-									},
-									{
-										"key": "options",
-										"value": "central",
-										"type": "text",
-										"disabled": true
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:ResourceServer\"\r\n    ],\r\n    \"name\": \"IudxResourceServerPM\",\r\n    \"id\": \"{{resource_server_id}}\",\r\n    \"description\": \"Multi tenanted IUDX resource server for postman collection\",\r\n    \"tags\": [\r\n        \"IUDX\",\r\n        \"Resource\",\r\n        \"Server\",\r\n        \"Platform\"\r\n    ],\r\n    \"cos\": \"{{cos_id}}\",\r\n    \"owner\": \"{{owner_id}}\",\r\n    \"resourceServerOrg\": {\r\n        \"name\": \"iudx\",\r\n        \"additionalInfoURL\": \"https://iudx.org.in\",\r\n        \"location\": {\r\n            \"type\": \"Place\",\r\n            \"address\": \"IISc, Bangalore\",\r\n            \"geometry\": {\r\n                \"type\": \"Point\",\r\n                \"coordinates\": [\r\n                    77.570423,\r\n                    13.013945\r\n                ]\r\n            }\r\n        }\r\n    },\r\n    \"resourceServerRegURL\": \"rs-test-pm.iudx.io\",\r\n    \"resourceAccessModalities\": [\r\n        {\r\n            \"type\": [\r\n                \"iudx:HTTPAccess\"\r\n            ],\r\n            \"protocol\": \"http\",\r\n            \"accessURL\": \"rs\",\r\n            \"port\": 8080\r\n        }\r\n    ],\r\n    \"location\": {\r\n        \"type\": \"Place\",\r\n        \"address\": \"IISc, Bangalore\",\r\n        \"geometry\": {\r\n            \"type\": \"Point\",\r\n            \"coordinates\": [\r\n                77.570423,\r\n                13.013945\r\n            ]\r\n        }\r\n    }\r\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{host}}{{base}}/item/",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item",
-										""
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "200 (success) - Update an DX Provider Item",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {\r",
-											"    pm.response.to.have.status(200);\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response header\", function () {\r",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response body\", function () {    \r",
-											"    const body = pm.response.json();\r",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
-											"    pm.expect(body.results).to.have.property(\"id\");\r",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {}
-									}
-								}
-							],
-							"request": {
-								"method": "PUT",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{adminToken}}",
-										"type": "text"
-									},
-									{
-										"key": "instance",
-										"value": "pune",
-										"type": "text",
-										"disabled": true
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:Provider\"\r\n    ],\r\n    \"name\": \"IudxProviderPM\",\r\n    \"id\": \"{{provider_id}}\",\r\n    \"resourceServer\": \"{{resource_server_id}}\",\r\n    \"description\": \"provider for the postman collection\",\r\n    \"ownerUserId\": \"{{ownerUserId}}\",\r\n    \"providerOrg\": {\r\n        \"name\": \"Datakaveri\",\r\n        \"additionalInfoURL\": \"https://datakaveri.org\",\r\n        \"location\": {\r\n            \"type\": \"Place\",\r\n            \"address\": \"IIsc\",\r\n            \"geometry\": {\r\n                \"type\": \"Point\",\r\n                \"coordinates\": [\r\n                    75.92,\r\n                    14.5\r\n                ]\r\n            }\r\n        }\r\n    }\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1612,75 +935,13 @@
 								"header": [
 									{
 										"key": "token",
-										"value": "{{token}}",
+										"value": "{{org_admin_token}}",
 										"type": "text"
 									}
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"type\": [\n    \"adex:AiModel\"\n  ],\n  \"name\": \"AiSandBoxAiModelPM\",\n  \"description\": \"updated ai model item for the postman collection\",\n  \"shortDescription\": \"A test AI model item created for Postman integration.\",\n  \"label\": \"ai model item for test only\",\n  \"tags\": [\n    \"ai\",\n    \"crop\",\n    \"crop disease\",\n    \"disease detection\",\n    \"ai model\"\n  ],\n  \"provider\": \"{{provider_id}}\",\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"modelType\": \"ImageClassifier\",\n  \"fileFormat\": \"ipynb\",\n  \"industry\": \"Agriculture\",\n  \"uploadedBy\": \"test.user@datakaveri.org\",\n  \"license\": \"MIT\",\n  \"fileSize\": \"15MB\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{host}}{{base}}/item/",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item",
-										""
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "200 (success) - Update an DX Resource Group Item",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {\r",
-											"    pm.response.to.have.status(200);\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response header\", function () {\r",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response body\", function () {    \r",
-											"    const body = pm.response.json();\r",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
-											"    pm.expect(body.results).to.have.property(\"id\");\r",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "PUT",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{token}}",
-										"type": "text"
-									},
-									{
-										"key": "instance",
-										"value": "pune",
-										"type": "text",
-										"disabled": true
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:ResourceGroup\",\r\n        \"iudx:IssueReporting\"\r\n    ],\r\n    \"name\": \"iudxResourceGroupPM\",\r\n    \"id\": \"{{resource_group_id}}\",\r\n    \"description\": \"resource group item for the postman collection\",\r\n    \"tags\": [\r\n        \"swachhata\",\r\n        \"complaints\",\r\n        \"construction material\",\r\n        \"requests\"\r\n    ],\r\n    \"provider\": \"{{provider_id}}\"\r\n}",
+									"raw": "{\n  \"type\": [\n    \"adex:AiModel\"\n  ],\n  \"id\": \"{{ai_model_id}}\",\n  \"name\": \"AiSandBoxAiModelPM\",\n  \"description\": \"ai model item for the postman collection\",\n  \"shortDescription\": \"A test AI model item created for Postman integration.\",\n  \"label\": \"ai model item for test only\",\n  \"tags\": [\n    \"ai\",\n    \"crop\",\n    \"crop disease\",\n    \"disease detection\",\n    \"ai model\"\n  ],\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationId\": \"22ef65f2-0ff8-474c-97e1-0de35a5fd16b\",\n  \"organizationType\": \"Private\",\n  \"department\": \"Agriculture and Co-operation\",\n  \"modelType\": \"ImageClassifier\",\n  \"fileFormat\": \"ipynb\",\n  \"industry\": \"Agriculture\",\n  \"uploadedBy\": \"test.user@datakaveri.org\",\n  \"license\": \"MIT\",\n  \"fileSize\": \"15MB\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1731,82 +992,13 @@
 								"header": [
 									{
 										"key": "token",
-										"value": "{{token}}",
+										"value": "{{org_admin_token}}",
 										"type": "text"
 									}
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name\": \"AiSandBoxDataBankPM\",\n  \"type\": [\"adex:DataBank\"],\n  \"label\": \"Subdistrict Weather Information\",\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\n  \"description\": \"updated- Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\n  \"provider\": \"{{provider_id}}\",\n  \"uploadedBy\": \"Forecast department\",\n  \"resourceGroup\": \"{{resource_group_id}}\",\n  \"resourceServer\": \"{{resource_server_id}}\",\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationType\": \"Government\",\n  \"fileFormat\": \"xlsx\",\n  \"dataReadiness\": 80,\n  \"department\": \"Department of IT, Electronics and Communication\",\n  \"industry\": \"Environmental Monitoring\",\n  \"geoCoverage\": \"Karnataka, India\",\n  \"yearRange\": \"2021-2024\",\n  \"uploadFrequency\": \"Daily\",\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\n  \"license\": \"CC-BY 4.0\",\n  \"resourceType\": \"MESSAGESTREAM\",\n  \"adexResourceAPIs\": [\"TEMPORAL\", \"ATTR\"],\n  \"iudxResourceAPIs\": [\"ATTR\"],\n  \"location\": {\n    \"type\": \"Place\",\n    \"address\": \"Subdistrict Office, Karnataka, India\",\n    \"geometry\": {\n      \"type\": \"Polygon\",\n      \"coordinates\": [\n        [\n          [76.895, 12.914],\n          [76.896, 12.914],\n          [76.896, 12.915],\n          [76.895, 12.915],\n          [76.895, 12.914]\n        ]\n      ]\n    }\n  },\n  \"dataDescriptor\": {\n    \"@context\": \"https://example.com/context/weather\",\n    \"type\": [\"DataDescriptor\"],\n    \"dataDescriptorLabel\": \"Subdistrict Level Daily Weather Data\",\n    \"description\": \"Contains weather parameters like precipitation and temperature per subdistrict.\",\n    \"districtCode\": {\n      \"type\": [\"Property\"],\n      \"description\": \"Code of the district\",\n      \"dataSchema\": \"string\"\n    },\n    \"subDistrictCode\": {\n      \"type\": [\"Property\"],\n      \"description\": \"Code of the subdistrict\",\n      \"dataSchema\": \"string\"\n    },\n    \"precipitation\": {\n      \"type\": [\"QuantitativeValue\"],\n      \"description\": \"Amount of rainfall\",\n      \"unitCode\": \"MMT\",\n      \"unitText\": \"Millimetres\",\n      \"dataSchema\": \"number\"\n    },\n    \"airTemperature\": {\n      \"type\": [\"QuantitativeValue\"],\n      \"description\": \"Ambient temperature readings\",\n      \"maxOverTime\": {\n        \"type\": [\"QuantitativeValue\"],\n        \"description\": \"Maximum temperature over the time period\",\n        \"dataSchema\": \"number\"\n      },\n      \"minOverTime\": {\n        \"type\": [\"QuantitativeValue\"],\n        \"description\": \"Minimum temperature over the time period\",\n        \"dataSchema\": \"number\"\n      }\n    }\n  },\n  \"dataSample\": {\n    \"districtCode\": \"KA-12\",\n    \"subDistrictCode\": \"KA-12-SD-05\",\n    \"precipitation\": 34.5,\n    \"airTemperature\": {\n      \"maxOverTime\": 32.4,\n      \"minOverTime\": 21.1\n    },\n    \"observationDateTime\": \"2023-02-03T08:30:00+05:30\"\n  }\n}\n",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{host}}{{base}}/item/",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item",
-										""
-									],
-									"query": [
-										{
-											"key": "",
-											"value": null,
-											"disabled": true
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "200 (success) - Update an DX Resource Item",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {\r",
-											"    pm.response.to.have.status(200);\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response header\", function () {\r",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response body\", function () {    \r",
-											"    const body = pm.response.json();\r",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
-											"    pm.expect(body.results).to.have.property(\"id\");\r",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "PUT",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{token}}",
-										"type": "text"
-									},
-									{
-										"key": "instance",
-										"value": "pune",
-										"type": "text",
-										"disabled": true
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:Resource\",\r\n        \"iudx:PointOfInterest\"\r\n    ],\r\n    \"name\": \"iudxResourceItemPM\",\r\n    \"id\": \"{{resource_item_id}}\",\r\n    \"label\": \"item for tesr only\",\r\n    \"description\": \"resource item for the postman collection\",\r\n    \"tags\": [\r\n        \"swachhata\",\r\n        \"complaints\",\r\n        \"construction material\",\r\n        \"requests\"\r\n    ],\r\n    \"apdURL\": \"rs.apd.iudx.org.in\",\r\n    \"accessPolicy\": \"SECURE\",\r\n    \"resourceServer\": \"{{resource_server_id}}\",\r\n    \"provider\": \"{{provider_id}}\",\r\n    \"resourceGroup\": \"{{resource_group_id}}\"\r\n}",
+									"raw": "{\n  \"id\": \"{{data_bank_id}}\",\n  \"name\": \"AiSandBoxDataBankPM\",\n  \"type\": [\"adex:DataBank\"],\n  \"label\": \"Subdistrict Weather Information\",\n  \"shortDescription\": \"Daily aggregated temperature and rainfall data at subdistrict level.\",\n  \"description\": \"updated- Daily weather statistics at subdistrict level including temperature and rainfall metrics.\",\n  \"tags\": [\"weather\", \"temperature\", \"rainfall\", \"environment\"],\n  \"uploadedBy\": \"Forecast department\",\n  \"accessPolicy\": \"RESTRICTED\",\n  \"organizationId\": \"22ef65f2-0ff8-474c-97e1-0de35a5fd16b\",\n  \"organizationType\": \"Government\",\n  \"fileFormat\": \"xlsx\",\n  \"dataReadiness\": 80,\n  \"department\": \"Department of IT, Electronics and Communication\",\n  \"industry\": \"Environmental Monitoring\",\n  \"geoCoverage\": \"Karnataka, India\",\n  \"yearRange\": \"2021-2024\",\n  \"uploadFrequency\": \"Daily\",\n  \"verifiedBy\": \"Department of Meteorology, Karnataka\",\n  \"license\": \"CC-BY 4.0\",\n  \"resourceType\": \"MESSAGESTREAM\",\n  \"adexResourceAPIs\": [\"TEMPORAL\", \"ATTR\"],\n  \"iudxResourceAPIs\": [\"ATTR\"],\n  \"location\": {\n    \"type\": \"Place\",\n    \"address\": \"Subdistrict Office, Karnataka, India\",\n    \"geometry\": {\n      \"type\": \"Polygon\",\n      \"coordinates\": [\n        [\n          [76.895, 12.914],\n          [76.896, 12.914],\n          [76.896, 12.915],\n          [76.895, 12.915],\n          [76.895, 12.914]\n        ]\n      ]\n    }\n  },\n  \"dataDescriptor\": {\n    \"@context\": \"https://example.com/context/weather\",\n    \"type\": [\"DataDescriptor\"],\n    \"dataDescriptorLabel\": \"Subdistrict Level Daily Weather Data\",\n    \"description\": \"Contains weather parameters like precipitation and temperature per subdistrict.\",\n    \"districtCode\": {\n      \"type\": [\"Property\"],\n      \"description\": \"Code of the district\",\n      \"dataSchema\": \"string\"\n    },\n    \"subDistrictCode\": {\n      \"type\": [\"Property\"],\n      \"description\": \"Code of the subdistrict\",\n      \"dataSchema\": \"string\"\n    },\n    \"precipitation\": {\n      \"type\": [\"QuantitativeValue\"],\n      \"description\": \"Amount of rainfall\",\n      \"unitCode\": \"MMT\",\n      \"unitText\": \"Millimetres\",\n      \"dataSchema\": \"number\"\n    },\n    \"airTemperature\": {\n      \"type\": [\"QuantitativeValue\"],\n      \"description\": \"Ambient temperature readings\",\n      \"maxOverTime\": {\n        \"type\": [\"QuantitativeValue\"],\n        \"description\": \"Maximum temperature over the time period\",\n        \"dataSchema\": \"number\"\n      },\n      \"minOverTime\": {\n        \"type\": [\"QuantitativeValue\"],\n        \"description\": \"Minimum temperature over the time period\",\n        \"dataSchema\": \"number\"\n      }\n    }\n  },\n  \"dataSample\": {\n    \"districtCode\": \"KA-12\",\n    \"subDistrictCode\": \"KA-12-SD-05\",\n    \"precipitation\": 34.5,\n    \"airTemperature\": {\n      \"maxOverTime\": 32.4,\n      \"minOverTime\": 21.1\n    },\n    \"observationDateTime\": \"2023-02-03T08:30:00+05:30\"\n  }\n}\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -1865,64 +1057,6 @@
 								"body": {
 									"mode": "raw",
 									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:ResourceGroup\",\r\n        \"iudx:IssueReporting\"\r\n    ],\r\n    \"name\": \"agra-swachhata-app\",\r\n    \"description\": \"Civic Issues like open defecation, garbage dumping, etc., reported in Agra city via Swachhata app. Publishes all the complaints/issues lodged on the current day, on a daily basis.\",\r\n    \"tags\": [\r\n        \"swachhata\",\r\n        \"complaints\",\r\n        \"reporting\",\r\n        \"issue\",\r\n        \"garbage dump\",\r\n        \"debris removal\",\r\n        \"open defecation\",\r\n        \"construction material\",\r\n        \"requests\"\r\n    ],\r\n    \"provider\": \"e0760835-6066-301b-b224-\"\r\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{host}}{{base}}/item/",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item",
-										""
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "400 (invalid links) - Update an DX Entity",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {\r",
-											"    pm.response.to.have.status(400);\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response header\", function () {\r",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
-											"});\r",
-											"\r",
-											"\r",
-											"pm.test(\"Check response body\", function () {    \r",
-											"    const body = pm.response.json();\r",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:LinkValidationFailed\");\r",
-											"});\r",
-											"\r",
-											""
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "PUT",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{token}}",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\r\n    \"@context\": \"https://voc.iudx.org.in/\",\r\n    \"type\": [\r\n        \"iudx:Resource\",\r\n        \"iudx:PointOfInterest\"\r\n    ],\r\n    \"name\": \"wifi-location\",\r\n    \"label\": \"Wi-Fi Locations in Pimpri-Chinchwad City\",\r\n    \"description\": \"The physical coordinates of Wi-Fi system locations in Pimpri-Chinchwad city.\",\r\n    \"tags\": [\r\n        \"Wi-Fi\",\r\n        \"Wi-Fi zone\",\r\n        \"hotspot\",\r\n        \"internet\",\r\n        \"Wi-Fi access\",\r\n        \"Wi-Fi location\",\r\n        \"wireless internet\",\r\n        \"internet access\"\r\n    ],\r\n    \"apdURL\": \"rs.apd.iudx.org.in\",\r\n    \"accessPolicy\": \"SECURE\",\r\n    \"resourceServer\": \"{{resource_server_id}}\",\r\n    \"provider\": \"{{provider_id}}\",\r\n    \"resourceGroup\": \"83995e8c-fa80-4241-93c0-e86a66154eb6\"\r\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2067,65 +1201,6 @@
 					"name": "Delete Item",
 					"item": [
 						{
-							"name": "200 (success) - Delete an Resource Item DX Entity",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {\r",
-											"    pm.response.to.have.status(200);\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response header\", function () {\r",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response body\", function () {    \r",
-											"    const body = pm.response.json();\r",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
-											"});\r",
-											"\r",
-											""
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "DELETE",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{token}}",
-										"type": "text"
-									},
-									{
-										"key": "instance",
-										"value": "pune",
-										"type": "text",
-										"disabled": true
-									}
-								],
-								"url": {
-									"raw": "{{host}}{{base}}/item?id={{resource_item_id}}",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item"
-									],
-									"query": [
-										{
-											"key": "id",
-											"value": "{{resource_item_id}}"
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
 							"name": "200 (success) - Delete DataBank Item",
 							"event": [
 								{
@@ -2157,7 +1232,7 @@
 								"header": [
 									{
 										"key": "token",
-										"value": "token",
+										"value": "{{org_admin_token}}",
 										"type": "text"
 									}
 								],
@@ -2173,65 +1248,6 @@
 										{
 											"key": "id",
 											"value": "{{data_bank_id}}"
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "200 (success) - Delete an Resource Group DX Entity",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {\r",
-											"    pm.response.to.have.status(200);\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response header\", function () {\r",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response body\", function () {    \r",
-											"    const body = pm.response.json();\r",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
-											"});\r",
-											"\r",
-											""
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "DELETE",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{token}}",
-										"type": "text"
-									},
-									{
-										"key": "instance",
-										"value": "pune",
-										"type": "text",
-										"disabled": true
-									}
-								],
-								"url": {
-									"raw": "{{host}}{{base}}/item?id={{resource_group_id}}",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item"
-									],
-									"query": [
-										{
-											"key": "id",
-											"value": "{{resource_group_id}}"
 										}
 									]
 								}
@@ -2270,7 +1286,7 @@
 								"header": [
 									{
 										"key": "token",
-										"value": "{{token}}",
+										"value": "{{org_admin_token}}",
 										"type": "text"
 									}
 								],
@@ -2286,124 +1302,6 @@
 										{
 											"key": "id",
 											"value": "{{ai_model_id}}"
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "200 (success) - Delete an Provider DX Entity",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {\r",
-											"    pm.response.to.have.status(200);\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response header\", function () {\r",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response body\", function () {    \r",
-											"    const body = pm.response.json();\r",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
-											"});\r",
-											"\r",
-											""
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "DELETE",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{adminToken}}",
-										"type": "text"
-									},
-									{
-										"key": "instance",
-										"value": "pune",
-										"type": "text",
-										"disabled": true
-									}
-								],
-								"url": {
-									"raw": "{{host}}{{base}}/item?id={{provider_id}}",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item"
-									],
-									"query": [
-										{
-											"key": "id",
-											"value": "{{provider_id}}"
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "200 (success) - Delete an Resource Server DX Entity Copy",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {\r",
-											"    pm.response.to.have.status(200);\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response header\", function () {\r",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response body\", function () {    \r",
-											"    const body = pm.response.json();\r",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
-											"});\r",
-											"\r",
-											""
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "DELETE",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{cosAdminToken}}",
-										"type": "text"
-									},
-									{
-										"key": "instance",
-										"value": "pune",
-										"type": "text",
-										"disabled": true
-									}
-								],
-								"url": {
-									"raw": "{{host}}{{base}}/item?id={{resource_server_id}}",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item"
-									],
-									"query": [
-										{
-											"key": "id",
-											"value": "{{resource_server_id}}"
 										}
 									]
 								}
@@ -2442,7 +1340,7 @@
 								"header": [
 									{
 										"key": "token",
-										"value": "{{cosAdminToken}}",
+										"value": "{{cos_token}}",
 										"type": "text"
 									},
 									{
@@ -2453,138 +1351,17 @@
 									}
 								],
 								"url": {
-									"raw": "http://localhost:8081/{{base}}/item?id={{adex_apps_id}}",
-									"protocol": "http",
+									"raw": "{{host}}{{base}}/item?id={{adex_apps_id}}",
 									"host": [
-										"localhost"
+										"{{host}}{{base}}"
 									],
-									"port": "8081",
 									"path": [
-										"{{base}}",
 										"item"
 									],
 									"query": [
 										{
 											"key": "id",
 											"value": "{{adex_apps_id}}"
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "200 (success) - Delete a COS item DX entity",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {\r",
-											"    pm.response.to.have.status(200);\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response header\", function () {\r",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response body\", function () {    \r",
-											"    const body = pm.response.json();\r",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
-											"});\r",
-											"\r",
-											""
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "DELETE",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{cosAdminToken}}",
-										"type": "text"
-									},
-									{
-										"key": "instance",
-										"value": "pune",
-										"type": "text",
-										"disabled": true
-									}
-								],
-								"url": {
-									"raw": "{{host}}{{base}}/item?id={{cos_id}}",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item"
-									],
-									"query": [
-										{
-											"key": "id",
-											"value": "{{cos_id}}"
-										}
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "200 (success) - Delete a Owner item DX",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Response status\", function () {\r",
-											"    pm.response.to.have.status(200);\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response header\", function () {\r",
-											"    pm.response.to.have.header(\"Content-Type\",\"application/json\");\r",
-											"});\r",
-											"\r",
-											"pm.test(\"Check response body\", function () {    \r",
-											"    const body = pm.response.json();\r",
-											"    pm.expect(body).to.have.property(\"type\", \"urn:dx:cat:Success\");\r",
-											"});\r",
-											"\r",
-											""
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"method": "DELETE",
-								"header": [
-									{
-										"key": "token",
-										"value": "{{cosAdminToken}}",
-										"type": "text"
-									},
-									{
-										"key": "instance",
-										"value": "pune",
-										"type": "text",
-										"disabled": true
-									}
-								],
-								"url": {
-									"raw": "{{host}}{{base}}/item?id={{owner_id}}",
-									"host": [
-										"{{host}}{{base}}"
-									],
-									"path": [
-										"item"
-									],
-									"query": [
-										{
-											"key": "id",
-											"value": "{{owner_id}}"
 										}
 									]
 								}
@@ -3804,7 +2581,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"beforeRange\",\n            \"field\": \"dataReadiness\",\n            \"values\": [80]\n        }\n    ]\n}",
+											"raw": "{\n    \"searchCriteria\": [\n        {\n            \"searchType\": \"term\",\n            \"field\": \"type\",\n            \"values\": [\"adex:DataBank\"]\n        },\n        {\n            \"searchType\": \"beforeRange\",\n            \"field\": \"dataReadiness\",\n            \"values\": [85]\n        }\n    ]\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -4085,7 +2862,13 @@
 							"name": "200 (Success) - No filters",
 							"request": {
 								"method": "POST",
-								"header": [],
+								"header": [
+									{
+										"key": "token",
+										"value": "{{org_admin_token}}",
+										"type": "text"
+									}
+								],
 								"body": {
 									"mode": "raw",
 									"raw": "{\n  \"searchCriteria\": [\n    {\n        \"searchType\": \"term\",\n        \"field\": \"type\",\n        \"values\": [\"adex:AiModel\"]\n    }\n  ]\n}\n",
