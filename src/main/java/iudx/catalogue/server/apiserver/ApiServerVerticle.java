@@ -126,7 +126,7 @@ public class ApiServerVerticle extends AbstractVerticle {
     // API Callback managers
     crudApis = new CrudApis(api, isUac);
     searchApis = new SearchApis(api);
-    listApis = new ListApis();
+    listApis = new ListApis(api);
     relApis = new RelationshipApis();
     geoApis = new GeocodingApis();
     ratingApis = new RatingApis();
@@ -154,6 +154,7 @@ public class ApiServerVerticle extends AbstractVerticle {
     crudApis.setAuthService(authService);
     ratingApis.setAuthService(authService);
     mlayerApis.setAuthService(authService);
+    listApis.setAuthService(authService);
 
     ValidatorService validationService =
         ValidatorService.createProxy(vertx, VALIDATION_SERVICE_ADDRESS);
@@ -166,7 +167,7 @@ public class ApiServerVerticle extends AbstractVerticle {
 
     NLPSearchService nlpsearchService = NLPSearchService.createProxy(vertx, NLP_SERVICE_ADDRESS);
 
-    searchApis.setService(dbService, geoService, nlpsearchService, validationService);
+    searchApis.setService(dbService, geoService, nlpsearchService, validationService, authService);
 
     AuditingService auditingService = AuditingService.createProxy(vertx, AUDITING_SERVICE_ADDRESS);
     crudApis.setAuditingService(auditingService);
