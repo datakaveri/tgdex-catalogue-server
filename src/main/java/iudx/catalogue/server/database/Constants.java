@@ -31,6 +31,10 @@ public class Constants {
   public static final String TAG_AQM = "aqm";
   public static final String DESCRIPTION_ATTR = "description";
   public static final String ACCESS_POLICY = "accessPolicy";
+  public static final String OPEN = "OPEN";
+
+  public static final String RESTRICTED = "RESTRICTED";
+  public static final String PRIVATE = "PRIVATE";
 
   /** ElasticClient search types. */
   public static final String DOC_IDS_ONLY = "DOCIDS";
@@ -76,6 +80,8 @@ public class Constants {
   public static final String AGGS_END = "}";
   public static final String TERM_QUERY_TEMPLATE = "{ \"term\": { \"$field\": \"$value\" } }";
   public static final String TERMS_QUERY_TEMPLATE = "{ \"terms\": { \"$field\": $value } }";
+  public static final String MUST_NOT_EXISTS_QUERY_TEMPLATE =
+      "{ \"bool\": { \"must_not\": { \"exists\": { \"field\": \"$field\" } } } }";
   public static final String TERMS_AGG_TEMPLATE = "\"$name\": { \"terms\": "
       + "{ \"field\": \"$field\", \"size\": $size } }";
 
@@ -247,6 +253,7 @@ public class Constants {
   public static final String BOOL_SHOULD_QUERY = "{\"query\":{\"bool\":{\"should\":[$1]}}}";
   public static final String SHOULD_QUERY = "{\"bool\":{\"should\":$1}}";
   public static final String MUST_QUERY = "{\"bool\":{\"must\":$1}}";
+  public static final String MUST_NOT_QUERY = "{\"bool\":{\"must_not\":$1}}";
   public static final String FILTER_QUERY = "{\"bool\":{\"filter\":[$1]}}";
   public static final String MATCH_QUERY = "{\"match\":{\"$1\":\"$2\"}}";
   public static final String FUZZY_MATCH_QUERY = "{ \"match\": { \"$1\": { \"query\": "

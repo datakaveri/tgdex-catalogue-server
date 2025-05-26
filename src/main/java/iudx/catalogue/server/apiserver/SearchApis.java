@@ -6,6 +6,8 @@
 package iudx.catalogue.server.apiserver;
 
 import static iudx.catalogue.server.apiserver.util.Constants.*;
+import static iudx.catalogue.server.authenticator.Constants.API_ENDPOINT;
+import static iudx.catalogue.server.authenticator.Constants.TOKEN;
 import static iudx.catalogue.server.util.Constants.*;
 
 import io.vertx.core.MultiMap;
@@ -16,6 +18,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import iudx.catalogue.server.apiserver.util.QueryMapper;
 import iudx.catalogue.server.apiserver.util.RespBuilder;
+import iudx.catalogue.server.authenticator.AuthenticationService;
 import iudx.catalogue.server.database.DatabaseService;
 import iudx.catalogue.server.geocoding.GeocodingService;
 import iudx.catalogue.server.nlpsearch.NLPSearchService;
@@ -32,6 +35,7 @@ public final class SearchApis {
   private GeocodingService geoService;
   private NLPSearchService nlpService;
   private ValidatorService validatorService;
+  private AuthenticationService authService;
   private final Api api;
 
   private static final Logger LOGGER = LogManager.getLogger(SearchApis.class);
@@ -48,11 +52,13 @@ public final class SearchApis {
    * @param nlpService the NLPService to be set
    */
   public void setService(DatabaseService dbService, GeocodingService geoService,
-                         NLPSearchService nlpService, ValidatorService validatorService) {
+                         NLPSearchService nlpService, ValidatorService validatorService,
+                         AuthenticationService authService) {
     this.dbService = dbService;
     this.geoService = geoService;
     this.nlpService = nlpService;
     this.validatorService = validatorService;
+    this.authService = authService;
   }
 
   public void setDbService(DatabaseService dbService) {
@@ -220,14 +226,43 @@ public final class SearchApis {
     response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
 
     JsonObject requestBody = routingContext.body().asJsonObject();
+    String token = request.getHeader(HEADER_TOKEN);
 
     /* HTTP request instance/host details */
     String instanceId = request.getHeader(HEADER_INSTANCE);
+    requestBody.put(HEADER_INSTANCE, instanceId);
 
-    LOGGER.debug("Info: routed to search/count");
-    LOGGER.debug("Info: instance;" + instanceId);
+    if (token != null && !token.isEmpty()) {
+      JsonObject jwtAuthenticationInfo = new JsonObject()
+          .put(TOKEN, token)
+          .put(METHOD, REQUEST_GET)
+          .put(API_ENDPOINT, api.getRouteSearch());
 
-    /* validating proper actual query parameters from request */
+      authService.tokenInterospect(new JsonObject(), jwtAuthenticationInfo, authHandler -> {
+        if (authHandler.failed()) {
+          LOGGER.error("Error: " + authHandler.cause().getMessage());
+          response.setStatusCode(401)
+              .end(new RespBuilder()
+                  .withType(TYPE_TOKEN_INVALID)
+                  .withTitle(TITLE_TOKEN_INVALID)
+                  .withDetail(authHandler.cause().getMessage())
+                  .getResponse());
+        } else {
+          LOGGER.debug("Auth res: " + authHandler.result());
+          requestBody.put("sub", authHandler.result().getString("sub"));
+          processSearch(request, response, requestBody);
+        }
+      });
+    } else {
+      // No token provided, proceed without "sub"
+      processSearch(request, response, requestBody);
+    }
+  }
+
+  private void processSearch(HttpServerRequest request, HttpServerResponse response,
+                             JsonObject requestBody) {
+    boolean hasValidFilter = false;
+
     if ((!requestBody.containsKey(SEARCH_CRITERIA_KEY)
         || requestBody.getJsonArray(SEARCH_CRITERIA_KEY).isEmpty())
         && (!requestBody.containsKey(GEOPROPERTY)
@@ -244,10 +279,7 @@ public final class SearchApis {
               .withDetail("Mandatory field(s) not provided")
               .getResponse());
       return;
-
     }
-
-    boolean hasValidFilter = false;
 
     /* SEARCH_CRITERIA filter (attribute, temporal, range) */
     if (requestBody.getJsonArray(SEARCH_CRITERIA_KEY) != null
@@ -288,17 +320,13 @@ public final class SearchApis {
       return;
     }
 
-    requestBody.put(HEADER_INSTANCE, instanceId);
-
     validatorService.validateSearchQuery(requestBody, validateHandler -> {
       if (validateHandler.failed()) {
         LOGGER.error("Fail: Search/Count; Invalid request query parameters");
-        LOGGER.debug(validateHandler.cause());
-        response
-            .setStatusCode(400)
+        response.setStatusCode(400)
             .end(validateHandler.cause().getLocalizedMessage());
       } else {
-        String path = routingContext.normalizedPath();
+        String path = request.path();
         if (path.equals(api.getRouteSearch())) {
           dbService.searchQuery(requestBody, handler -> {
             if (handler.succeeded()) {
@@ -345,7 +373,6 @@ public final class SearchApis {
         }
       }
     });
-
   }
 
   /**

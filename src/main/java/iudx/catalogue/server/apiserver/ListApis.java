@@ -9,6 +9,7 @@
 package iudx.catalogue.server.apiserver;
 
 import static iudx.catalogue.server.apiserver.util.Constants.*;
+import static iudx.catalogue.server.authenticator.Constants.API_ENDPOINT;
 import static iudx.catalogue.server.util.Constants.*;
 
 import io.vertx.core.AsyncResult;
@@ -20,7 +21,9 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import iudx.catalogue.server.apiserver.util.QueryMapper;
 import iudx.catalogue.server.apiserver.util.RespBuilder;
+import iudx.catalogue.server.authenticator.AuthenticationService;
 import iudx.catalogue.server.database.DatabaseService;
+import iudx.catalogue.server.util.Api;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
@@ -30,9 +33,19 @@ public final class ListApis {
 
   private static final Logger LOGGER = LogManager.getLogger(ListApis.class);
   private DatabaseService dbService;
+  private AuthenticationService authService;
+  private final Api api;
+
+  public ListApis(Api api) {
+    this.api = api;
+  }
 
   public void setDbService(DatabaseService dbService) {
     this.dbService = dbService;
+  }
+
+  public void setAuthService(AuthenticationService authService) {
+    this.authService = authService;
   }
 
   /**
@@ -196,6 +209,41 @@ public final class ListApis {
     }
     requestBody.put(HEADER_INSTANCE, instanceId);
 
+    String token = request.getHeader(HEADER_TOKEN);
+
+    if (token != null && !token.isEmpty()) {
+      JsonObject jwtAuthenticationInfo = new JsonObject()
+          .put(HEADER_TOKEN, token)
+          .put(METHOD, REQUEST_GET)
+          .put(API_ENDPOINT, api.getRouteListMulItems());
+
+      authService.tokenInterospect(new JsonObject(), jwtAuthenticationInfo, authHandler -> {
+        if (authHandler.succeeded()) {
+          JsonObject authInfo = authHandler.result();
+          String sub = authInfo.getString(SUB);
+
+          if (sub != null && !sub.isEmpty()) {
+            requestBody.put(SUB, sub);  // Add sub value to request body
+          }
+
+          proceedWithItemListing(requestBody, itemTypes, response);
+        } else {
+          LOGGER.error("Fail: Token introspection failed");
+          response.setStatusCode(401)
+              .end(new RespBuilder()
+                  .withType(TYPE_TOKEN_INVALID)
+                  .withTitle(TITLE_TOKEN_INVALID)
+                  .withDetail(authHandler.cause().getMessage())
+                  .getResponse());
+        }
+      });
+    } else {
+      proceedWithItemListing(requestBody, itemTypes, response);
+    }
+  }
+
+  private void proceedWithItemListing(JsonObject requestBody, JsonArray itemTypes,
+                                      HttpServerResponse response) {
     JsonObject resp = QueryMapper.validateQueryParam(requestBody);
     if (resp.getString(STATUS).equals(SUCCESS)) {
       List<String> type = new ArrayList<>();
@@ -221,6 +269,7 @@ public final class ListApis {
           case FILE_FORMAT:
           case DATA_READINESS:
           case MODEL_TYPE:
+          case ID:
             type.add(itemType);
             break;
           case OWNER:
@@ -242,6 +291,7 @@ public final class ListApis {
             LOGGER.error("Fail: Invalid itemType: " + itemType);
         }
       }
+
       requestBody.put(TYPE, type);
       /* Request database service with requestBody for listing items */
       dbService.listMultipleItems(
@@ -249,19 +299,17 @@ public final class ListApis {
           dbhandler -> {
             handleResponseFromDatabase(response, itemTypes.toString(), dbhandler);
           });
+
     } else {
       LOGGER.error("Fail: Search/Count; Invalid request query parameters");
-      response
-          .setStatusCode(400)
-          .end(
-              new RespBuilder()
-                  .withType(TYPE_INVALID_SYNTAX)
-                  .withTitle(TITLE_INVALID_SYNTAX)
-                  .withDetail(DETAIL_WRONG_ITEM_TYPE)
-                  .getResponse());
+      response.setStatusCode(400).end(
+          new RespBuilder()
+              .withType(TYPE_INVALID_SYNTAX)
+              .withTitle(TITLE_INVALID_SYNTAX)
+              .withDetail(DETAIL_WRONG_ITEM_TYPE)
+              .getResponse());
     }
   }
-
 
   void handleResponseFromDatabase(
       HttpServerResponse response, String itemType, AsyncResult<JsonObject> dbhandler) {

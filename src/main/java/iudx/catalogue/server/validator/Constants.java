@@ -28,6 +28,15 @@ public class Constants {
           "{\"bool\":{\"must\":[{\"match\":{\"type.keyword\":\"$2\"}},"
               + "{\"match\":{\"$3.keyword\":\"$4\"}}]}}]}},\"_source\":[\"type\"]}");
 
+  public static final String ORGANIZATION_ID_MATCH_SUB_QUERY =
+      "{\"query\":{\"bool\":{\"must\":[{"
+          + "\"bool\":{\"must\":[{"
+          + "\"match\":{\"organizationId.keyword\":\"$1\"}}]}},";
+  public static final String AI_SANDBOX_ITEM_EXISTS_QUERY =
+      ORGANIZATION_ID_MATCH_SUB_QUERY.concat(
+          "{\"bool\":{\"must\":[{\"match\":{\"type.keyword\":\"$2\"}},"
+              + "{\"match\":{\"$3.keyword\":\"$4\"}}]}}]}},\"_source\":[\"type\"]}");
+
   public static final String PROVIDER_ITEM_EXISTS_QUERY =
       ID_MATCH_SUB_QUERY.concat(
           "{\"bool\":{\"must\":[{\"match\":{\"ownerUserId.keyword\":\"$2\"}},"
@@ -48,9 +57,9 @@ public class Constants {
       "{\"query\":{\"bool\":{\"must\":[{"
           + "\"match\":{\"type\":\"iudx:Owner\"}},"
           + "{\"match\":{\"name.keyword\":\"$1\"}}]}}}";
-  public static final String APPS_ITEM_EXISTS_QUERY =
+  public static final String ITEM_WITH_NAME_EXISTS_QUERY =
       "{\"query\":{\"bool\":{\"must\":[{"
-          + "\"match\":{\"type\":\"adex:Apps\"}},"
-          + "{\"match\":{\"name.keyword\":\"$1\"}}]}}}";
+          + "\"match\":{\"type\":\"$1\"}},"
+          + "{\"match\":{\"name.keyword\":\"$2\"}}]}}}";
   static final String FILTER_PATH = "?filter_path=took,hits.total.value,hits.hits._source";
 }

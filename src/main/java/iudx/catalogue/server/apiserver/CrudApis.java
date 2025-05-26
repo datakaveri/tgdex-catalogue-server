@@ -13,6 +13,7 @@ import static iudx.catalogue.server.util.Constants.*;
 import static iudx.catalogue.server.util.Constants.ERROR;
 import static iudx.catalogue.server.util.Constants.ID;
 import static iudx.catalogue.server.util.Constants.METHOD;
+import static iudx.catalogue.server.util.Constants.RESULTS;
 import static iudx.catalogue.server.util.Constants.STATUS;
 
 import io.vertx.core.Future;
@@ -24,6 +25,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import iudx.catalogue.server.apiserver.util.RespBuilder;
 import iudx.catalogue.server.auditing.AuditingService;
+import iudx.catalogue.server.auditing.util.AuditMetadata;
 import iudx.catalogue.server.authenticator.AuthenticationService;
 import iudx.catalogue.server.database.DatabaseService;
 import iudx.catalogue.server.util.Api;
@@ -48,9 +50,8 @@ public final class CrudApis {
   private AuditingService auditingService;
   private boolean hasAuditService = false;
   private String host;
-  private Api api;
-  private boolean isUac;
-
+  private final Api api;
+  private final boolean isUac;
 
 
   /**
@@ -115,7 +116,8 @@ public final class CrudApis {
               .end(respBuilder.getResponse());
     }
     type.retainAll(ITEM_TYPES);
-    String itemType = type.toString().replaceAll("\\[", "").replaceAll("\\]", "");
+    String itemType = type.toString().replaceAll("\\[", "")
+        .replaceAll("\\]", "");
 
     LOGGER.debug("Info: itemType;" + itemType);
 
@@ -151,13 +153,19 @@ public final class CrudApis {
                 .put(METHOD, REQUEST_POST)
                 .put(API_ENDPOINT, api.getRouteItems())
                 .put(ITEM_TYPE, itemType);
+            if (itemType.equalsIgnoreCase(ITEM_TYPE_AI_MODEL)
+                || itemType.equalsIgnoreCase(ITEM_TYPE_DATA_BANK)) {
+              jwtAuthenticationInfo.put(ORGANIZATION_ID, requestBody.getString(ORGANIZATION_ID));
+            }
 
             if (isUac) {
               handleItemCreation(routingContext, requestBody, response, jwtAuthenticationInfo);
             } else {
               if (itemType.equalsIgnoreCase(ITEM_TYPE_COS)
                   || itemType.equalsIgnoreCase(ITEM_TYPE_OWNER)
-                  || itemType.equalsIgnoreCase(ITEM_TYPE_APPS)) {
+                  || itemType.equalsIgnoreCase(ITEM_TYPE_APPS)
+                  || itemType.equalsIgnoreCase(ITEM_TYPE_AI_MODEL)
+                  || itemType.equalsIgnoreCase(ITEM_TYPE_DATA_BANK)) {
                 handleItemCreation(routingContext, requestBody, response, jwtAuthenticationInfo);
               } else if (itemType.equalsIgnoreCase(ITEM_TYPE_RESOURCE_SERVER)) {
                 handleItemCreation(routingContext, requestBody, response, jwtAuthenticationInfo);
@@ -241,7 +249,14 @@ public final class CrudApis {
                       .withDetail(authHandler.cause().getMessage())
                       .getResponse());
         } else {
-          LOGGER.debug("Success: JWT Auth successful");
+          LOGGER.debug("Success: JWT Auth successful: {}", authHandler.result());
+
+          if (jwtAuthenticationInfo.getString(ITEM_TYPE).equals(ITEM_TYPE_AI_MODEL)
+              || jwtAuthenticationInfo.getString(ITEM_TYPE).equals(ITEM_TYPE_DATA_BANK)) {
+            String kcId = authHandler.result().getString(SUB);
+            requestBody.put(PROVIDER_USER_ID, kcId);
+          }
+
           requestBody.put(HTTP_METHOD, routingContext.request().method().toString());
           /* Link Validating the request to ensure item correctness */
           validatorService.validateItem(requestBody, valhandler -> {
@@ -280,11 +295,15 @@ public final class CrudApis {
                     LOGGER.info("Success: Item created;");
                     response.setStatusCode(201)
                           .end(dbhandler.result().toString());
-                    if (hasAuditService && !isUac) {
-                      updateAuditTable(
-                              authHandler.result(),
-                              new String[]{valhandler.result().getString(ID),
-                                      api.getRouteItems(), REQUEST_POST});
+
+                    String itemType =
+                        dbhandler.result().getJsonObject(RESULTS).getJsonArray(TYPE).getString(0);
+                    String itemName =
+                        dbhandler.result().getJsonObject(RESULTS).getString(NAME);
+                    if (hasAuditService) {
+                      updateAuditTable(authHandler.result(),
+                          new AuditMetadata(valhandler.result().getString(ID), api.getRouteItems(),
+                              REQUEST_POST, itemType, itemName));
                     }
                   }
                 });
@@ -296,10 +315,14 @@ public final class CrudApis {
                     LOGGER.info("Success: Item updated;");
                     response.setStatusCode(200)
                           .end(dbhandler.result().toString());
+
+                    String itemType =
+                        dbhandler.result().getJsonObject(RESULTS).getJsonArray(TYPE).getString(0);
+                    String itemName = dbhandler.result().getJsonObject(RESULTS).getString(NAME);
                     if (hasAuditService) {
                       updateAuditTable(authHandler.result(),
-                              new String[]{valhandler.result().getString(ID),
-                                      api.getRouteItems(), REQUEST_PUT});
+                          new AuditMetadata(valhandler.result().getString(ID), api.getRouteItems(),
+                              REQUEST_PUT, itemType, itemName));
                     }
                   } else if (dbhandler.failed()) {
                     LOGGER.error("Fail: Item update;" + dbhandler.cause().getMessage());
@@ -327,48 +350,91 @@ public final class CrudApis {
   // tag::db-service-calls[]
   public void getItemHandler(RoutingContext routingContext) {
 
-    /* Id in path param */
     HttpServerResponse response = routingContext.response();
+    response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
 
     String itemId = routingContext.queryParams().get(ID);
+    String token = routingContext.request().getHeader(HEADER_TOKEN);
 
     LOGGER.debug("Info: Getting item; id=" + itemId);
 
     JsonObject requestBody = new JsonObject().put(ID, itemId);
-    response.putHeader(HEADER_CONTENT_TYPE, MIME_APPLICATION_JSON);
 
-    if (validateId(itemId)) {
-      // if (validateId(itemId) == false) {
-      dbService.getItem(requestBody, dbhandler -> {
-        if (dbhandler.succeeded()) {
-          if (dbhandler.result().getInteger(TOTAL_HITS) == 0) {
-            LOGGER.error("Fail: Item not found");
-            JsonObject result = dbhandler.result();
-            result.put(STATUS, ERROR);
-            result.put(TYPE, TYPE_ITEM_NOT_FOUND);
-            dbhandler.result().put("detail", "doc doesn't exist");
-            response.setStatusCode(404)
-                    .end(dbhandler.result().toString());
-          } else {
-            LOGGER.info("Success: Retreived item");
-            response.setStatusCode(200)
-                    .end(dbhandler.result().toString());
-          }
-        } else if (dbhandler.failed()) {
-          LOGGER.error("Fail: Item not found;" + dbhandler.cause().getMessage());
-          response.setStatusCode(400)
-              .end(dbhandler.cause().getMessage());
+    if (!validateId(itemId)) {
+      LOGGER.error("Fail: Invalid request payload");
+      response.setStatusCode(400)
+          .end(new RespBuilder()
+              .withType(TYPE_INVALID_UUID)
+              .withTitle(TITLE_INVALID_UUID)
+              .withDetail("The id is invalid")
+              .getResponse());
+      return;
+    }
+
+    // Token is optional: if present, validate & audit
+    if (token != null && !token.isEmpty()) {
+      JsonObject jwtAuthenticationInfo = new JsonObject()
+          .put(TOKEN, token)
+          .put(METHOD, REQUEST_GET)
+          .put(API_ENDPOINT, api.getRouteItems());
+
+      authService.tokenInterospect(new JsonObject(), jwtAuthenticationInfo, authHandler -> {
+        if (authHandler.failed()) {
+          LOGGER.warn("Warning: Token introspection failed, skipping audit");
+          fetchItemWithoutAudit(requestBody, response);
+        } else {
+          dbService.getItem(requestBody, dbhandler -> {
+            if (dbhandler.succeeded()) {
+              if (dbhandler.result().getInteger(TOTAL_HITS) == 0) {
+                LOGGER.error("Fail: Item not found");
+                JsonObject result = dbhandler.result();
+                result.put(STATUS, ERROR).put(TYPE, TYPE_ITEM_NOT_FOUND)
+                    .put("detail", "doc doesn't exist");
+                response.setStatusCode(404).end(result.toString());
+              } else {
+                LOGGER.info("Success: Retrieved item");
+                response.setStatusCode(200).end(dbhandler.result().toString());
+
+                String itemType = dbhandler.result().getJsonArray(RESULTS).getJsonObject(0)
+                    .getJsonArray(TYPE).getString(0);
+                String itemName =
+                    dbhandler.result().getJsonArray(RESULTS).getJsonObject(0).getString(NAME);
+                if (hasAuditService) {
+                  updateAuditTable(authHandler.result(),
+                      new AuditMetadata(itemId, api.getRouteItems(), REQUEST_GET, itemType,
+                          itemName));
+                }
+              }
+            } else {
+              LOGGER.error("Fail: DB Error;" + dbhandler.cause().getMessage());
+              response.setStatusCode(400).end(dbhandler.cause().getMessage());
+            }
+          });
         }
       });
     } else {
-      LOGGER.error("Fail: Invalid request payload");
-      response.setStatusCode(400)
-              .end(new RespBuilder()
-                        .withType(TYPE_INVALID_UUID)
-                        .withTitle(TITLE_INVALID_UUID)
-                        .withDetail("The id is invalid")
-                        .getResponse());
+      fetchItemWithoutAudit(requestBody, response);
     }
+  }
+
+  private void fetchItemWithoutAudit(JsonObject requestBody, HttpServerResponse response) {
+    dbService.getItem(requestBody, dbhandler -> {
+      if (dbhandler.succeeded()) {
+        if (dbhandler.result().getInteger(TOTAL_HITS) == 0) {
+          LOGGER.error("Fail: Item not found");
+          JsonObject result = dbhandler.result();
+          result.put(STATUS, ERROR).put(TYPE, TYPE_ITEM_NOT_FOUND)
+              .put("detail", "doc doesn't exist");
+          response.setStatusCode(404).end(result.toString());
+        } else {
+          LOGGER.info("Success: Retrieved item (no audit)");
+          response.setStatusCode(200).end(dbhandler.result().toString());
+        }
+      } else {
+        LOGGER.error("Fail: DB Error;" + dbhandler.cause().getMessage());
+        response.setStatusCode(400).end(dbhandler.cause().getMessage());
+      }
+    });
   }
 
   /**
@@ -406,17 +472,26 @@ public final class CrudApis {
           itemTypeHandler -> {
             if (itemTypeHandler.succeeded()) {
 
+              String organizationId = itemTypeHandler.result().getString(ORGANIZATION_ID);
+              jwtAuthenticationInfo.put(ORGANIZATION_ID, organizationId);
+              jwtAuthenticationInfo.put(NAME, itemTypeHandler.result().getString(NAME));
+              jwtAuthenticationInfo.put(PROVIDER_USER_ID,
+                  itemTypeHandler.result().getString(PROVIDER_USER_ID));
               Set<String> types =
                   new HashSet<String>(itemTypeHandler.result().getJsonArray(TYPE).getList());
               types.retainAll(ITEM_TYPES);
-              String itemType = types.toString().replaceAll("\\[", "").replaceAll("\\]", "");
+              String itemType = types.toString().replaceAll("\\[", "")
+                  .replaceAll("\\]", "");
               LOGGER.debug("itemType : {} ", itemType);
               jwtAuthenticationInfo.put(ITEM_TYPE, itemType);
               if (isUac) {
                 handleItemDeletion(response, jwtAuthenticationInfo, requestBody, itemId);
               } else {
                 if (itemType.equalsIgnoreCase(ITEM_TYPE_COS)
-                    || itemType.equalsIgnoreCase(ITEM_TYPE_OWNER)
+                    || itemType.equalsIgnoreCase(ITEM_TYPE_OWNER)) {
+                  handleItemDeletion(response, jwtAuthenticationInfo, requestBody, itemId);
+                } else if (itemType.equalsIgnoreCase(ITEM_TYPE_DATA_BANK)
+                    || itemType.equalsIgnoreCase(ITEM_TYPE_AI_MODEL)
                     || itemType.equalsIgnoreCase(ITEM_TYPE_APPS)) {
                   handleItemDeletion(response, jwtAuthenticationInfo, requestBody, itemId);
                 } else if (itemType.equalsIgnoreCase(ITEM_TYPE_RESOURCE_SERVER)) {
@@ -496,9 +571,12 @@ public final class CrudApis {
                 LOGGER.debug(dbHandler.result().toString());
                 if (dbHandler.result().getString(STATUS).equals(TITLE_SUCCESS)) {
                   response.setStatusCode(200).end(dbHandler.result().toString());
-                  if (hasAuditService && !isUac) {
+                  String itemType = jwtAuthenticationInfo.getString(ITEM_TYPE);
+                  String itemName = jwtAuthenticationInfo.getString(NAME);
+                  if (hasAuditService) {
                     updateAuditTable(authHandler.result(),
-                        new String[]{itemId, api.getRouteItems(), REQUEST_DELETE});
+                        new AuditMetadata(itemId, api.getRouteItems(),
+                            REQUEST_DELETE, itemType, itemName));
                   }
                 } else {
                   response.setStatusCode(404)
@@ -681,32 +759,43 @@ public final class CrudApis {
   }
 
   /**
-   * function to handle call to audit service.
+   * Handles publishing audit information to the auditing service.
    *
-   * @param jwtDecodedInfo contains the user-role, user-id, iid
-   * @param otherInfo contains item-id, api-endpoint and the HTTP method.
+   * <p>This method constructs a structured audit log using metadata extracted
+   * from the authenticated user's JWT and additional API interaction details.
+   * The information is then published to the RabbitMQ-based audit service.
+   *
+   * @param jwtDecodedInfo A JsonObject containing decoded JWT claims such as
+   *                       user ID, and IID (infrastructure ID).
+   * @param metadata       An instance of {@link AuditMetadata} containing the item ID,
+   *                       API endpoint, HTTP method, item type, and item name.
    */
-  private void updateAuditTable(JsonObject jwtDecodedInfo, String[] otherInfo) {
+  private void updateAuditTable(JsonObject jwtDecodedInfo, AuditMetadata metadata) {
     LOGGER.info("Updating audit table on successful transaction");
 
-    JsonObject auditInfo = jwtDecodedInfo;
     ZonedDateTime zst = ZonedDateTime.now();
-    LOGGER.debug("TIME ZST: " + zst);
     long epochTime = getEpochTime(zst);
-    auditInfo.put(IUDX_ID, otherInfo[0])
-            .put(API, otherInfo[1])
-            .put(HTTP_METHOD, otherInfo[2])
-            .put(EPOCH_TIME, epochTime)
-            .put(USERID, jwtDecodedInfo.getString(USER_ID));
+
+    JsonObject auditInfo = new JsonObject()
+        .put(IUDX_ID, metadata.itemId)
+        .put(API, metadata.apiEndpoint)
+        .put(HTTP_METHOD, metadata.httpMethod)
+        .put(ITEM_TYPE, metadata.itemType)
+        .put(ITEM_NAME, metadata.itemName)
+        .put(EPOCH_TIME, epochTime)
+        .put(USERID, jwtDecodedInfo.getString(USER_ID));
 
     LOGGER.debug("audit data: " + auditInfo.encodePrettily());
-    auditingService.insertAuditngValuesInRmq(auditInfo, auditHandler -> {
-      if (auditHandler.succeeded()) {
-        LOGGER.info("message published in RMQ.");
-      } else {
-        LOGGER.error("failed to publish message in RMQ.");
-      }
-    });
+
+    //TODO: Yet to integrate with finalize the schema and send to audit server
+
+//    auditingService.insertAuditngValuesInRmq(auditInfo, auditHandler -> {
+//      if (auditHandler.succeeded()) {
+//        LOGGER.info("message published in RMQ.");
+//      } else {
+//        LOGGER.error("failed to publish message in RMQ.", auditHandler.cause());
+//      }
+//    });
   }
 
   private long getEpochTime(ZonedDateTime zst) {

@@ -93,10 +93,12 @@ public class Constants {
   public static final String BUCKETS = "buckets";
   public static final String ID = "id";
   public static final String ITEM = "item";
+  public static final String SUB = "sub";
 
   public static final String RESOURCE_ID = "resourceId";
 
   public static final String ITEM_TYPE = "itemType";
+  public static final String ITEM_NAME = "itemName";
 
   public static final String PROPERTY = "property";
   public static final String VALUE = "value";
@@ -170,9 +172,11 @@ public class Constants {
   public static final String TERM = "term";
   public static final String NAME = "name";
   public static final String FILTER = "filter";
+  public static final String MUST_NOT = "must_not";
   public static final String TAGS = "tags";
   public static final String DEPARTMENT = "department";
   public static final String ORGANIZATION_TYPE = "organizationType";
+  public static final String ORGANIZATION_ID = "organizationId";
   public static final String FILE_FORMAT = "fileFormat";
   public static final String DATA_READINESS = "dataReadiness";
   public static final String MODEL_TYPE = "modelType";

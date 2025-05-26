@@ -15,9 +15,6 @@
       "description": "SomeDescription",
       "shortDescription" : "a short description about the item",
       "tags": ["environment", "weather", "rainfall", "temperature"],
-      "provider": "337545aa-1fa5-4ca0-bf3d-072144dec5b6",
-      "resourceGroup": "96bc97bf-504e-4306-bb49-99d77896cf1d",
-      "resourceServer": "85bc97bf-904f-2306-gb49-89d77896cf2e",
       "accessPolicy": "RESTRICTED",
       "organizationType": "Private",
       "fileFormat": "xlsx",
@@ -57,11 +54,9 @@
     "shortDescription",
     "description",
     "tags",
-    "provider",
-    "resourceGroup",
-    "resourceServer",
     "accessPolicy",
     "organizationType",
+    "organizationId",
     "fileFormat",
     "dataReadiness",
     "department",
@@ -140,38 +135,6 @@
       "description": "An explanation about the purpose of this instance.",
       "default": ""
     },
-    "provider": {
-      "$id": "#/properties/provider",
-      "type": "string",
-      "title": "The provider schema",
-      "description": "An explanation about the purpose of this instance.",
-      "default": "",
-      "examples": ["8b95ab80-2aaf-4636-a65e-7f2563d0d371"],
-      "maxLength": 36,
-      "pattern": "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
-    },
-    "resourceGroup": {
-      "$id": "#/properties/resourceGroup",
-      "type": "string",
-      "title": "The resourceGroup schema",
-      "description": "An explanation about the purpose of this instance.",
-      "default": "",
-      "examples": ["8b95ab80-2aaf-4636-a65e-7f2563d0d371"],
-      "maxLength": 36,
-      "pattern": "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
-    },
-    "resourceServer": {
-      "$id": "#/properties/resourceServer",
-      "type": "string",
-      "title": "The resourceServer schema",
-      "description": "An explanation about the purpose of this instance.",
-      "default": "",
-      "examples": [
-        "8b95ab80-2aaf-4636-a65e-7f2563d0d371"
-      ],
-      "maxLength": 36,
-      "pattern": "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
-    },
     "accessPolicy": {
       "$id": "#/properties/accessPolicy",
       "type": "string",
@@ -187,7 +150,20 @@
     },
     "description": {
       "type": "string",
-      "title": "The description schema"
+      "title": "The description schema",
+      "maxLength": 4000
+    },
+    "organizationId": {
+      "$id": "#/properties/organizationId",
+      "type": "string",
+      "title": "The organizationId schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "8b95ab80-2aaf-4636-a65e-7f2563d0d351"
+      ],
+      "maxLength": 36,
+      "pattern": "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
     },
     "organizationType": {
       "type": "string",
@@ -195,7 +171,8 @@
     },
     "shortDescription": {
       "type": "string",
-      "title": ""
+      "title": "",
+      "maxLength": 512
     },
     "industry" : {
       "type": "string",

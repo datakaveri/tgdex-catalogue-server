@@ -56,6 +56,7 @@ public final class QueryDecoder {
     JsonObject elasticQuery = new JsonObject();
     String queryGeoShape = null;
     JsonArray mustQuery = new JsonArray();
+    JsonArray mustNotQuery = new JsonArray();
     Boolean match = false;
 
     if (searchType.equalsIgnoreCase("getParentObjectInfo")) {
@@ -66,7 +67,8 @@ public final class QueryDecoder {
                   .replace(
                       "$2",
                       "\"type\",\"provider\",\"ownerUserId\","
-                          + "\"resourceGroup\",\"resourceServer\","
+                          + "\"resourceGroup\",\"name\",\"organizationId\","
+                          + "\"resourceServer\","
                           + "\"resourceServerRegURL\", \"cos\", \"cos_admin\""));
       return elasticQuery;
     }
@@ -363,6 +365,49 @@ public final class QueryDecoder {
       mustQuery.add(new JsonObject(instanceFilter));
     }
 
+    String sub = request.getString(SUB);
+
+    if (sub != null && !sub.isEmpty()) {
+      // Public access
+      JsonObject publicAccess = new JsonObject(MATCH_QUERY
+          .replace("$1", ACCESS_POLICY).replace("$2", OPEN));
+
+      // Restricted access
+      JsonObject restrictedAccess = new JsonObject(MATCH_QUERY
+          .replace("$1", ACCESS_POLICY).replace("$2", RESTRICTED));
+
+      // Private access by owner
+      JsonObject privateAccess = new JsonObject(MATCH_QUERY
+          .replace("$1", ACCESS_POLICY).replace("$2", PRIVATE));
+
+      JsonObject ownerMatch = new JsonObject(MATCH_QUERY
+          .replace("$1", PROVIDER_USER_ID).replace("$2", sub));
+
+      // private + ownerUserId = own private data
+      JsonObject privateOwned = new JsonObject()
+          .put("bool", new JsonObject()
+              .put("must", new JsonArray()
+                  .add(privateAccess)
+                  .add(ownerMatch)));
+
+      // Combined access filter: PUBLIC or RESTRICTED or OWN PRIVATE
+      JsonObject accessControl = new JsonObject()
+          .put("bool", new JsonObject()
+              .put("should", new JsonArray()
+                  .add(publicAccess)
+                  .add(restrictedAccess)
+                  .add(privateOwned)));
+
+      mustQuery.add(accessControl);
+
+    } else {
+      // Not authenticated → Exclude all PRIVATE data
+      JsonObject excludeAllPrivate = new JsonObject(MATCH_QUERY
+          .replace("$1", ACCESS_POLICY)
+          .replace("$2", PRIVATE));
+      mustNotQuery.add(excludeAllPrivate);
+    }
+
     /* checking the requests for limit attribute */
     if (request.containsKey(LIMIT)) {
       Integer sizeFilter = request.getInteger(LIMIT);
@@ -413,6 +458,9 @@ public final class QueryDecoder {
     } else {
 
       JsonObject boolQuery = new JsonObject(MUST_QUERY.replace("$1", mustQuery.toString()));
+      if (!mustNotQuery.isEmpty()) {
+        boolQuery.getJsonObject("bool").put(MUST_NOT, mustNotQuery);
+      }
       /* return fully formed elastic query */
       if (queryGeoShape != null) {
         try {
@@ -660,54 +708,74 @@ public final class QueryDecoder {
   public String listMultipleItemTypesQuery(JsonObject request) {
     LOGGER.debug("Info: Reached list multiple items; " + request.toString());
 
-    String instanceId = request.getString(INSTANCE);
-    JsonArray filters = request.getJsonArray(SEARCH_CRITERIA_KEY);  // Now filters is an array of
-    // filter objects
     Integer limit = request.getInteger(LIMIT,
         FILTER_PAGINATION_SIZE - request.getInteger(OFFSET, 0));
 
     StringBuilder queryBuilder = new StringBuilder();
     queryBuilder.append(QUERY_START);
 
-    boolean hasExtraFilter = filters != null && !filters.isEmpty()
-        || instanceId != null && !instanceId.isEmpty();
-    boolean hasFilter = instanceId != null && !instanceId.isEmpty() || hasExtraFilter;
+    // Always include at least accessPolicy filter
+    queryBuilder.append(QUERY_BOOL_FILTER_START);
 
-    if (hasFilter) {
-      queryBuilder.append(QUERY_BOOL_FILTER_START);
+    // Access policy filter
+    JsonArray allowedPolicies = new JsonArray();
+    allowedPolicies.add(OPEN).add(RESTRICTED);
 
-      // Handle instanceId filter (if present)
-      if (instanceId != null && !instanceId.isEmpty()) {
-        String instanceFilter = TERM_QUERY_TEMPLATE
-            .replace("$field", INSTANCE + KEYWORD_KEY)
-            .replace("$value", instanceId);
-        queryBuilder.append(instanceFilter).append(",");
-      }
+    String openRestrictedFilter = TERMS_QUERY_TEMPLATE
+        .replace("$field", ACCESS_POLICY + KEYWORD_KEY)
+        .replace("$value", allowedPolicies.toString());
 
-      // Handle additional filters (from the filters array)
-      if (filters != null && !filters.isEmpty()) {
-        for (Object filterObj : filters) {
-          JsonObject filter = (JsonObject) filterObj;
-          String field = filter.getString(FIELD);
-          JsonArray values = filter.getJsonArray(VALUES);
+    // Create the `must_not exists` part for missing accessPolicy
+    String accessPolicyMissing = MUST_NOT_EXISTS_QUERY_TEMPLATE
+        .replace("$field", ACCESS_POLICY);
 
-          if (field != null && values != null && !values.isEmpty()) {
-            String extraFilter = TERMS_QUERY_TEMPLATE
-                .replace("$field", field + KEYWORD_KEY)
-                .replace("$value", values.toString());
-            // Assuming a single value in "values" for simplicity
-            queryBuilder.append(extraFilter).append(",");
-          }
+    String shouldArray = String.format("[%s,%s]", openRestrictedFilter, accessPolicyMissing);
+    String openRestrictedOrMissing = SHOULD_QUERY.replace("$1", shouldArray);
+
+    // Private access policy needs special handling: restrict by ownerUserId = sub
+    // Access policy filter logic
+    boolean hasToken = request.containsKey(SUB) && request.getString(SUB) != null;
+    if (hasToken) {
+      String shouldClause = getShouldClause(request.getString(SUB), openRestrictedOrMissing);
+      queryBuilder.append(shouldClause).append(",");
+    } else {
+      // Only open + restricted if no token
+      queryBuilder.append(openRestrictedOrMissing).append(",");
+    }
+
+    //instanceId filter
+    String instanceId = request.getString(INSTANCE);
+    if (instanceId != null && !instanceId.isEmpty()) {
+      String instanceFilter = TERM_QUERY_TEMPLATE
+          .replace("$field", INSTANCE + KEYWORD_KEY)
+          .replace("$value", instanceId);
+      queryBuilder.append(instanceFilter).append(",");
+    }
+
+    // Handle additional filters (from the filters array)
+    JsonArray filters = request.getJsonArray(SEARCH_CRITERIA_KEY);
+    if (filters != null && !filters.isEmpty()) {
+      for (Object filterObj : filters) {
+        JsonObject filter = (JsonObject) filterObj;
+        String field = filter.getString(FIELD);
+        JsonArray values = filter.getJsonArray(VALUES);
+
+        if (field != null && values != null && !values.isEmpty()) {
+          String extraFilter = TERMS_QUERY_TEMPLATE
+              .replace("$field", field + KEYWORD_KEY)
+              .replace("$value", values.toString());
+          // Assuming a single value in "values" for simplicity
+          queryBuilder.append(extraFilter).append(",");
         }
       }
-
-      // Remove last comma if necessary
-      if (queryBuilder.toString().endsWith(",")) {
-        queryBuilder = new StringBuilder(queryBuilder.substring(0, queryBuilder.length() - 1));
-      }
-
-      queryBuilder.append(QUERY_BOOL_FILTER_END);
     }
+
+    // Remove last comma if necessary
+    if (queryBuilder.toString().endsWith(",")) {
+      queryBuilder = new StringBuilder(queryBuilder.substring(0, queryBuilder.length() - 1));
+    }
+
+    queryBuilder.append(QUERY_BOOL_FILTER_END);
 
     queryBuilder.append(AGGS_START);
 
@@ -730,6 +798,24 @@ public final class QueryDecoder {
     queryBuilder.append(QUERY_END);
 
     return queryBuilder.toString();
+  }
+
+  private static String getShouldClause(String sub, String openRestrictedFilter) {
+    String privateFilter = TERM_QUERY_TEMPLATE
+        .replace("$field", ACCESS_POLICY + KEYWORD_KEY)
+        .replace("$value", PRIVATE);
+
+    String ownerFilter = TERM_QUERY_TEMPLATE
+        .replace("$field", PROVIDER_USER_ID + KEYWORD_KEY)
+        .replace("$value", sub);
+
+    // Combine private access filters in must clause
+    String mustArray = String.format("[%s,%s]", privateFilter, ownerFilter);
+    String privateMustClause = MUST_QUERY.replace("$1", mustArray);
+
+    // Combine with open/restricted in should clause
+    String shouldArray = String.format("[%s,%s]", openRestrictedFilter, privateMustClause);
+    return SHOULD_QUERY.replace("$1", shouldArray);
   }
 
 }

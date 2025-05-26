@@ -53,6 +53,7 @@ public class AuthenticationVerticle extends AbstractVerticle {
   private Api api;
   private String dxApiBasePath;
   private boolean isUac;
+  private boolean isTgdex;
 
   static WebClient createWebClient(Vertx vertx, JsonObject config) {
     return createWebClient(vertx, config, false);
@@ -100,9 +101,10 @@ public class AuthenticationVerticle extends AbstractVerticle {
   @Override
   public void start() throws Exception {
     isUac = config().getBoolean(UAC_DEPLOYMENT);
+    isTgdex = config().getBoolean(TGDEX_DEPLOYMENT);
     binder = new ServiceBinder(vertx);
     binder.setAddress(AUTH_SERVICE_ADDRESS);
-    if (isUac) {
+    if (isUac || isTgdex) {
       setKeycloakAuthService();
     } else {
       setJwtAuthService();
@@ -152,6 +154,7 @@ public class AuthenticationVerticle extends AbstractVerticle {
   private void setKeycloakAuthService() throws IOException, ParseException {
     String keyCloakHost = config().getString(KEYCLOACK_HOST);
     String certsEndpoint = config().getString(CERTS_ENDPOINT);
+    String issuer = config().getString("issuer");
     String audience = config().getString("host");
 
     URL jwksUrl = new URL(keyCloakHost.concat(certsEndpoint));
@@ -165,9 +168,9 @@ public class AuthenticationVerticle extends AbstractVerticle {
     jwtProcessor.setJWSKeySelector(keySelector);
     JWTClaimsSetVerifier<SecurityContext> claimsSetVerifier =
         new DefaultJWTClaimsVerifier<>(
-            new HashSet<>(Arrays.asList(audience)),
-            new JWTClaimsSet.Builder().issuer(keyCloakHost).build(),
-            new HashSet<>(Arrays.asList("exp", "sub", "iat", "iss", "aud", "client_id")),
+            new HashSet<>(Collections.singletonList(audience)),
+            new JWTClaimsSet.Builder().issuer(issuer).build(),
+            new HashSet<>(Arrays.asList("exp", "sub", "iat", "iss", "aud")),
             Collections.singleton("nonce"));
 
     jwtProcessor.setJWTClaimsSetVerifier(claimsSetVerifier);

@@ -6,7 +6,8 @@
   "commonConfig": {
     "dxApiBasePath": "",
     "dxAuthBasePath": "",
-    "isUACInstance": false
+    "isUACInstance": false,
+    "isTGDExInstance": true
   },
   "clusterId": "iudx-catalogue-cluster",
   "host": "server",
@@ -35,7 +36,9 @@
       "verticleInstances": 1,
       "authServerHost": "",
       "issuer": "",
-      "jwtIgnoreExpiry": true
+      "jwtIgnoreExpiry": true,
+      "keycloakServerHost": "",
+      "certsEndpoint": ""
     },
     {
       "id": "iudx.catalogue.server.validator.ValidatorVerticle",
