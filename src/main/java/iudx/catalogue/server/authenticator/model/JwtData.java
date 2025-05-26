@@ -1,7 +1,11 @@
 package iudx.catalogue.server.authenticator.model;
 
 import io.vertx.codegen.annotations.DataObject;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @DataObject(generateConverter = true, publicConverter = false)
 public final class JwtData {
@@ -18,6 +22,8 @@ public final class JwtData {
   private String clientId;
   private String did;
   private String drl;
+  private List<String> roles = new ArrayList<>();
+  private String organizationId;
 
   public JwtData() {
     super();
@@ -27,6 +33,18 @@ public final class JwtData {
     JwtDataConverter.fromJson(json, this);
     setAccessToken(json.getString("access_token"));
     setClientId(json.getString("client_id"));
+    setOrganizationId(json.getString("organisation_id"));
+    extractRoles(json);
+  }
+
+  private void extractRoles(JsonObject json) {
+    JsonObject realmAccess = json.getJsonObject("realm_access");
+    if (realmAccess != null) {
+      JsonArray rolesArray = realmAccess.getJsonArray("roles", new JsonArray());
+      this.roles = rolesArray.stream()
+          .map(Object::toString)
+          .collect(Collectors.toList());
+    }
   }
 
   /**
@@ -37,6 +55,7 @@ public final class JwtData {
   public JsonObject toJson() {
     JsonObject json = new JsonObject();
     JwtDataConverter.toJson(this, json);
+    json.put("roles", new JsonArray(roles));
     return json;
   }
 
@@ -46,6 +65,14 @@ public final class JwtData {
 
   public void setAccessToken(String accessToken) {
     this.accessToken = accessToken;
+  }
+
+  public String getOrganizationId() {
+    return organizationId;
+  }
+
+  public void setOrganizationId(String organizationId) {
+    this.organizationId = organizationId;
   }
 
   public String getSub() {
@@ -136,28 +163,31 @@ public final class JwtData {
     this.drl = drl;
   }
 
+  public List<String> getRoles() {
+    return roles;
+  }
+
+  public void setRoles(List<String> roles) {
+    this.roles = roles;
+  }
+
   @Override
   public String toString() {
-    return "JwtData [access_token="
-        + accessToken
-        + ", sub="
-        + sub
-        + ", iss="
-        + iss
-        + ", aud="
-        + aud
-        + ", iid="
-        + iid
-        + ", role="
-        + role
-        + ", cons="
-        + cons
-        + ", client_id="
-        + clientId
-        + ", did="
-        + did
-        + ", drl="
-        + drl
+    return "JwtData ["
+        + "accessToken=" + accessToken
+        + ", sub=" + sub
+        + ", iss=" + iss
+        + ", aud=" + aud
+        + ", exp=" + exp
+        + ", iat=" + iat
+        + ", iid=" + iid
+        + ", role=" + role
+        + ", cons=" + cons
+        + ", clientId=" + clientId
+        + ", did=" + did
+        + ", drl=" + drl
+        + ", roles=" + roles
+        + ", organizationId=" + organizationId
         + "]";
   }
 }

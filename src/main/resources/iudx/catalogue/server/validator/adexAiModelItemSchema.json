@@ -38,9 +38,9 @@
     "shortDescription",
     "description",
     "tags",
-    "provider",
     "accessPolicy",
     "organizationType",
+    "organizationId",
     "department",
     "modelType",
     "fileFormat",
@@ -100,16 +100,6 @@
         ]
       }
     },
-    "provider": {
-      "$id": "#/properties/provider",
-      "type": "string",
-      "title": "The provider schema",
-      "description": "An explanation about the purpose of this instance.",
-      "default": "",
-      "examples": ["8b95ab80-2aaf-4636-a65e-7f2563d0d371"],
-      "maxLength": 36,
-      "pattern": "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
-    },
     "tags": {
       "$id": "#/properties/tags",
       "type": "array",
@@ -140,13 +130,31 @@
     "description": {
       "type": "string",
       "title": "The description schema",
-      "description": "Detailed description of the model"
+      "description": "Detailed description of the model",
+      "maxLength": 4000
+    },
+    "shortDescription": {
+      "type": "string",
+      "title": "The shortDescription schema",
+      "description": "Short description of the model",
+      "maxLength": 512
     },
     "organizationType": {
       "type": "string",
       "title": "The organizationType schema",
       "description": "Type of organization providing the model",
       "examples": ["Private", "Public", "Academic Institution"]
+    },"organizationId": {
+      "$id": "#/properties/organizationId",
+      "type": "string",
+      "title": "The organizationId schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "8b95ab80-2aaf-4636-a65e-7f2563d0d351"
+      ],
+      "maxLength": 36,
+      "pattern": "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
     },
     "department": {
       "type": "string",

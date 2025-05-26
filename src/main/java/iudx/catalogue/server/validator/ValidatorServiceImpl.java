@@ -234,8 +234,7 @@ public class ValidatorServiceImpl implements ValidatorService {
     LOGGER.debug("Info: itemType: " + itemType);
 
     // Validate if Resource
-    if (itemType.equalsIgnoreCase(ITEM_TYPE_RESOURCE)
-        || itemType.equalsIgnoreCase(ITEM_TYPE_DATA_BANK)) {
+    if (itemType.equalsIgnoreCase(ITEM_TYPE_RESOURCE)) {
       validateResource(request, method, handler);
     } else if (itemType.equalsIgnoreCase(ITEM_TYPE_RESOURCE_SERVER)) {
       // Validate if Resource Server TODO: More checks and auth rules
@@ -250,6 +249,8 @@ public class ValidatorServiceImpl implements ValidatorService {
       validateOwnerItem(request, method, handler);
     } else if (itemType.equalsIgnoreCase(ITEM_TYPE_AI_MODEL)) {
       validateAiModelItem(request, method, handler);
+    } else if (itemType.equalsIgnoreCase(ITEM_TYPE_DATA_BANK)) {
+      validateDataBankItem(request, method, handler);
     } else if (itemType.equalsIgnoreCase(ITEM_TYPE_APPS)) {
       validateAppsItem(request, method, handler);
     }
@@ -264,7 +265,8 @@ public class ValidatorServiceImpl implements ValidatorService {
       request.put(ID, uuid.toString());
     }
     request.put(ITEM_STATUS, ACTIVE).put(ITEM_CREATED_AT, getUtcDatetimeAsString());
-    String checkQuery = APPS_ITEM_EXISTS_QUERY.replace("$1", request.getString(NAME));
+    String checkQuery = ITEM_WITH_NAME_EXISTS_QUERY
+        .replace("$1", ITEM_TYPE_APPS).replace("$2", request.getString(NAME));
     LOGGER.debug(checkQuery);
     client.searchGetId(
         checkQuery,
@@ -276,7 +278,7 @@ public class ValidatorServiceImpl implements ValidatorService {
             return;
           }
           if (method.equalsIgnoreCase(REQUEST_POST) && res.result().getInteger(TOTAL_HITS) > 0) {
-            LOGGER.debug("adex apps item already exists with the given name");
+            LOGGER.debug("potential apps item already exists with the given name");
             handler.handle(Future.failedFuture("Fail: Apps item already exists"));
           } else {
             handler.handle(Future.succeededFuture(request));
@@ -293,13 +295,10 @@ public class ValidatorServiceImpl implements ValidatorService {
     }
 
     request.put(ITEM_STATUS, ACTIVE).put(ITEM_CREATED_AT, getUtcDatetimeAsString());
-    String provider = request.getString(PROVIDER);
-    String checkQuery =
-        ITEM_EXISTS_QUERY
-            .replace("$1", provider)
-            .replace("$2", ITEM_TYPE_AI_MODEL)
-            .replace("$3", NAME)
-            .replace("$4", request.getString(NAME));
+    String organization = request.getString(ORGANIZATION_ID);
+
+    String checkQuery = ITEM_WITH_NAME_EXISTS_QUERY
+        .replace("$1", ITEM_TYPE_AI_MODEL).replace("$2", request.getString(NAME));
     client.searchAsync(
         checkQuery,
         docIndex,
@@ -311,13 +310,45 @@ public class ValidatorServiceImpl implements ValidatorService {
           }
           String returnType = getReturnTypeForValidation(res.result());
           LOGGER.debug(returnType);
-          if (res.result().getInteger(TOTAL_HITS) < 1 || !returnType.contains(ITEM_TYPE_PROVIDER)) {
-            LOGGER.debug("Provider does not exist");
-            handler.handle(Future.failedFuture("Fail: Provider item doesn't exist"));
-          } else if (method.equalsIgnoreCase(REQUEST_POST)
+          if (method.equalsIgnoreCase(REQUEST_POST)
               && returnType.contains(ITEM_TYPE_AI_MODEL)) {
-            LOGGER.debug("AI Model already exists");
+            LOGGER.debug("AI Model already exists with the name {} in organization {}",
+                request.getString(NAME), request.getString(ORGANIZATION_ID));
             handler.handle(Future.failedFuture("Fail: AI Model item already exists"));
+          } else {
+            handler.handle(Future.succeededFuture(request));
+          }
+        });
+  }
+
+  private void validateDataBankItem(JsonObject request, String method,
+                                   Handler<AsyncResult<JsonObject>> handler) {
+    validateId(request, handler, isUacInstance);
+    if (!isUacInstance && !request.containsKey(ID)) {
+      UUID uuid = UUID.randomUUID();
+      request.put(ID, uuid.toString());
+    }
+
+    request.put(ITEM_STATUS, ACTIVE).put(ITEM_CREATED_AT, getUtcDatetimeAsString());
+
+    String checkQuery = ITEM_WITH_NAME_EXISTS_QUERY
+        .replace("$1", ITEM_TYPE_DATA_BANK).replace("$2", request.getString(NAME));
+    client.searchAsync(
+        checkQuery,
+        docIndex,
+        res -> {
+          if (res.failed()) {
+            LOGGER.debug("Fail: DB Error");
+            handler.handle(Future.failedFuture(VALIDATION_FAILURE_MSG));
+            return;
+          }
+          String returnType = getReturnTypeForValidation(res.result());
+          LOGGER.debug(returnType);
+          if (method.equalsIgnoreCase(REQUEST_POST)
+              && returnType.contains(ITEM_TYPE_AI_MODEL)) {
+            LOGGER.debug("Data Bank item already exists with the name {} in organization {}",
+                request.getString(NAME), request.getString(ORGANIZATION_ID));
+            handler.handle(Future.failedFuture("Fail: DataBank item already exists"));
           } else {
             handler.handle(Future.succeededFuture(request));
           }
@@ -461,9 +492,9 @@ public class ValidatorServiceImpl implements ValidatorService {
   private void validateResource(
       JsonObject request, String method, Handler<AsyncResult<JsonObject>> handler) {
     validateId(request, handler, isUacInstance);
-    if (!isUacInstance && !request.containsKey("id")) {
+    if (!isUacInstance && !request.containsKey(ID)) {
       UUID uuid = UUID.randomUUID();
-      request.put("id", uuid.toString());
+      request.put(ID, uuid.toString());
     }
 
     request.put(ITEM_STATUS, ACTIVE).put(ITEM_CREATED_AT, getUtcDatetimeAsString());
@@ -590,14 +621,14 @@ public class ValidatorServiceImpl implements ValidatorService {
 
   private void validateId(
       JsonObject request, Handler<AsyncResult<JsonObject>> handler, boolean isUacInstance) {
-    if (request.containsKey("id")) {
-      String id = request.getString("id");
+    if (request.containsKey(ID)) {
+      String id = request.getString(ID);
       LOGGER.debug("id in the request body: " + id);
 
       if (!isValidUuid(id)) {
         handler.handle(Future.failedFuture("validation failed. Incorrect id"));
       }
-    } else if (isUacInstance && !request.containsKey("id")) {
+    } else if (isUacInstance && !request.containsKey(ID)) {
       handler.handle(Future.failedFuture("mandatory id field not present in request body"));
     }
   }

@@ -9,8 +9,6 @@ import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.serviceproxy.ServiceBinder;
 import iudx.catalogue.server.database.ElasticClient;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 
 /**
@@ -18,7 +16,7 @@ import org.apache.logging.log4j.Logger;
  *
  * <h1>Validator Verticle</h1>
  *
- * <p>The Validator Verticle implementation in the the IUDX Catalogue Server exposes the {@link
+ * <p>The Validator Verticle implementation in the IUDX Catalogue Server exposes the {@link
  * iudx.catalogue.server.validator.ValidatorService} over the Vert.x Event Bus.
  *
  * @version 1.0
