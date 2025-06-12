@@ -1,4 +1,4 @@
-package org.cdpg.dx.cat.crud.service;
+package org.cdpg.dx.tgdex.crud.service;
 
 import io.vertx.ext.web.RoutingContext;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;

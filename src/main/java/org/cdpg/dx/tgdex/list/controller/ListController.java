@@ -1,10 +1,10 @@
-package org.cdpg.dx.cat.list.controller;
+package org.cdpg.dx.tgdex.list.controller;
 
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.cat.apiserver.ApiController;
-import org.cdpg.dx.cat.list.service.ListService;
+import org.cdpg.dx.tgdex.apiserver.ApiController;
+import org.cdpg.dx.tgdex.list.service.ListService;
 
 import static org.cdpg.dx.util.Constants.*;
 

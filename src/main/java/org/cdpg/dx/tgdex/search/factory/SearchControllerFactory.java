@@ -1,9 +1,9 @@
-package org.cdpg.dx.cat.search.factory;
+package org.cdpg.dx.tgdex.search.factory;
 
 import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.cat.search.controller.SearchController;
-import org.cdpg.dx.cat.search.service.SearchService;
-import org.cdpg.dx.cat.search.service.SearchServiceImpl;
+import org.cdpg.dx.tgdex.search.controller.SearchController;
+import org.cdpg.dx.tgdex.search.service.SearchService;
+import org.cdpg.dx.tgdex.search.service.SearchServiceImpl;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 
 public class SearchControllerFactory {

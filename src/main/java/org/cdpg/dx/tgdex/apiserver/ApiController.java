@@ -1,4 +1,4 @@
-package org.cdpg.dx.cat.apiserver;
+package org.cdpg.dx.tgdex.apiserver;
 
 import io.vertx.ext.web.openapi.RouterBuilder;
 

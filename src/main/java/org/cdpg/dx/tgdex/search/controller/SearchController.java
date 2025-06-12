@@ -1,10 +1,10 @@
-package org.cdpg.dx.cat.search.controller;
+package org.cdpg.dx.tgdex.search.controller;
 
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.cat.apiserver.ApiController;
-import org.cdpg.dx.cat.search.service.SearchService;
+import org.cdpg.dx.tgdex.apiserver.ApiController;
+import org.cdpg.dx.tgdex.search.service.SearchService;
 
 import static org.cdpg.dx.util.Constants.*;
 
