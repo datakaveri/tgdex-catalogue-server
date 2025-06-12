@@ -1,0 +1,232 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "http://example.com/apps-metadata.schema.json",
+  "type": "object",
+  "title": "Adex Potential Applications Metadata Schema",
+  "description": "Schema for ADeX Apps model metadata.",
+  "default": {},
+  "examples": [
+    {
+      "type": [
+        "adex:Apps"
+      ],
+      "name": "SomeName",
+      "tags": [
+        "ai", "ml", "model", "aimodel", "mlmodel",
+        "ai-model", "ml-model", "machine", "learning",
+        "machine learning", "training", "algorithm"
+      ],
+      "label": "Test-Crop Disease Detection Model",
+      "description": "An test potential application item for detecting crop disease with the help of infected leaf images.",
+      "organizationType": "Private",
+      "department": "Agriculture and Co-operation",
+      "shortDescription": "A test potential application item for detecting crop disease",
+      "uploadedBy": "cdpg@datakaveri.org",
+      "fileFormat": "xlsx",
+      "accessPolicy": "Public",
+      "canBeUsedFor": {
+        "cropMonitoring": "Detect and classify diseases in crops using image input",
+        "yieldOptimization": "Improve crop yield by early detection of diseases"
+      },
+      "dataInputsAndAiTechniques": {
+        "Input Data Banks": [
+          "Annotated Leaf Image Dataset",
+          "Crop Type Classification Data"
+        ],
+        "Expected Output": [
+          "Disease Type",
+          "Confidence Score",
+          "Recommended Treatment"
+        ],
+        "AI Models": [
+          "Convolutional Neural Networks",
+          "Transfer Learning"
+        ],
+        "Potential Benefits": [
+          "Early detection of crop diseases",
+          "Reduction in crop loss",
+          "Better planning and resource 1allocation"
+        ]
+      }
+    }
+  ],
+  "required": [
+    "name",
+    "type",
+    "tags",
+    "label",
+    "shortDescription",
+    "description",
+    "organizationType",
+    "department",
+    "uploadedBy",
+    "fileFormat",
+    "accessPolicy",
+    "canBeUsedFor",
+    "dataInputsAndAiTechniques"
+  ],
+  "properties": {
+    "name": {
+      "$id": "#/properties/name",
+      "type": "string",
+      "title": "The name schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": ["SomePlace"],
+      "maxLength": 512,
+      "pattern": "^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$"
+    },
+    "id": {
+      "$id": "#/properties/id",
+      "type": "string",
+      "title": "The id schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "8b95ab80-2aaf-4636-a65e-7f2563d0d371"
+      ],
+      "maxLength": 36,
+      "pattern": "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
+    },
+    "type": {
+      "$id": "#/properties/type",
+      "type": "array",
+      "title": "The type schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": [],
+      "examples": [
+        [
+          "adex:Apps"
+        ]
+      ],
+      "additionalItems": true,
+      "items": {
+        "$id": "#/properties/type/items",
+        "anyOf": [
+          {
+            "$id": "#/properties/type/items/anyOf/0",
+            "type": "string",
+            "title": "The first anyOf schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+              "adex:Apps"
+            ]
+          }
+        ]
+      }
+    },
+    "tags": {
+      "$id": "#/properties/tags",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "The tags schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": ""
+    },
+    "label": {
+      "type": "string",
+      "title": "The label schema",
+      "description": "User-friendly label for the model",
+      "maxLength": 512
+    },
+    "shortDescription": {
+      "type": "string",
+      "title": "The short description schema",
+      "description": "Short description about the item"
+    },
+    "description": {
+      "type": "string",
+      "title": "The description schema",
+      "description": "Detailed description of the model"
+    },
+    "organizationType": {
+      "type": "string",
+      "title": "The organizationType schema",
+      "description": "Type of organization providing the model",
+      "examples": ["Private", "Public"]
+    },
+    "department": {
+      "type": "string",
+      "title": "The department schema",
+      "description": "Department name"
+    },
+    "canBeUsedFor": {
+      "type": "object",
+      "title": "The canBeUsedFor schema",
+      "description": "Potential uses of the model",
+      "propertyNames": {
+        "type": "string",
+        "maxLength": 100
+      },
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 300
+      },
+      "maxProperties": 5
+    },
+    "dataInputsAndAiTechniques": {
+      "type": "object",
+      "title": "The dataInputsAndAiTechniques schema",
+      "description": "Input data sources and AI methods",
+      "properties": {
+        "Input Data Banks": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "Expected Output": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "AI Models": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "Potential Benefits": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          }
+        }
+      },
+      "required": [
+        "Input Data Banks",
+        "Expected Output",
+        "AI Models",
+        "Potential Benefits"
+      ],
+      "additionalProperties": false
+    },
+    "itemStatus": {
+      "type": "string",
+      "title": "The itemStatus schema",
+      "description": "Current status of the model",
+      "enum": ["ACTIVE", "INACTIVE"]
+    },
+    "itemCreatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "The itemCreatedAt schema",
+      "description": "Creation timestamp of the model item"
+    },
+    "@context": {
+      "type": "string",
+      "title": "The @context schema",
+      "description": "JSON-LD context URI",
+      "format": "uri"
+    }
+  },
+  "additionalProperties": true
+}

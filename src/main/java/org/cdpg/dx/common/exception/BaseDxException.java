@@ -1,6 +1,5 @@
 package org.cdpg.dx.common.exception;
 
-import static org.cdpg.dx.common.exception.DxErrorCodes.*;
 import static org.cdpg.dx.common.exception.DxErrorCodes.DEFAULT_CODE;
 import static org.cdpg.dx.common.exception.DxErrorCodes.PG_ERROR;
 import static org.cdpg.dx.common.exception.DxErrorCodes.PG_INVALID_COL_ERROR;

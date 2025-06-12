@@ -1,0 +1,11 @@
+# Error Code Mapping:
+- 0 : Internal Server Error
+- 1 : Invalid Token / Revoked Token
+- 2 : 
+- 3 : 
+- 4 : Not Found
+- 5 : 
+- 6 : 
+- 7 : 
+- 8 : Bad Request
+- 9 : Conflict
