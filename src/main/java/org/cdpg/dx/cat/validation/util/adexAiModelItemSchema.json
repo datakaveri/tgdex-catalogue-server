@@ -1,0 +1,211 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "$id": "http://example.com/model-metadata.schema.json",
+  "type": "object",
+  "title": "Adex AI Model Metadata Schema",
+  "description": "Schema for ADeX AI/ML model metadata.",
+  "default": {},
+  "examples": [
+    {
+      "type": [
+        "adex:AiModel"
+      ],
+      "name": "ai-model-crop",
+      "provider": "337545aa-1fa5-4ca0-bf3d-072144dec5b6",
+      "tags": [
+        "ai", "ml", "model", "aimodel", "mlmodel",
+        "ai-model", "ml-model", "machine", "learning",
+        "machine learning", "training", "algorithm"
+      ],
+      "accessPolicy": "RESTRICTED",
+      "label": "Test-Crop Disease Detection Model",
+      "shortDescription": "Detects diseases in crop leaves using image classification.",
+      "description": "An test AI model for detecting crop disease with the help of infected leaf images.",
+      "organizationType": "Private",
+      "department": "Agriculture and Co-operation",
+      "modelType": "ImageClassifier",
+      "fileFormat": "ipynb",
+      "industry": "Agriculture",
+      "uploadedBy": "john.doe@datakaveri.org",
+      "license": "MIT",
+      "fileSize": "15MB"
+    }
+  ],
+  "required": [
+    "name",
+    "type",
+    "label",
+    "shortDescription",
+    "description",
+    "tags",
+    "accessPolicy",
+    "organizationType",
+    "organizationId",
+    "department",
+    "modelType",
+    "fileFormat",
+    "industry",
+    "uploadedBy",
+    "license",
+    "fileSize"
+  ],
+  "properties": {
+    "name": {
+      "$id": "#/properties/name",
+      "type": "string",
+      "title": "The name schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": ["SomePlace"],
+      "maxLength": 512,
+      "pattern": "^[a-zA-Z0-9]([\\w-]*[a-zA-Z0-9 ])?$"
+    },
+    "id": {
+      "$id": "#/properties/id",
+      "type": "string",
+      "title": "The id schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "8b95ab80-2aaf-4636-a65e-7f2563d0d371"
+      ],
+      "maxLength": 36,
+      "pattern": "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
+    },
+    "type": {
+      "$id": "#/properties/type",
+      "type": "array",
+      "title": "The type schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": [],
+      "examples": [
+        [
+          "adex:AiModel"
+        ]
+      ],
+      "additionalItems": true,
+      "items": {
+        "$id": "#/properties/type/items",
+        "anyOf": [
+          {
+            "$id": "#/properties/type/items/anyOf/0",
+            "type": "string",
+            "title": "The first anyOf schema",
+            "description": "An explanation about the purpose of this instance.",
+            "default": "",
+            "examples": [
+              "adex:AiModel"
+            ]
+          }
+        ]
+      }
+    },
+    "tags": {
+      "$id": "#/properties/tags",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "The tags schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": ""
+    },
+    "accessPolicy": {
+      "$id": "#/properties/accessPolicy",
+      "type": "string",
+      "title": "The access policy schema",
+      "default": "",
+      "examples": ["SECURE", "pii"],
+      "pattern": "^(RESTRICTED|OPEN|PII|PRIVATE|restricted|open|pii|private)$"
+    },
+    "label": {
+      "$id": "#/properties/label",
+      "type": "string",
+      "title": "The label schema",
+      "description": "User-friendly label for the model",
+      "default": "",
+      "examples": ["SomeLabel"],
+      "maxLength": 512
+    },
+    "description": {
+      "type": "string",
+      "title": "The description schema",
+      "description": "Detailed description of the model",
+      "maxLength": 4000
+    },
+    "shortDescription": {
+      "type": "string",
+      "title": "The shortDescription schema",
+      "description": "Short description of the model",
+      "maxLength": 512
+    },
+    "organizationType": {
+      "type": "string",
+      "title": "The organizationType schema",
+      "description": "Type of organization providing the model",
+      "examples": ["Private", "Public", "Academic Institution"]
+    },"organizationId": {
+      "$id": "#/properties/organizationId",
+      "type": "string",
+      "title": "The organizationId schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "8b95ab80-2aaf-4636-a65e-7f2563d0d351"
+      ],
+      "maxLength": 36,
+      "pattern": "^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$"
+    },
+    "department": {
+      "type": "string",
+      "title": "The department schema",
+      "description": "Department name"
+    },
+    "modelType": {
+      "type": "string",
+      "title": "The modelType schema",
+      "description": "Type of model (e.g., ImageClassifier, TimeSeriesPredictor)"
+    },
+    "fileFormat": {
+      "type": "string",
+      "title": "The fileFormat schema",
+      "description": "File format of the model",
+      "examples": ["ipynb", "pkl", "onnx"]
+    },
+    "industry": {
+      "type": "string",
+      "title": "The industry schema"
+    },
+    "uploadedBy": {
+      "type": "string",
+      "title": "The uploadedBy schema"
+    },
+    "license": {
+      "type": "string",
+      "title": "The license schema"
+    },
+    "fileSize": {
+      "type": "string",
+      "title": "The fileSize schema"
+    },
+    "itemStatus": {
+      "type": "string",
+      "title": "The itemStatus schema",
+      "description": "Current status of the model",
+      "enum": ["ACTIVE", "INACTIVE"]
+    },
+    "itemCreatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "The itemCreatedAt schema",
+      "description": "Creation timestamp of the model item"
+    },
+    "@context": {
+      "type": "string",
+      "title": "The @context schema",
+      "description": "JSON-LD context URI",
+      "format": "uri"
+    }
+  },
+  "additionalProperties": true
+}

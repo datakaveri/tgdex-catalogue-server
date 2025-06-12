@@ -196,6 +196,8 @@ paths:
           description: |
             DX instance on which this query is to be made. Don't mention this if search on entire catalogue is to be made. Else mentioning a specific instance name here restricts search only to that instance.
           required: false
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -387,7 +389,7 @@ paths:
       tags:
         - List
       description: List a particular type
-      operationId: list types
+      operationId: listTypes
       parameters:
         - name: instance
           in: header
@@ -594,7 +596,7 @@ paths:
         Insert an item into the catalogue where the item's body specifies the type of item and 
         instance name. id, itemCreatedAt and itemStatus are added by server. Items maybe subClasses of type 
         [IUDXEntity](https://voc.iudx.org.in/IUDXEntity). Depending on this, some properties maybe mandatory. The json schema for the different types can be found [here](https://github.com/datakaveri/iudx-catalogue-server/tree/master/src/main/resources/iudx/catalogue/server/validator). In the future, we will serve schemas from our own servers.
-      operationId: create item
+      operationId: createItem
       parameters:
         - name: token
           in: header
@@ -688,7 +690,7 @@ paths:
            - name
            - type (1st element in array non-modifiable)
            - itemStatus
-      operationId: update item
+      operationId: updateItem
       parameters:
         - name: token
           in: header
@@ -760,7 +762,7 @@ paths:
       tags:
         - Entity
       description: Get an item given the id
-      operationId: get item
+      operationId: getItem
       parameters:
         - name: id
           in: query
@@ -811,7 +813,7 @@ paths:
       tags:
         - Entity
       description: Delete an item
-      operationId: delete item
+      operationId: deleteItem
       parameters:
         - name: token
           in: header
@@ -958,7 +960,8 @@ components:
         title:
           description: A human readable title to the message response.
         totalHits:
-          type: integer <int32>
+          type: integer
+          format: int32
           description: Total number of documents which matched the query.
       required:
         - type
@@ -1093,30 +1096,28 @@ components:
         offset: 0
     SearchCriteriaRequest:
       type: object
+      required:
+        - searchCriteria
       properties:
         searchCriteria:
           type: array
           items:
             $ref: '#/components/schemas/SearchCriteria'
           description: List of property-based search criteria.
-          limit:
-            type: integer
-            description: Limit number of records in search response.
-            minimum: 1
-          offset:
-            type: integer
-            description: Offset from where the next batch of results should be returned.
-            minimum: 0
-          filter:
-            in: query
-            description: Filter properties to display. This is an array of strings.
-            schema:
-              type: array
-              maxItems: 10
-              items:
-                type: string
-      required:
-        - searchCriteria
+        limit:
+          type: integer
+          description: Limit number of records in search response.
+          minimum: 1
+        offset:
+          type: integer
+          description: Offset from where the next batch of results should be returned.
+          minimum: 0
+        filter:
+          type: array
+          description: Filter properties to display. This is an array of strings.
+          maxItems: 10
+          items:
+            type: string
     TextSearchRequest:
       type: object
       properties:
@@ -1138,13 +1139,11 @@ components:
           description: Offset from where the next batch of results should be returned.
           minimum: 0
         filter:
-          in: query
           description: Filter properties to display. This is an array of strings.
-          schema:
-            type: array
-            maxItems: 10
-            items:
-              type: string
+          type: array
+          maxItems: 10
+          items:
+            type: string
       required:
         - q
     ComplexSearchRequest:
@@ -1173,13 +1172,11 @@ components:
           description: Offset from where the next batch of results should be returned.
           minimum: 0
         filter:
-          in: query
           description: Filter properties to display. This is an array of strings.
-          schema:
-            type: array
-            maxItems: 10
-            items:
-              type: string
+          type: array
+          maxItems: 10
+          items:
+            type: string
       required:
         - q
         - searchCriteria
@@ -2465,13 +2462,11 @@ components:
           type: string
         canBeUsedFor:
           type: object
-          propertyNames:
-            type: string
-            maxLength: 100
           additionalProperties:
             type: string
             maxLength: 300
           maxProperties: 5
+
         dataInputsAndAiTechniques:
           type: object
           properties:
@@ -4297,13 +4292,12 @@ components:
               type: string
             canBeUsedFor:
               type: object
-              propertyNames:
-                type: string
-                maxLength: 100
+              description: A map with up to 5 key-value pairs.
               additionalProperties:
                 type: string
                 maxLength: 300
               maxProperties: 5
+
             dataInputsAndAiTechniques:
               type: object
               properties:
@@ -4962,14 +4956,16 @@ components:
             properties:
               tags:
                 type: array
-                items: string
                 description: List of tags
+                items:
+                  type: string
               id:
                 type: string
                 description: Identifier for the result
             required:
               - tags
               - id
+
       required:
         - type
         - totalHits
@@ -5019,17 +5015,19 @@ components:
           type: array
           items:
             type: object
-            properties:
-              tags:
-                type: array
-                items: string
-                description: List of tags
-              id:
-                type: string
-                description: Identifier for the result
             required:
               - tags
               - id
+            properties:
+              tags:
+                type: array
+                description: List of tags
+                items:
+                  type: string
+              id:
+                type: string
+                description: Identifier for the result
+
       required:
         - type
         - totalHits
@@ -5115,7 +5113,8 @@ components:
                 description: Label of the resource
               type:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of resource types
               "@context":
                 type: string
@@ -5134,7 +5133,8 @@ components:
                     description: Device Name
               tags:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of tags
               itemCreatedAt:
                 type: string
@@ -5159,7 +5159,8 @@ components:
                     properties:
                       coordinates:
                         type: array
-                        items: number
+                        items:
+                          type: number
                         description: Coordinates [longitude, latitude]
                       type:
                         type: string
@@ -5300,7 +5301,8 @@ components:
                 description: Label of the resource
               type:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of resource types
               "@context":
                 type: string
@@ -5319,7 +5321,8 @@ components:
                     description: Device Name
               tags:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of tags
               itemCreatedAt:
                 type: string
@@ -5344,7 +5347,8 @@ components:
                     properties:
                       coordinates:
                         type: array
-                        items: number
+                        items:
+                          type: number
                         description: Coordinates [longitude, latitude]
                       type:
                         type: string
@@ -5486,7 +5490,8 @@ components:
                 description: Label of the resource
               type:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of resource types
               "@context":
                 type: string
@@ -5505,7 +5510,8 @@ components:
                     description: Device Name
               tags:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of tags
               itemCreatedAt:
                 type: string
@@ -5530,7 +5536,8 @@ components:
                     properties:
                       coordinates:
                         type: array
-                        items: number
+                        items:
+                          type: number
                         description: Coordinates [longitude, latitude]
                       type:
                         type: string
@@ -5671,7 +5678,8 @@ components:
                 description: Label of the resource
               type:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of resource types
               "@context":
                 type: string
@@ -5690,7 +5698,8 @@ components:
                     description: Device Name
               tags:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of tags
               itemCreatedAt:
                 type: string
@@ -5715,7 +5724,8 @@ components:
                     properties:
                       coordinates:
                         type: array
-                        items: number
+                        items:
+                          type: number
                         description: Coordinates [longitude, latitude]
                       type:
                         type: string
@@ -5965,7 +5975,8 @@ components:
                 description: Label of the resource
               type:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of resource types
               "@context":
                 type: string
@@ -5975,7 +5986,8 @@ components:
                 description: Provider's User ID
               tags:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of tags
               itemCreatedAt:
                 type: string
@@ -6129,7 +6141,8 @@ components:
                 description: Label of the resource
               type:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of resource types
               "@context":
                 type: string
@@ -6139,7 +6152,8 @@ components:
                 description: Provider's User ID
               tags:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of tags
               itemCreatedAt:
                 type: string
@@ -6252,7 +6266,8 @@ components:
             properties:
               type:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of resource types
               id:
                 type: string
@@ -6312,7 +6327,8 @@ components:
                 description: Resource identifier
               tags:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of tags associated with the resource
               dataReadiness:
                 type: integer
@@ -6381,7 +6397,8 @@ components:
                 description: Resource identifier
               tags:
                 type: array
-                items: string
+                items:
+                  type: string
                 description: List of tags associated with the resource
               itemCreatedAt:
                 type: string
@@ -6586,6 +6603,8 @@ components:
       type: object
       title: Response - invalid schema
       description: Invalid Schema response schema
+      required:
+        - type
       properties:
         type:
           type: string
@@ -6596,8 +6615,6 @@ components:
         detail:
           type: string
           description: Detailed description of the type or response
-        required:
-          - type
       example:
         type: urn:dx:cat:InvalidSchema
         title: Invalid Schema
@@ -6609,6 +6626,8 @@ components:
       type: object
       title: Response - invalid schema
       description: Invalid Schema response schema
+      required:
+        - type
       properties:
         type:
           type: string
@@ -6619,8 +6638,7 @@ components:
         detail:
           type: string
           description: Detailed description of the type or response
-        required:
-          - type
+
       example:
         type: urn:dx:cat:InvalidSchema
         title: Invalid Schema
@@ -6632,6 +6650,8 @@ components:
       type: object
       title: Response  - invalid UUID
       description: Invalid UUID response schema
+      required:
+        - type
       properties:
         type:
           type: string
@@ -6642,8 +6662,6 @@ components:
         detail:
           type: string
           description: Detailed description of the type or response
-        required:
-          - type
       example:
         type: urn:dx:cat:InvalidSchema
         title: Invalid Schema
@@ -6653,6 +6671,8 @@ components:
       type: object
       title: Response  - invalid links
       description: Invalid Links response schema
+      required:
+        - type
       properties:
         type:
           type: string
@@ -6663,8 +6683,6 @@ components:
         detail:
           type: string
           description: Detailed description of the type or response
-        required:
-          - type
       example:
         type: urn:dx:cat:LinkValidationFailed
         title: Link Validation Failed
@@ -7775,7 +7793,8 @@ components:
             URN type of the response indicating if the query was successful or if any errors have
             been triggered.
         totalHits:
-          type: integer <int32>
+          type: integer
+          format: int32
           description: Total number of documents which matched the query.
         title:
           description: A human readable title to the message response.
