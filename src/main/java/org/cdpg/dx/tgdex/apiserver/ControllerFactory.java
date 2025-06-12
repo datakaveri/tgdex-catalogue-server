@@ -1,16 +1,16 @@
-package org.cdpg.dx.cat.apiserver;
+package org.cdpg.dx.tgdex.apiserver;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.cat.crud.controller.CrudController;
-import org.cdpg.dx.cat.crud.factory.CrudControllerFactory;
-import org.cdpg.dx.cat.list.controller.ListController;
-import org.cdpg.dx.cat.list.factory.ListControllerFactory;
-import org.cdpg.dx.cat.search.controller.SearchController;
-import org.cdpg.dx.cat.search.factory.SearchControllerFactory;
+import org.cdpg.dx.tgdex.crud.controller.CrudController;
+import org.cdpg.dx.tgdex.crud.factory.CrudControllerFactory;
+import org.cdpg.dx.tgdex.list.controller.ListController;
+import org.cdpg.dx.tgdex.list.factory.ListControllerFactory;
+import org.cdpg.dx.tgdex.search.controller.SearchController;
+import org.cdpg.dx.tgdex.search.factory.SearchControllerFactory;
 import org.cdpg.dx.catalogue.service.CatalogueService;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.database.postgres.service.PostgresService;

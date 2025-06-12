@@ -1,6 +1,6 @@
-openapi: 3.0.2
+openapi: 3.0.3
 info:
-  version: '5.6.0'
+  version: 1.1.0
   title: Data Exchange Catalogue Server APIs
   license:
     name: Apache 2.0
@@ -612,9 +612,9 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: '#/components/schemas/exampleEntityAIModel'
-                - $ref: '#/components/schemas/exampleEntityDataBank'
-                - $ref: '#/components/schemas/exampleEntityPotentialApps'
+                - $ref: '#/components/schemas/adexAiModelItem'
+                - $ref: '#/components/schemas/adexAppsItem'
+                - $ref: '#/components/schemas/adexDatabankItem'
       responses:
         '201':
           description: Successfully inserted
@@ -903,6 +903,13 @@ tags:
     x-displayName: List
 components:
   schemas:
+    adexAiModelItem:
+      $ref: './adexAiModelItemSchema.json'
+    adexAppsItem:
+      $ref: './adexAppsItemSchema.json'
+    adexDatabankItem:
+      $ref: './adexDataBankResourceItemSchema.json'
+
     successResponseWithObjects:
       type: object
       title: Root Type for standardResponse
@@ -2564,7 +2571,7 @@ components:
           Potential Benefits:
             - 'Early detection of crop diseases'
             - 'Reduction in crop loss'
-            - 'Better planning and resource allocation'
+            - 'Better planning and resource wallocation'
     updateItemResponse:
       type: object
       title: Response for update Item
@@ -3693,7 +3700,7 @@ components:
             Potential Benefits:
               - 'Early detection of crop diseases'
               - 'Reduction in crop loss'
-              - 'Better planning and resource allocation'
+              - 'Better planning and resource 2allocation'
           itemStatus: "ACTIVE"
           itemCreatedAt: "2024-01-05T02:09:10+0530"
     successResponseForUpdateOwnerEntity:
