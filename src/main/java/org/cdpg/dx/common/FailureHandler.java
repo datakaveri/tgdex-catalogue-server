@@ -1,5 +1,6 @@
 package org.cdpg.dx.common;
 
+import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -7,11 +8,11 @@ import org.cdpg.dx.common.response.DxErrorResponse;
 import org.cdpg.dx.common.util.ExceptionHttpStatusMapper;
 import org.cdpg.dx.common.util.ThrowableUtils;
 
-public class FailureHandler {
+public class FailureHandler implements Handler<RoutingContext> {
 
   private static final Logger LOGGER = LogManager.getLogger(FailureHandler.class);
 
-  public static void handle(RoutingContext context) {
+  public void handle(RoutingContext context) {
     LOGGER.trace("FailureHandler.handle() started");
     Throwable failure = context.failure();
     if (failure == null) {

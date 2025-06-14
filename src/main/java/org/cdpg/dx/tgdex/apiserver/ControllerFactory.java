@@ -5,8 +5,8 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
-import org.cdpg.dx.tgdex.crud.controller.CrudController;
-import org.cdpg.dx.tgdex.crud.factory.CrudControllerFactory;
+import org.cdpg.dx.tgdex.item.controller.ItemController;
+import org.cdpg.dx.tgdex.item.factory.ItemControllerFactory;
 import org.cdpg.dx.tgdex.list.controller.ListController;
 import org.cdpg.dx.tgdex.list.factory.ListControllerFactory;
 import org.cdpg.dx.tgdex.search.controller.SearchController;
@@ -42,7 +42,7 @@ public class ControllerFactory {
         UniqueAttributeService.createProxy(vertx, UNIQUE_ATTRIBUTE_SERVICE_ADDRESS);
     final AuditingHandler auditingHandler = new AuditingHandler(vertx);
 
-    final CrudController crudController = CrudControllerFactory.createCrudController(auditingHandler,esService);
+    final ItemController crudController = ItemControllerFactory.createCrudController(auditingHandler,esService);
     final ListController listController = ListControllerFactory.createListController(esService, auditingHandler);
     final SearchController searchController = SearchControllerFactory.createSearchController(esService, auditingHandler);
     return List.of(crudController,listController,searchController);
