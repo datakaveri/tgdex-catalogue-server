@@ -13,15 +13,14 @@ import java.util.Optional;
 
 import static org.cdpg.dx.auditing.util.Constants.AUDITING_EXCHANGE;
 import static org.cdpg.dx.auditing.util.Constants.ROUTING_KEY;
-import static org.cdpg.dx.common.config.ServiceProxyAddressConstants.DATA_BROKER_SERVICE_ADDRESS;
 
 public class AuditingHandler {
   private static final Logger LOGGER = LogManager.getLogger(AuditingHandler.class);
   private static final List<Integer> STATUS_CODES_TO_AUDIT = List.of(200, 201, 204);
   private final DataBrokerService databrokerService;
 
-  public AuditingHandler(Vertx vertx) {
-    this.databrokerService = DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
+  public AuditingHandler(DataBrokerService dataBrokerService) {
+    this.databrokerService = dataBrokerService;
   }
 
   public void handleApiAudit(RoutingContext context) {
@@ -48,7 +47,7 @@ public class AuditingHandler {
     context.next();
   }
 
-  public void publishAuditLogs(List<AuditLog> auditLogList) throws Exception {
+  public void publishAuditLogs(List<AuditLog> auditLogList){
     LOGGER.trace("AuditingHandler() started");
 
     auditLogList.forEach(

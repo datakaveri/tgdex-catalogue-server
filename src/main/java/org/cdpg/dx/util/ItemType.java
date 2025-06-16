@@ -13,16 +13,4 @@ public enum ItemType {
     ItemType(String itemType) {
         this.itemType = itemType;
     }
-
-    private static Map<String, ItemType> itemTypeMap;
-
-    public static ItemType from(String text) {
-        if (itemTypeMap == null) {
-            itemTypeMap = new HashMap<>();
-            for (ItemType event : values()) {
-                itemTypeMap.put(event.toString(), event);
-            }
-        }
-        return itemTypeMap.get(text);
-    }
 }

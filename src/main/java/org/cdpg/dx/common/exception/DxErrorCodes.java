@@ -39,4 +39,6 @@ public class DxErrorCodes {
 
     public static final int UNAUTHORIZED = 10003;
     public static final int INTERNAL_ERROR = 10004;
+    public static final int FORBIDDEN = 12001;
+
 }

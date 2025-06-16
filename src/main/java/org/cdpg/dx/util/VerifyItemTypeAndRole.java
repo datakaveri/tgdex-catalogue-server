@@ -28,7 +28,7 @@ public class VerifyItemTypeAndRole implements Handler<RoutingContext> {
         JsonObject principal = user.principal();
         JsonObject realmAccess = principal.getJsonObject("realm_access");
         if (realmAccess == null || !realmAccess.containsKey("roles")) {
-            routingContext.fail(new DxForbiddenException("User don't have any assigned")); // 403
+            routingContext.fail(new DxForbiddenException("User don't have any assigned role")); // 403
             return;
         }
         createMap();

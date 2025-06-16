@@ -22,10 +22,6 @@ public class ListController implements ApiController {
                 .operation(LIST_AVAILABLE_FILTER)
                 .handler(auditingHandler::handleApiAudit)
                 .handler(this::handleGetAvailableFilters);
-        builder
-                .operation(GET_LIST)
-                .handler(auditingHandler::handleApiAudit)
-                .handler(this::handleGetList);
     }
 
     private void handleGetList(RoutingContext routingContext) {
