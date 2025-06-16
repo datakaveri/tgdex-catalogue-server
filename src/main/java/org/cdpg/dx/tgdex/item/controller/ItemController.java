@@ -9,6 +9,7 @@ import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.tgdex.apiserver.ApiController;
 import org.cdpg.dx.tgdex.item.service.ItemService;
 import org.cdpg.dx.util.CheckIfTokenPresent;
+import org.cdpg.dx.util.VerifyItemTypeAndRole;
 
 import static org.cdpg.dx.util.Constants.*;
 
@@ -16,9 +17,8 @@ public class ItemController implements ApiController {
     AuditingHandler auditingHandler;
     ItemService itemService;
     CheckIfTokenPresent checkIfTokenPresent = new CheckIfTokenPresent();
-    Handler<RoutingContext> adminAccessHandler =
-            AuthorizationHandler.forRoles(DxRole.ORG_ADMIN, DxRole.COS_ADMIN);
 
+    VerifyItemTypeAndRole verifyItemTypeAndRole = new VerifyItemTypeAndRole();
     public ItemController(AuditingHandler auditingHandler, ItemService itemService) {
         this.itemService =itemService;
         this.auditingHandler=auditingHandler;
@@ -29,28 +29,26 @@ public class ItemController implements ApiController {
         builder
                 .operation(CREATE_ITEM)
                 .handler(checkIfTokenPresent)
-                .handler(adminAccessHandler)
+                .handler(verifyItemTypeAndRole)
                 .handler(this::handleCreateItem)
                 .handler(auditingHandler::handleApiAudit);
 
         builder
                 .operation(GET_ITEM)
-                .handler(checkIfTokenPresent)
-                .handler(adminAccessHandler)
                 .handler(this::handleGetItem)
                 .handler(auditingHandler::handleApiAudit);
 
         builder
                 .operation(DELETE_ITEM)
                 .handler(checkIfTokenPresent)
-                .handler(adminAccessHandler)
+                .handler(verifyItemTypeAndRole)
                 .handler(this::handleDeleteItem)
                 .handler(auditingHandler::handleApiAudit);
 
         builder
                 .operation(UPDATE_ITEM)
                 .handler(checkIfTokenPresent)
-                .handler(adminAccessHandler)
+                .handler(verifyItemTypeAndRole)
                 .handler(auditingHandler::handleApiAudit)
                 .handler(this::handleUpdateItem);
     }
