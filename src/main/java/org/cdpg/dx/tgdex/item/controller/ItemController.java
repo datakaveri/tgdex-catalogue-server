@@ -3,10 +3,13 @@ package org.cdpg.dx.tgdex.item.controller;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.auth.authorization.handler.AuthorizationHandler;
 import org.cdpg.dx.auth.authorization.model.DxRole;
 import org.cdpg.dx.tgdex.apiserver.ApiController;
+import org.cdpg.dx.tgdex.apiserver.ApiServerVerticle;
 import org.cdpg.dx.tgdex.item.service.ItemService;
 import org.cdpg.dx.util.CheckIfTokenPresent;
 import org.cdpg.dx.util.VerifyItemTypeAndRole;
@@ -17,6 +20,7 @@ public class ItemController implements ApiController {
     AuditingHandler auditingHandler;
     ItemService itemService;
     CheckIfTokenPresent checkIfTokenPresent = new CheckIfTokenPresent();
+    private static final Logger LOGGER = LogManager.getLogger(ItemController.class);
 
     VerifyItemTypeAndRole verifyItemTypeAndRole = new VerifyItemTypeAndRole();
     public ItemController(AuditingHandler auditingHandler, ItemService itemService) {
@@ -51,6 +55,8 @@ public class ItemController implements ApiController {
                 .handler(verifyItemTypeAndRole)
                 .handler(auditingHandler::handleApiAudit)
                 .handler(this::handleUpdateItem);
+            LOGGER.debug("Item Controller registered");
+
     }
 
     private void handleGetItem(RoutingContext routingContext) {

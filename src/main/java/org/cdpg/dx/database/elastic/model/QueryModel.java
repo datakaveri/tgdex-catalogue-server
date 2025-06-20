@@ -10,9 +10,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.common.exception.DxBadRequestException;
-import org.cdpg.dx.common.exception.DxInternalServerErrorException;
-import org.cdpg.dx.database.elastic.util.AggregationFactory;
 import org.cdpg.dx.database.elastic.util.AggregationType;
 import org.cdpg.dx.database.elastic.util.BoolOperator;
 import org.cdpg.dx.database.elastic.util.QueryType;
@@ -106,7 +103,7 @@ public class QueryModel {
         this.filterQueries = subQueries;
         break;
       default:
-        throw new DxBadRequestException("Unsupported BoolOperator: " + boolOperator);
+        throw new UnsupportedOperationException("Unsupported BoolOperator: " + boolOperator);
     }
     this.queryType = QueryType.BOOL; // Explicitly set the query type as BOOL for clarity.
   }
@@ -202,8 +199,9 @@ public class QueryModel {
     return queryParameters;
   }
 
-  public void setQueryParameters(Map<String, Object> queryParameters) {
+  public QueryModel setQueryParameters(Map<String, Object> queryParameters) {
     this.queryParameters = queryParameters;
+    return this;
   }
 
   public List<QueryModel> getSubQueries() {
@@ -253,8 +251,9 @@ public class QueryModel {
     return mustQueries;
   }
 
-  public void setMustQueries(List<QueryModel> mustQueries) {
+  public QueryModel setMustQueries(List<QueryModel> mustQueries) {
     this.mustQueries = mustQueries;
+    return this;
   }
 
   public void addMustQuery(QueryModel mustQuery) {
@@ -391,12 +390,22 @@ public class QueryModel {
    * @throws UnsupportedOperationException if the query type is not supported.
    */
   public Query toElasticsearchQuery() {
-    LOGGER.debug("Converting QueryModel to Elasticsearch Query");
+    LOGGER.debug("Converting QueryModel to Elasticsearch Query "+queryType);
 
     if (this.queryType == null) {
       LOGGER.error("Query type is null for QueryModel: {}", this.toJson());
       throw new IllegalArgumentException("Query type cannot be null");
     }
+    //  {
+//    "query": {
+//    "bool": {
+//      "must": [
+//      { "match": { "type": "dataset" }},
+//      { "match": { "name.keyword": "water-quality" }}
+//      ]
+//    }
+//  }
+//  }
 
     try {
       switch (this.queryType) {
@@ -404,10 +413,25 @@ public class QueryModel {
           return MatchAllQuery.of(m -> m)._toQuery();
         case MATCH:
           return MatchQuery.of(
-                          m ->
-                                  m.field((String) queryParameters.get(FIELD))
-                                          .query(queryParameters.get(VALUE).toString()))
-                  ._toQuery();
+                  m -> {
+                    m.field((String) queryParameters.get(FIELD))
+                            .query(queryParameters.get(VALUE).toString());
+
+                    if (queryParameters.containsKey(FUZZY)) {
+                      m.fuzziness(queryParameters.get(FUZZY).toString());
+                    }
+
+                    if (queryParameters.containsKey(OPERATOR)) {
+                      m.operator(Operator.valueOf(queryParameters.get(OPERATOR).toString()));
+                    }
+                    return m;
+                  }
+          )._toQuery();
+        case MATCH_PHRASE:
+          return MatchPhraseQuery.of(
+                  mp -> mp.field((String) queryParameters.get(FIELD))
+                          .query(queryParameters.get(VALUE).toString())
+          )._toQuery();
         case TERM:
           return TermQuery.of(
                           t ->
@@ -420,7 +444,7 @@ public class QueryModel {
           if (queryParameters.get(VALUE) instanceof JsonArray) {
             termsValues = ((JsonArray) queryParameters.get(VALUE)).getList();
           } else {
-            termsValues = List.of(queryParameters.get(VALUE).toString());
+            termsValues = List.of((String) queryParameters.get(VALUE));
           }
           // Convert the list to FieldValue and wrap in TermsQueryField
           TermsQueryField termsQueryField =
@@ -466,10 +490,15 @@ public class QueryModel {
                   ._toQuery();
         case WILDCARD:
           return WildcardQuery.of(
-                          w ->
-                                  w.field((String) queryParameters.get(FIELD))
-                                          .value((String) queryParameters.get(VALUE)))
-                  ._toQuery();
+                  w -> {
+                    w.field((String) queryParameters.get(FIELD))
+                            .value((String) queryParameters.get(VALUE));
+                    if (Boolean.TRUE.equals(queryParameters.get(CASE_INSENSITIVE))) {
+                      w.caseInsensitive(true);
+                    }
+                    return w;
+                  }
+          )._toQuery();
         case GEO_BOUNDING_BOX:
           return GeoBoundingBoxQuery.of(g -> g
                   .field((String) queryParameters.get(FIELD))
@@ -504,6 +533,19 @@ public class QueryModel {
         case TEXT:
           return QueryStringQuery.of(qs -> qs.query(queryParameters.get(Q_VALUE).toString()))
                   ._toQuery();
+        case MULTI_MATCH:
+          return MultiMatchQuery.of(m -> {
+            m.query((String) queryParameters.get("query"))
+                    .fields(((JsonArray) queryParameters.get("fields")).getList())
+                    .fuzziness((String) queryParameters.getOrDefault("fuzziness", null))
+//                    .type(TextQueryType.valueOf((String)queryParameters.getOrDefault("type",null) ))
+                    .boost(Float.parseFloat((String) queryParameters.getOrDefault("boost", "1.0")));
+            if(queryParameters.get("type")!=null){
+                                 m.type(TextQueryType.valueOf((String)queryParameters.get("type")));
+            }
+            return m;
+          })._toQuery();
+
         case SCRIPT_SCORE:
           // Add the script_score query here
           JsonArray queryVector = (JsonArray) queryParameters.get("query_vector");
@@ -559,14 +601,15 @@ public class QueryModel {
                             DateRangeQuery.Builder builder = new DateRangeQuery.Builder()
                                     .field(queryParameters.get(FIELD).toString());
 
-                            Map<String, Consumer<String>> rangeConditions = Map.of(
-                                    GREATER_THAN_EQ_OP, builder::gte,
-                                    LESS_THAN_EQ_OP, builder::lte,
-                                    GREATER_THAN_OP, builder::gt,
-                                    LESS_THAN_OP, builder::lt
+                              Map<String, Consumer<String>> rangeConditions = Map.of(
+                                    GREATER_THAN_EQUALS, builder::gte,
+                                    LESS_THAN_EQUALS, builder::lte,
+                                    GREATER_THAN, builder::gt,
+                                      LESS_THAN, builder::lt
                             );
 
                             rangeConditions.forEach((key, setter) -> {
+
                               if (queryParameters.containsKey(key)) {
                                 setter.accept(queryParameters.get(key).toString());
                               }
@@ -577,14 +620,13 @@ public class QueryModel {
                   ))._toQuery();
 
         default:
-          throw new DxBadRequestException("Query type not supported: " + this.queryType);
+          throw new UnsupportedOperationException("Query type not supported: " + this.queryType);
       }
     } catch (Exception e) {
       LOGGER.error("Error while creating Elasticsearch Query for QueryModel: {}", this.toJson(), e);
-      throw new DxInternalServerErrorException("Failed to convert QueryModel to Elasticsearch Query", e);
+      throw new RuntimeException("Failed to convert QueryModel to Elasticsearch Query", e);
     }
   }
-
   /**
    * Converts this QueryModel into an Elasticsearch Aggregation object.
    *
@@ -596,7 +638,7 @@ public class QueryModel {
       LOGGER.error(
               "Aggregation type or parameters missing. Aggregation cannot be created for: "
                       + this.toJson());
-      throw new DxBadRequestException("Invalid aggregation configuration");
+      throw new IllegalArgumentException("Invalid aggregation configuration");
     }
     return AggregationFactory.createAggregation(this);
   }

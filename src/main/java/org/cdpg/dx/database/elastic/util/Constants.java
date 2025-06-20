@@ -64,6 +64,8 @@ public class Constants {
 
   public static final String TEXTSEARCH_REGEX = "(.*)textSearch(.*)";
   public static final String ATTRIBUTE_SEARCH_REGEX = "(.*)attributeSearch(.*)";
+  public static final String SEARCH_CRITERIA_REGEX = "(.*)searchCriteria(.*)";
+
   public static final String GEOSEARCH_REGEX = "(.*)geoSearch(.*)";
   public static final String RESPONSE_FILTER_GEO = "responseFilter_geoSearch_";
   public static final String RESPONSE_FILTER_REGEX = "(.*)responseFilter(.*)";
@@ -101,6 +103,7 @@ public class Constants {
   public static final String PROVIDER_AGGREGATION_ONLY = "PROVIDER_AGGREGATION";
 
   public static final String RESPONSE_ATTRS = "attrs";
+  public static final String CASE_INSENSITIVE = "case_insensitive";
 
 
   /**
@@ -305,6 +308,8 @@ public class Constants {
   public static final String ATTRIBUTE = "attrs";
   public static final String RESULT = "results";
   public static final String SIZE_KEY = "size";
+  public static final String PAGE_KEY = "page";
+
   public static final int STATIC_DELAY_TIME = 3000;
   public static final String FILTER_PATH = "?filter_path=took,hits.total.value,hits.hits._source";
   public static final String FILTER_PATH_AGGREGATION =
@@ -434,6 +439,8 @@ public class Constants {
   public static final String POINT = "Point";
   public static final String COORDINATES = "coordinates";
   public static final String Q_VALUE = "q";
+  public static final String FUZZY = "fuzzy";
+  public static final String AUTO_COMPLETE = "autoComplete";
   public static final String LIMIT = "limit";
   public static final String OFFSET = "offset";
 
@@ -443,6 +450,8 @@ public class Constants {
   public static final String SEARCH_TYPE_ATTRIBUTE = "attributeSearch_";
   public static final String SEARCH_TYPE_TAGS = "tagsSearch_";
   public static final String RESPONSE_FILTER = "responseFilter_";
+  public static final String SEARCH_TYPE_CRITERIA = "searchCriteria_";  // used in SEARCH_TYPE value
+  public static final String SEARCH_CRITERIA_KEY = "searchCriteria";
 
   public static final String MESSAGE = "detail";
   public static final String RESULTS = "results";
@@ -460,6 +469,7 @@ public class Constants {
   public static final String TOTAL_HITS = "totalHits";
   public static final String INCLUDE_FIELDS = "includeFields";
   public static final String FIELD = "field";
+  public static final String VALUES = "values";
   public static final String QUERY_KEY = "query";
   public static final String HITS = "hits";
   public static final String TOTAL = "total";
@@ -467,6 +477,19 @@ public class Constants {
   public static final String NAME = "name";
   public static final String FILTER = "filter";
   public static final String TAGS = "tags";
+  public static final String LESS_THAN_EQUALS = "lte";
+  public static final String GREATER_THAN_EQUALS = "gte";
+  public static final String LESS_THAN = "lt";
+  public static final String GREATER_THAN = "gt";
+  public static final String FILE_FORMAT = "fileFormat";
+
+  /** Temporal Query **/
+  public static final String BETWEEN_RANGE = "betweenRange";
+  public static final String AFTER_RANGE = "afterRange";
+  public static final String BEFORE_RANGE = "beforeRange";
+  public static final String BETWEEN_TEMPORAL = "betweenTemporal";
+  public static final String AFTER_TEMPORAL = "afterTemporal";
+  public static final String BEFORE_TEMPORAL = "beforeTemporal";
 
   public static final String AVERAGE_RATING = "average_rating";
   public static final String TOTAL_RATINGS = "totalRatings";

@@ -12,8 +12,8 @@ public enum HttpStatusCode {
 
   // 2XX: codes
   NO_CONTENT(204, "No Content", URNConstants.SERVER + "noContent"),
-  SUCCESS(200, "Success", URNConstants.SERVER + "success"),
-  CREATED(201, "Created", URNConstants.SERVER + "success"),
+  SUCCESS(200, "Success", URNConstants.SERVER + "Success"),
+  CREATED(201, "Created", URNConstants.SERVER + "Success"),
 
   // 4xx: Client Error
   BAD_REQUEST(400, "Bad Request", URNConstants.SERVER + "badRequest"),

@@ -46,11 +46,15 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     @Override
     public Future<List<ElasticsearchResponse>> search(String index, QueryModel queryModel) {
         // Convert QueryModel into Elasticsearch Query and aggregations
-        LOGGER.info("Inside search");
+        LOGGER.info("Inside search "+  queryModel.toJson());
+
+        LOGGER.info("Inside search "+  queryModel.getQueries());
+
         Map<String, Aggregation> elasticsearchAggregations = new HashMap<>();
         if (queryModel.getAggregations() != null && !queryModel.getAggregations().isEmpty()) {
             queryModel.getAggregations().forEach(aggregation -> elasticsearchAggregations.put(aggregation.getAggregationName(), aggregation.toElasticsearchAggregations()));
         }
+
         QueryModel queries = queryModel.getQueries();
         LOGGER.debug("QUERIES "+queries.toJson());
         Query query = queries == null ? null : queries.toElasticsearchQuery();

@@ -3,7 +3,7 @@ package org.cdpg.dx.common;
 import java.util.stream.Stream;
 
 public enum ResponseUrn {
-  SUCCESS_URN("urn:dx:acl:success", "Success"),
+  SUCCESS_URN("urn:dx:acl:Success", "Success"),
   VERIFY_SUCCESS_URN("urn:apd:Allow", "Success"),
   INVALID_PARAM_URN("urn:dx:acl:invalidParameter", "Invalid parameter passed"),
   INVALID_PARAM_VALUE_URN("urn:dx:acl:invalidParameterValue", "Invalid parameter value passed"),

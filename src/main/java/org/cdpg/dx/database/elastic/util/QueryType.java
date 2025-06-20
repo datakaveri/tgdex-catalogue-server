@@ -13,8 +13,7 @@ public enum QueryType {
   GEO_BOUNDING_BOX,
   TEXT,
   SCRIPT_SCORE,
-  FILTER,
-  MUST,
-  MUST_NOT,
+  MATCH_PHRASE,
+  MULTI_MATCH,
   QUERY_STRING
 }
