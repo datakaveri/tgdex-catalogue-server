@@ -1,6 +1,6 @@
 openapi: 3.0.2
 info:
-  version: '5.6.0'
+  version: 1.1.0
   title: Data Exchange Catalogue Server APIs
   license:
     name: Apache 2.0
@@ -52,7 +52,7 @@ servers:
   - url: 'https://example-cat.com/iudx/cat/v1'
     description: Production Instance
 paths:
-  /search:
+  /iudx/cat/v1/search:
     post:
       tags:
         - Discovery
@@ -199,7 +199,8 @@ paths:
         content:
           application/json:
             schema:
-              oneOf:
+              anyOf:
+                - $ref: '#/components/schemas/TextSearchRequest'
                 - $ref: '#/components/schemas/SearchCriteriaRequest'
                 - $ref: '#/components/schemas/AutocompleteFuzzyTextSearchRequest'
                 - $ref: '#/components/schemas/ComplexSearchRequest'
@@ -372,7 +373,7 @@ paths:
               ],
               "filter": ["id", "type", "department", "itemCreatedAt", "dataReadiness"]
             }'
-  '/list':
+  /iudx/cat/v1/list:
     post:
       tags:
         - List
@@ -495,7 +496,7 @@ paths:
               ],
               "filter": ["tags", "department", "organizationType", "fileFormat", "dataReadiness"]
             }'
-  /item:
+  /iudx/cat/v1/item:
     post:
       tags:
         - Entity
@@ -984,16 +985,17 @@ components:
           - surat
     AutocompleteFuzzyTextSearchRequest:
       type: object
+      additionalProperties: false
       properties:
         q:
           type: string
           description: The search query string for autocomplete.
-        autoComplete:
-          type: boolean
-          description: Enables autocomplete suggestions.
         fuzzy:
           type: boolean
           description: Enables fuzzy matching for the search query.
+        autoComplete:
+          type: boolean
+          description: Enables autocomplete suggestions.
         filter:
           type: array
           items:
@@ -1013,16 +1015,30 @@ components:
           - "tags"
     SearchCriteriaRequest:
       type: object
+      additionalProperties: false   # (or true, if you prefer)
       properties:
         searchCriteria:
           type: array
           items:
             $ref: '#/components/schemas/SearchCriteria'
-          description: List of property-based search criteria.
+        filter:
+          type: array
+          items:
+            type: string
+          description: List of fields to return
+        limit:
+          type: integer
+          minimum: 1
+          default: 10
+        offset:
+          type: integer
+          minimum: 0
+          default: 0
       required:
         - searchCriteria
     TextSearchRequest:
       type: object
+      additionalProperties: false
       properties:
         q:
           type: string
@@ -1037,6 +1053,7 @@ components:
         - q
     ComplexSearchRequest:
       type: object
+      additionalProperties: false
       properties:
         q:
           type: string
@@ -1087,7 +1104,9 @@ components:
         values:
           type: array
           items:
-            type: string
+            oneOf:
+              - type: string
+              - type: number
           description: |
             Values for the selected `searchType`. Required value format:
             - `term`: One or more strings

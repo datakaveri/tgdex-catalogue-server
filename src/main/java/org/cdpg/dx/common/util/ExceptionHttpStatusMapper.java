@@ -14,6 +14,7 @@ public class ExceptionHttpStatusMapper {
   private static final Logger LOGGER = LogManager.getLogger(ExceptionHttpStatusMapper.class);
 
   public static HttpStatusCode map(Throwable throwable) {
+    LOGGER.debug("Mapping exception to HTTP status code: {}", throwable.getClass().getSimpleName());
     return switch (throwable) {
       case NoRowFoundException e -> {
         LOGGER.debug("Matched: NoRowFoundException");

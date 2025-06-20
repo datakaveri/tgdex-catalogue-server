@@ -19,10 +19,10 @@ public class Constants {
   public static final String APPLICATION_JSON = "application/json";
 
   // Request's operationIds
-  public static final String CREATE_ITEM="createItem";
-  public static final String GET_ITEM="getItem";
-  public static final String UPDATE_ITEM="updateItem";
-  public static final String DELETE_ITEM="deleteItem";
+  public static final String CREATE_ITEM="create item";
+  public static final String GET_ITEM="get item";
+  public static final String UPDATE_ITEM="update item";
+  public static final String DELETE_ITEM="delete item";
   public static final String LIST_AVAILABLE_FILTER="listAvailableFilters";
   public static final String GET_LIST="listTypes";
   public static final String POST_SEARCH="search";

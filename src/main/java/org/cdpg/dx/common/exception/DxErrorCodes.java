@@ -14,6 +14,9 @@ public class DxErrorCodes {
     public static final int AUTH_ERROR = 10004;
     public static final int INTERNAL_SERVER_ERROR = 10005;
 
+    public static final int ES_ERROR = 12000;
+
+
     public static final int SUBS_ERROR = 22000;
     public static final int SUBS_QUEUE_EXISTS = 22001;
     public static final int SUBS_QUEUE_REGISTRATION_FAILED = 22002;
@@ -39,4 +42,6 @@ public class DxErrorCodes {
 
     public static final int UNAUTHORIZED = 10003;
     public static final int INTERNAL_ERROR = 10004;
+    public static final int FORBIDDEN = 12001;
+
 }

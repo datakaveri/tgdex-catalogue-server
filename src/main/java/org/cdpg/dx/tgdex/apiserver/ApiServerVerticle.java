@@ -63,85 +63,91 @@ public class ApiServerVerticle extends AbstractVerticle {
         Future<JWTAuth> authFuture = JwtAuthProvider.init(vertx, config());
 
         List<ApiController> controllers = ControllerFactory.createControllers(vertx, config());
+try {
+    Future.all(routerFuture, authFuture)
+            .onSuccess(
+                    cf -> {
+                        RouterBuilder routerBuilder = cf.resultAt(0);
+                        JWTAuth jwtAuth = cf.resultAt(1);
+                        AuthenticationHandler authHandler = new KeycloakJwtAuthHandler(jwtAuth, config().getBoolean("isTokenRequired"));
 
-        Future.all(routerFuture, authFuture)
-                .onSuccess(
-                        cf -> {
-                            RouterBuilder routerBuilder = cf.resultAt(0);
-                            JWTAuth jwtAuth = cf.resultAt(1);
-                            AuthenticationHandler authHandler = new KeycloakJwtAuthHandler(jwtAuth,config().getBoolean("isTokenRequired"));
+                        try {
+                            LOGGER.debug("Adding platform handlers...");
+                            int timeout = config().getInteger("timeout", 100000);
+                            routerBuilder.rootHandler(TimeoutHandler.create(timeout, 408));
 
-                            try {
-                                LOGGER.debug("Adding platform handlers...");
-                                int timeout = config().getInteger("timeout", 100000);
-                                routerBuilder.rootHandler(TimeoutHandler.create(timeout, 408));
+                            routerBuilder.rootHandler(BodyHandler.create().setHandleFileUploads(false));
 
-                                routerBuilder.rootHandler(BodyHandler.create().setHandleFileUploads(false));
+                            LOGGER.debug("Registering controllers...");
+                            RouterBuilderOptions factoryOptions =
+                                    new RouterBuilderOptions().setMountResponseContentTypeHandler(true);
+                            routerBuilder.setOptions(factoryOptions);
+                            routerBuilder.securityHandler("authorization", authHandler);
 
-                                LOGGER.debug("Registering controllers...");
-                                RouterBuilderOptions factoryOptions =
-                                        new RouterBuilderOptions().setMountResponseContentTypeHandler(true);
-                                routerBuilder.setOptions(factoryOptions);
-                                routerBuilder.securityHandler("authorization", authHandler);
+                            controllers.forEach(controller -> controller.register(routerBuilder));
 
-                                controllers.forEach(controller -> controller.register(routerBuilder));
+                            LOGGER.debug("Creating router...");
+                            router = routerBuilder.createRouter();
 
-                                LOGGER.debug("Creating router...");
-                                router = routerBuilder.createRouter();
+                            LOGGER.debug("Configuring CORS and error handlers...");
+                            configureCorsHandler(router);
+                            putCommonResponseHeaders();
+                            configureErrorHandlers(router);
+                            configureFailureHandler(router);
 
-                                LOGGER.debug("Configuring CORS and error handlers...");
-                                configureCorsHandler(router);
-                                putCommonResponseHeaders();
-                                configureErrorHandlers(router);
-                                configureFailureHandler(router);
+                            LOGGER.debug("Starting HTTP server...");
+                            HttpServerOptions serverOptions = new HttpServerOptions();
 
-                                LOGGER.debug("Starting HTTP server...");
-                                HttpServerOptions serverOptions = new HttpServerOptions();
+                            // Serve static OpenAPI docs
+                            router
+                                    .get(ROUTE_STATIC_SPEC)
+                                    .produces(APPLICATION_JSON)
+                                    .handler(
+                                            routingContext -> {
+                                                HttpServerResponse response = routingContext.response();
+                                                response.sendFile("docs/openapi.yaml");
+                                            });
+                            router
+                                    .get(ROUTE_DOC)
+                                    .produces("text/html")
+                                    .handler(ctx -> ctx.response().sendFile("docs/apidoc.html"));
 
-                                // Serve static OpenAPI docs
-                                router
-                                        .get(ROUTE_STATIC_SPEC)
-                                        .produces(APPLICATION_JSON)
-                                        .handler(
-                                                routingContext -> {
-                                                    HttpServerResponse response = routingContext.response();
-                                                    response.sendFile("docs/openapi.yaml");
-                                                });
-                                router
-                                        .get(ROUTE_DOC)
-                                        .produces("text/html")
-                                        .handler(ctx -> ctx.response().sendFile("docs/apidoc.html"));
+                            setServerOptions(serverOptions);
+                            server = vertx.createHttpServer(serverOptions);
+                            server
+                                    .requestHandler(router)
+                                    .listen(
+                                            port,
+                                            http -> {
+                                                if (http.succeeded()) {
+                                                    printDeployedEndpoints(router);
+                                                    LOGGER.info("ApiServerVerticle deployed on port: {}", port);
+                                                } else {
+                                                    LOGGER.error(
+                                                            "HTTP server failed to start: {}",
+                                                            http.cause().getMessage(),
+                                                            http.cause());
+                                                }
+                                            });
 
-                                setServerOptions(serverOptions);
-                                server = vertx.createHttpServer(serverOptions);
-                                server
-                                        .requestHandler(router)
-                                        .listen(
-                                                port,
-                                                http -> {
-                                                    if (http.succeeded()) {
-                                                        printDeployedEndpoints(router);
-                                                        LOGGER.info("ApiServerVerticle deployed on port: {}", port);
-                                                    } else {
-                                                        LOGGER.error(
-                                                                "HTTP server failed to start: {}",
-                                                                http.cause().getMessage(),
-                                                                http.cause());
-                                                    }
-                                                });
-
-                            } catch (Exception e) {
-                                LOGGER.error(
-                                        "Error during router creation or server startup: {}", e.getMessage(), e);
-                            }
-                        })
-                .onFailure(
-                        failure -> {
+                        } catch (Exception e) {
                             LOGGER.error(
-                                    "Failed to create RouterBuilder from OpenAPI spec: {}",
-                                    failure.getMessage(),
-                                    failure);
-                        });
+                                    "Error during router creation or server startup: {}", e.getMessage(), e);
+                        }
+                    })
+            .onFailure(
+                    failure -> {
+                        LOGGER.error(
+                                "Failed to create RouterBuilder from OpenAPI spec: {}",
+                                failure.getMessage(),
+                                failure);
+                    });
+}
+catch (Exception e) {
+    LOGGER.error("Error during router creation or server startup: {}", e.getMessage(), e);
+    e.printStackTrace();
+    throw e;
+}
     }
 
     private void configureCorsHandler(Router router) {
