@@ -82,6 +82,9 @@ public class Constants {
 
     public static final String PROPERTY = "property";
     public static final String VALUE = "value";
+    public static final String OPEN = "OPEN";
+    public static final String PRIVATE = "PRIVATE";
+    public static final String RESTRICTED = "RESTRICTED";
 
     /** GeoRels. */
     public static final String GEOREL_WITHIN = "within";

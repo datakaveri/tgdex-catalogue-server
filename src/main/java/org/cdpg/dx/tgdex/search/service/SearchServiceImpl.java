@@ -43,21 +43,13 @@ public class SearchServiceImpl implements SearchService {
             LOGGER.error("Invalid search request: {}", e.getMessage());
             return Future.failedFuture(e);
         }
-//        QueryModel queryModel = queryDecoder.getQueryModel(requestBody);
-
-//        return elasticsearchService.search(docIndex, queryModel)
-//            .map(results -> new ResponseModel(
-//            results,
-//            requestBody.getInteger(SIZE_KEY),
-//                        requestBody.getInteger(PAGE_KEY)
-//            ));
 
         // Validate, then search, then map to ResponseModel
         return validatorService.validateSearchQuery(requestBody)
                 .compose(validated -> {
                     requestBody.put(SEARCH,true);
                     QueryModel queryModel = queryDecoder.getQueryModel(requestBody);
-                    return elasticsearchService.search(docIndex, queryModel);
+                    return elasticsearchService.search(docIndex, queryModel, "SOURCE");
                 })
                 .map(results -> new ResponseModel(
                         results,

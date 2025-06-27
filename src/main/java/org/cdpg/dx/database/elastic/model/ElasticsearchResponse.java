@@ -8,6 +8,7 @@ public class ElasticsearchResponse {
   private static JsonObject aggregations;
   private String docId;
   private JsonObject source;
+  private static int totalHits;
 
   public ElasticsearchResponse() {
     // Default constructor
@@ -28,6 +29,14 @@ public class ElasticsearchResponse {
 
   public static void setAggregations(JsonObject aggregations) {
     ElasticsearchResponse.aggregations = aggregations;
+  }
+
+  public static int getTotalHits() {
+    return totalHits;
+  }
+
+  public static void setTotalHits(int totalHits) {
+    ElasticsearchResponse.totalHits = totalHits;
   }
 
   public JsonObject toJson() {
@@ -54,6 +63,8 @@ public class ElasticsearchResponse {
 
   @Override
   public String toString() {
-    return "ElasticsearchResponse{" + "docId='" + docId + '\'' + ", source=" + source + '}';
+    return "ElasticsearchResponse{" + "docId='" + docId + '\'' + "totalHits='" + totalHits + '\'' +
+        ", " +
+        "source=" + source + '}';
   }
 }

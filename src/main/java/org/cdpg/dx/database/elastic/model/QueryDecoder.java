@@ -11,24 +11,14 @@ import org.cdpg.dx.database.elastic.util.QueryType;
 import java.util.*;
 
 import static org.cdpg.dx.database.elastic.util.Constants.*;
+import static org.cdpg.dx.tgdex.util.Constants.ITEM_TYPE_AI_MODEL;
+import static org.cdpg.dx.tgdex.util.Constants.ITEM_TYPE_DATA_BANK;
 
 public class QueryDecoder {
+
   private static final Logger LOGGER = LogManager.getLogger(QueryDecoder.class);
 
-
-  //  {
-//    "query": {
-//    "bool": {
-//      "must": [
-//      { "match": { "type": "dataset" }},
-//      { "match": { "name.keyword": "water-quality" }}
-//      ]
-//    }
-//  }
-//  }
-
   public QueryModel getQueryModel(JsonObject request) {
-    LOGGER.info("trying to get the query model");
     String searchType = request.getString(SEARCH_TYPE);
     boolean isValidQuery = false;
 
@@ -52,6 +42,12 @@ public class QueryDecoder {
       new TextSearchQueryDecorator(queryMap, request).add();
       isValidQuery = true;
     }
+
+    new AccessPolicyQueryDecorator(queryMap, request).add();
+    QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ITEM_TYPE_DATA_BANK);
+    QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ITEM_TYPE_AI_MODEL);
+    queryMap.get(FilterType.MUST_NOT).add(excludeDatabankFalse);
+    queryMap.get(FilterType.MUST_NOT).add(excludeAiModelFalse);
 
     if (searchType.matches(RESPONSE_FILTER_REGEX)) {
       new ResponseFilterDecorator(queryMap, request).add();
@@ -83,49 +79,78 @@ public class QueryDecoder {
   public QueryModel listMultipleItemTypesQuery(JsonObject request) {
     LOGGER.debug("listMultipleItemTypesQuery - {}", request);
 
+    // Step 1: Initialize query map with all FilterTypes
     Map<FilterType, List<QueryModel>> queryMap = new HashMap<>();
     for (FilterType filterType : FilterType.values()) {
       queryMap.put(filterType, new ArrayList<>());
     }
 
+    // Step 2: Apply decorators
+    new AccessPolicyQueryDecorator(queryMap, request).add();
     new SearchCriteriaQueryDecorator(queryMap, request).add();
     new InstanceFilterQueryDecorator(queryMap, request).add();
 
-    QueryModel q =new QueryModel();
-    q.setQueries(getBoolQuery(queryMap));
+    // Step 3: Exclude documents with uploadStatus = false for specific item types
+    QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ITEM_TYPE_DATA_BANK);
+    QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ITEM_TYPE_AI_MODEL);
+    queryMap.get(FilterType.MUST_NOT).add(excludeDatabankFalse);
+    queryMap.get(FilterType.MUST_NOT).add(excludeAiModelFalse);
 
-    JsonArray itemTypes = request.getJsonArray(TYPE);
+    // Step 4: Build bool query
+    QueryModel finalQuery = new QueryModel();
+    finalQuery.setQueries(getBoolQuery(queryMap));
+
+    // Step 5: Handle aggregations for each item type
+    JsonArray filters = request.getJsonArray(FILTER);
     int size = request.getInteger(LIMIT, FILTER_PAGINATION_SIZE - request.getInteger(OFFSET, 0));
+    List<QueryModel> aggs = new ArrayList<>();
 
-    for (int i = 0; i < itemTypes.size(); i++) {
-      String itemType = itemTypes.getString(i);
-      Map<String, Object> aggParams = Map.of(
-              FIELD, itemType + KEYWORD_KEY,
-              SIZE_KEY, size
-      );
-      QueryModel agg = new QueryModel();
-      agg.setAggregationType(AggregationType.TERMS);
-      agg.setAggregationParameters(aggParams);
-      q.addAggregationsMap(Map.of(itemType, agg));
+    if (filters != null) {
+      for (int i = 0; i < filters.size(); i++) {
+        String filter = filters.getString(i);
+        Map<String, Object> aggParams = Map.of(
+            FIELD, filter + KEYWORD_KEY,
+            SIZE_KEY, size
+        );
+        QueryModel agg = new QueryModel();
+        agg.setAggregationType(AggregationType.TERMS);
+        agg.setAggregationName(filter);
+        agg.setAggregationParameters(aggParams);
+        aggs.add(agg);
+      }
+      finalQuery.setAggregations(aggs);
     }
 
+    // Step 6: Set pagination limit if present
     if (request.containsKey(LIMIT)) {
-      q.setLimit(String.valueOf(size));
+      finalQuery.setLimit(String.valueOf(size));
     }
 
-    return q;
+    return finalQuery;
+  }
+  private QueryModel buildUploadStatusExclusion(String itemType) {
+    return new QueryModel(QueryType.BOOL).setMustQueries(List.of(
+        new QueryModel(QueryType.TERM).setQueryParameters(Map.of(
+            FIELD, TYPE_KEYWORD,
+            VALUE, itemType
+        )),
+        new QueryModel(QueryType.TERM).setQueryParameters(Map.of(
+            FIELD, "dataUploadStatus",
+            VALUE, false
+        ))
+    ));
   }
 
   private QueryModel buildGetParentObjectInfoQuery(JsonObject request) {
     String id = request.getString(ID);
 
     String[] fields = {
-            "type", "provider", "ownerUserId", "resourceGroup", "name", "organizationId",
-            "shortDescription", "resourceServer", "resourceServerRegURL", "cos", "cos_admin"
+        "type", "provider", "ownerUserId", "resourceGroup", "name", "organizationId",
+        "shortDescription", "resourceServer", "resourceServerRegURL", "cos", "cos_admin"
     };
 
     List<QueryModel> mustQueries = List.of(
-            new QueryModel(QueryType.TERM).setQueryParameters(Map.of(FIELD, "id.keyword", VALUE, id))
+        new QueryModel(QueryType.TERM).setQueryParameters(Map.of(FIELD, ID_KEYWORD, VALUE, id))
     );
 
     QueryModel boolQuery = new QueryModel(QueryType.BOOL);
@@ -135,67 +160,11 @@ public class QueryDecoder {
     return boolQuery;
   }
 
-
-  public QueryModel getQueryForValidator(JsonObject request){
-
-//    {
-//      "query": {
-//      "bool": {
-//        "should": [
-//        { "match": { "id.keyword": "resource-001" }},
-//        { "match": { "id.keyword": "resource-002" }},
-//        { "match": { "id.keyword": "group-123" }},
-//        {
-//          "bool": {
-//          "must": [
-//          { "match": { "type.keyword": "iudx:Resource" }},
-//          { "match": { "name.keyword": "Air Quality" }},
-//          { "match": { "resourceGroup.keyword": "group-123" }}
-//            ]
-//        }
-//        }
-//      ]
-//      }
-//    },
-//      "_source": ["type"]
-//    }
-
-//    QueryModel m1=new QueryModel(QueryType.MATCH);
-//    m1.setQueryParameters(Map.of("type",""));
-//
-//    QueryModel m2=new QueryModel(QueryType.MATCH);
-//    m2.setQueryParameters(Map.of("type",""));
-//    QueryModel m3=new QueryModel(QueryType.MATCH);
-//    m3.setQueryParameters(Map.of("type",""));
-//
-//    QueryModel m4=new QueryModel(QueryType.BOOL);
-//    m4.setMustQueries(List.of(m1, m2, m3));
-//    QueryModel m5=new QueryModel(QueryType.BOOL);
-//    m5.setShouldQueries(List.of(m1,m2,m3,m4));
-//
-//    QueryModel m6 = new QueryModel();
-//    m6.setQueries(m5);
-//    m6.setIncludeFields(List.of("type"));
-//
-
-    QueryModel matchQuery=new QueryModel(QueryType.MATCH);
-    matchQuery.setQueryParameters(Map.of("type","dataset"));
-    QueryModel matchQuery1=new QueryModel(QueryType.MATCH);
-    matchQuery1.setQueryParameters(Map.of("name.keyword", "water-quality"));
-    QueryModel boolQuery=new QueryModel(QueryType.BOOL);
-    boolQuery.setMustQueries(List.of(matchQuery, matchQuery1));
-
-    QueryModel q = new QueryModel();
-    q.setQueries(boolQuery);
-    return q;
-  }
-
   private QueryModel getBoolQuery(Map<FilterType, List<QueryModel>> filterQueries) {
     QueryModel boolQuery = new QueryModel(QueryType.BOOL);
 
     for (Map.Entry<FilterType, List<QueryModel>> entry : filterQueries.entrySet()) {
       switch (entry.getKey()) {
-
         case MUST -> boolQuery.setMustQueries(entry.getValue());
         case FILTER -> boolQuery.setFilterQueries(entry.getValue());
         case MUST_NOT -> boolQuery.setMustNotQueries(entry.getValue());

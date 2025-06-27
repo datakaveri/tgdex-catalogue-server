@@ -10,6 +10,7 @@ import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.tgdex.apiserver.ApiController;
 import org.cdpg.dx.tgdex.list.service.ListService;
 
+import static org.cdpg.dx.tgdex.util.Constants.RESULTS;
 import static org.cdpg.dx.util.Constants.*;
 
 public class ListController implements ApiController {
@@ -38,7 +39,9 @@ public class ListController implements ApiController {
             return;
         }
     listService.getAvailableFilters(requestBody).onSuccess(successHandler -> {
-        ResponseBuilder.sendSuccess(routingContext, successHandler.getResponse(), successHandler.getPaginationInfo());
+        ResponseBuilder.sendSuccess(routingContext, successHandler.getResponse().getJsonArray(
+            RESULTS),
+            successHandler.getPaginationInfo());
     }).onFailure(failureHandler -> {
         LOGGER.error("Failed to fetch activity logs: {}", failureHandler.getMessage(), failureHandler);
         routingContext.fail(failureHandler);
