@@ -32,7 +32,7 @@ public class SearchCriteriaQueryDecorator implements ElasticsearchQueryDecorator
     if (!request.containsKey(SEARCH_CRITERIA_KEY)) {
       return queryMap;
     }
-    LOGGER.info("Adding searchCriteria query decorator "+request) ;
+    LOGGER.info("Adding searchCriteria query decorator " + request) ;
     JsonArray criteria = request.getJsonArray(SEARCH_CRITERIA_KEY);
     if (criteria == null || criteria.isEmpty()) {
       throw new DxEsException("Invalid Property Value: Empty searchCriteria");
@@ -144,7 +144,6 @@ public class SearchCriteriaQueryDecorator implements ElasticsearchQueryDecorator
 
     QueryModel queryModel = new QueryModel(QueryType.BOOL);
     queryModel.setShouldQueries(shouldQueries);
-    queryModel.setMinimumShouldMatch("1");
     return queryModel;
   }
 

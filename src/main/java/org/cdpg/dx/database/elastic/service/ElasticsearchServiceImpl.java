@@ -1,20 +1,28 @@
 package org.cdpg.dx.database.elastic.service;
 
+import static org.cdpg.dx.database.elastic.util.Constants.AGGREGATIONS;
+import static org.cdpg.dx.database.elastic.util.Constants.STRING_SIZE;
+
 import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
-import co.elastic.clients.elasticsearch._types.SortOptions;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.CountRequest;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
-import co.elastic.clients.elasticsearch.core.search.SourceConfig;
 import co.elastic.clients.json.JsonpMapper;
 import co.elastic.clients.json.JsonpMapperFeatures;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.json.stream.JsonGenerator;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.exception.DxBadRequestException;
@@ -23,169 +31,219 @@ import org.cdpg.dx.database.elastic.ElasticClient;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 
-import java.io.StringWriter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import static org.cdpg.dx.database.elastic.util.Constants.AGGREGATIONS;
-
 
 public class ElasticsearchServiceImpl implements ElasticsearchService {
-    private static final Logger LOGGER = LogManager.getLogger(ElasticsearchServiceImpl.class);
+  private static final Logger LOGGER = LogManager.getLogger(ElasticsearchServiceImpl.class);
 
-    static ElasticClient client;
-    private static ElasticsearchAsyncClient asyncClient;
+  static ElasticClient client;
+  private static ElasticsearchAsyncClient asyncClient;
 
-    public ElasticsearchServiceImpl(ElasticClient client) {
-        ElasticsearchServiceImpl.client = client;
-        asyncClient = client.getClient();
+  public ElasticsearchServiceImpl(ElasticClient client) {
+    ElasticsearchServiceImpl.client = client;
+    asyncClient = client.getClient();
+  }
+
+  @Override
+  public Future<List<ElasticsearchResponse>> search(String index, QueryModel queryModel,
+                                                    String options) {
+    Promise<List<ElasticsearchResponse>> promise = Promise.promise();
+
+    Map<String, Aggregation> aggregations = new HashMap<>();
+
+    if (queryModel.getAggregations() != null) {
+      queryModel.getAggregations().forEach(agg ->
+          LOGGER.debug("{}, {}", agg.getAggregationName(),
+              agg.toElasticsearchAggregations()));
+    }
+    if (queryModel.getAggregations() != null) {
+      queryModel.getAggregations().forEach(agg ->
+          aggregations.put(agg.getAggregationName(), agg.toElasticsearchAggregations()));
+    }
+    SearchRequest.Builder requestBuilder = new SearchRequest.Builder().index(index);
+
+    QueryModel queries = queryModel.getQueries();
+    if (queries != null && queries.toElasticsearchQuery() != null) {
+      requestBuilder.query(queries.toElasticsearchQuery());
     }
 
-    @Override
-    public Future<List<ElasticsearchResponse>> search(String index, QueryModel queryModel) {
-        // Convert QueryModel into Elasticsearch Query and aggregations
-        LOGGER.info("Inside search "+  queryModel.toJson());
-
-        LOGGER.info("Inside search "+  queryModel.getQueries());
-
-        Map<String, Aggregation> elasticsearchAggregations = new HashMap<>();
-        if (queryModel.getAggregations() != null && !queryModel.getAggregations().isEmpty()) {
-            queryModel.getAggregations().forEach(aggregation -> elasticsearchAggregations.put(aggregation.getAggregationName(), aggregation.toElasticsearchAggregations()));
-        }
-
-        QueryModel queries = queryModel.getQueries();
-        LOGGER.debug("QUERIES "+queries.toJson());
-        Query query = queries == null ? null : queries.toElasticsearchQuery();
-        LOGGER.debug("QUERY "+query);
-
-        String size = queryModel.getLimit();
-        String from = queryModel.getOffset();
-        SearchRequest.Builder requestBuilder = new SearchRequest.Builder().index(index);
-
-        // Optional parameters, set only if not null
-        if (query != null) {
-            requestBuilder.query(query);
-        }
-        if (size != null) {
-            requestBuilder.size(Integer.valueOf(size));
-        }
-        if (from != null) {
-            requestBuilder.from(Integer.valueOf(from));
-        }
-        if (!elasticsearchAggregations.isEmpty()) {
-            requestBuilder.aggregations(elasticsearchAggregations);
-        }
-        SourceConfig sourceConfig = queryModel.toSourceConfig();
-        if (sourceConfig != null) {
-            requestBuilder.source(sourceConfig);
-        }
-        List<SortOptions> sortOptions = queryModel.toSortOptions();
-        if (sortOptions != null) {
-            requestBuilder.sort(sortOptions);
-        }
-        SearchRequest request = requestBuilder.build();
-        LOGGER.info("Final SearchRequest: {}", request);
-
-        return executeSearch(request).map(this::convertToElasticSearchResponse);
+    if (!aggregations.isEmpty()) {
+      requestBuilder.aggregations(aggregations);
     }
 
-    @Override
-    public Future<Integer> count(String index, QueryModel queryModel) {
-        // Convert QueryModel into Elasticsearch Query
-        Query query = queryModel.getQueries() == null ? null : queryModel.getQueries().toElasticsearchQuery();
-        LOGGER.info("Count query {}",query);
-        // Create a CountRequest.Builder for the count query
-        CountRequest.Builder requestBuilder = new CountRequest.Builder().index(index);
+    int limit = parseSize(options, queryModel);
+    requestBuilder.size(limit);
 
-        // Add query if present
-        if (query != null) {
-            requestBuilder.query(query);
-        }
-
-        CountRequest request = requestBuilder.build();
-        LOGGER.debug("Final CountRequest: {}", request);
-
-        // Execute the count query
-        return executeCount(request);
-    }
-    private Future<Integer> executeCount(CountRequest request) {
-        Promise<Integer> promise = Promise.promise();
-        LOGGER.info("REQUEST {}", request);
-
-        asyncClient.count(request).whenComplete((response, error) -> {
-            if (error != null) {
-                // Log specific error type for better debugging
-                LOGGER.error("Count operation failed. Error type: {}, Message: {}",
-                        error.getClass().getSimpleName(),
-                        error.getMessage());
-
-                // You might want to handle specific exceptions differently
-                {
-                    LOGGER.error("Elasticsearch cluster is unreachable");
-                    promise.fail(new DxInternalServerErrorException("Elasticsearch cluster is unreachable"));
-                }
-            } else {
-                try {
-                    Integer count = Math.toIntExact(response.count());
-                    LOGGER.debug("Total document count: {}", count);
-                    promise.complete(count);
-                } catch (ArithmeticException e) {
-                    LOGGER.error("Count value too large for Integer conversion");
-                    promise.fail(new DxBadRequestException("Count value too large for Integer conversion"));
-                }
-            }
-        });
-
-        return promise.future();
+    if (queryModel.getOffset() != null) {
+      requestBuilder.from(Integer.parseInt(queryModel.getOffset()));
     }
 
+    if (queryModel.toSourceConfig() != null) {
+      requestBuilder.source(queryModel.toSourceConfig());
+    }
 
-    private List<ElasticsearchResponse> convertToElasticSearchResponse(SearchResponse<ObjectNode> response) {
-        long totalHits = response.hits().total() != null ? response.hits().total().value() : 0;
-        LOGGER.debug("Total Hits in Elasticsearch Response: {}", totalHits);
+    if (queryModel.toSortOptions() != null) {
+      requestBuilder.sort(queryModel.toSortOptions());
+    }
 
-        // Parse hits
-        List<ElasticsearchResponse> responses = response.hits().hits().stream().map(hit -> {
+    SearchRequest request = requestBuilder.build();
+    LOGGER.debug("Request: " + request.toString());
+
+    asyncClient.search(request, ObjectNode.class).whenComplete((response, error) -> {
+      if (error != null) {
+        LOGGER.error("Search failed: {}", error.getMessage(), error);
+        promise.fail(new DxInternalServerErrorException(error.getMessage(), error));
+        return;
+      }
+
+      try {
+        List<ElasticsearchResponse> esResponses = new ArrayList<>();
+        JsonObject aggregationsJson = new JsonObject();
+
+        // 1. Handle hits if needed
+        if (!options.startsWith("AGGREGATION")) {
+          for (var hit : response.hits().hits()) {
             String id = hit.id();
-            JsonObject source = hit.source() != null ? JsonObject.mapFrom(hit.source()) : new JsonObject();
-            return new ElasticsearchResponse(id, source);
-        }).collect(Collectors.toList());
+            JsonObject source =
+                hit.source() != null ? JsonObject.mapFrom(hit.source()) : new JsonObject();
 
-        // Parse aggregations if present
-        if (response.aggregations() != null && !response.aggregations().isEmpty()) {
-            JsonpMapper mapper = asyncClient._jsonpMapper().withAttribute(JsonpMapperFeatures.SERIALIZE_TYPED_KEYS, false);
-            StringWriter writer = new StringWriter();
-            try (JsonGenerator generator = mapper.jsonProvider().createGenerator(writer)) {
-                mapper.serialize(response, generator);
-            } catch (Exception e) {
-                LOGGER.error("Error serializing aggregations: ", e);
-                throw new DxInternalServerErrorException("Failed to process aggregations", e);
+            switch (options) {
+              case "DOC_IDS_ONLY":
+                source = new JsonObject().put("id", id);
+                break;
+
+              case "SOURCE_AND_ID":
+                source = new JsonObject().put("id", id).put("source", source);
+                break;
+
+              case "SOURCE_ONLY":
+              default:
+                // leave source as-is
+                break;
             }
-            String result = writer.toString();
 
-            // Parse the aggregations object from the serialized result
-            JsonObject aggs = new JsonObject(result).getJsonObject(AGGREGATIONS);
-            ElasticsearchResponse.setAggregations(aggs);
+            esResponses.add(new ElasticsearchResponse(id, source));
+          }
+
+          long totalHits = response.hits().total() != null ? response.hits().total().value() : 0;
+          ElasticsearchResponse.setTotalHits((int) totalHits);
         }
 
-        return responses;
+        // 2. Handle aggregations if needed
+        if (options.startsWith("AGGREGATION")) {
+          aggregationsJson = parseAggregations(response, options);
+          LOGGER.debug("parsed aggs: " + aggregationsJson);
+        }
+
+        if (!aggregationsJson.isEmpty()) {
+          ElasticsearchResponse.setAggregations(aggregationsJson);
+        }
+
+        promise.complete(esResponses);
+      } catch (Exception e) {
+        LOGGER.error("Failed to parse search response", e);
+        promise.fail(new DxInternalServerErrorException("Failed to parse search result", e));
+      }
+    });
+
+    return promise.future();
+  }
+
+  private int parseSize(String options, QueryModel model) {
+    if (options.startsWith("AGGREGATION")) {
+      return 0;
+    }
+    return model.getLimit() != null ? Integer.parseInt(model.getLimit()) : STRING_SIZE;
+  }
+
+  private JsonObject parseAggregations(SearchResponse<ObjectNode> response, String options) {
+    JsonObject aggResult = new JsonObject();
+    JsonpMapper mapper =
+        asyncClient._jsonpMapper().withAttribute(JsonpMapperFeatures.SERIALIZE_TYPED_KEYS, false);
+    StringWriter writer = new StringWriter();
+    try (JsonGenerator generator = mapper.jsonProvider().createGenerator(writer)) {
+      mapper.serialize(response, generator);
+    } catch (Exception e) {
+      LOGGER.error("Error serializing aggregations: ", e);
+      throw new DxInternalServerErrorException("Failed to process aggregations", e);
+    }
+    String result = writer.toString();
+
+    // Parse the aggregations object from the serialized result
+    JsonObject rawAggs = new JsonObject(result).getJsonObject(AGGREGATIONS);
+
+
+    LOGGER.debug("raAggs: " + rawAggs);
+
+    if ("AGGREGATION_LIST".equals(options)) {
+      for (String aggKey : rawAggs.fieldNames()) {
+        JsonArray keys = new JsonArray();
+        JsonObject agg = rawAggs.getJsonObject(aggKey);
+        if (agg.containsKey("buckets")) {
+          JsonArray buckets = agg.getJsonArray("buckets");
+          for (int i = 0; i < buckets.size(); i++) {
+            keys.add(buckets.getJsonObject(i).getString("key"));
+          }
+        }
+        aggResult.put(aggKey, keys);
+      }
+    } else {
+      aggResult.mergeIn(rawAggs);
+    }
+    LOGGER.debug("agg list: " + aggResult);
+
+    return aggResult;
+  }
+
+
+  @Override
+  public Future<Integer> count(String index, QueryModel queryModel) {
+    // Convert QueryModel into Elasticsearch Query
+    Query query =
+        queryModel.getQueries() == null ? null : queryModel.getQueries().toElasticsearchQuery();
+    LOGGER.info("Count query {}", query);
+    // Create a CountRequest.Builder for the count query
+    CountRequest.Builder requestBuilder = new CountRequest.Builder().index(index);
+
+    // Add query if present
+    if (query != null) {
+      requestBuilder.query(query);
     }
 
+    CountRequest request = requestBuilder.build();
+    LOGGER.debug("Final CountRequest: {}", request);
 
-    private Future<SearchResponse<ObjectNode>> executeSearch(SearchRequest request) {
-        Promise<SearchResponse<ObjectNode>> promise = Promise.promise();
-        asyncClient.search(request, ObjectNode.class).whenComplete((response, error) -> {
-            if (error != null) {
-                LOGGER.error("Search operation failed due to {}: {}", error.getClass().getSimpleName(), error.getMessage(), error);
+    // Execute the count query
+    return executeCount(request);
+  }
 
-                promise.fail(new DxInternalServerErrorException(error.getMessage(),error));
-            } else {
-                promise.complete(response);
-            }
-        });
-        return promise.future();
-    }
+  private Future<Integer> executeCount(CountRequest request) {
+    Promise<Integer> promise = Promise.promise();
+    LOGGER.info("REQUEST {}", request);
 
+    asyncClient.count(request).whenComplete((response, error) -> {
+      if (error != null) {
+        // Log specific error type for better debugging
+        LOGGER.error("Count operation failed. Error type: {}, Message: {}",
+            error.getClass().getSimpleName(),
+            error.getMessage());
+
+        // You might want to handle specific exceptions differently
+        {
+          LOGGER.error("Elasticsearch cluster is unreachable");
+          promise.fail(new DxInternalServerErrorException("Elasticsearch cluster is unreachable"));
+        }
+      } else {
+        try {
+          Integer count = Math.toIntExact(response.count());
+          LOGGER.debug("Total document count: {}", count);
+          promise.complete(count);
+        } catch (ArithmeticException e) {
+          LOGGER.error("Count value too large for Integer conversion");
+          promise.fail(new DxBadRequestException("Count value too large for Integer conversion"));
+        }
+      }
+    });
+
+    return promise.future();
+  }
 }

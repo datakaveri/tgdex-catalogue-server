@@ -19,7 +19,7 @@ public interface ElasticsearchService {
     return new ElasticsearchServiceVertxEBProxy(vertx, address);
   }
 
-  Future<List<ElasticsearchResponse>> search(String index, QueryModel queryModel);
+  Future<List<ElasticsearchResponse>> search(String index, QueryModel queryModel, String options);
 
   Future<Integer> count(String index, QueryModel queryModel);
 }

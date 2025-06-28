@@ -23,7 +23,7 @@ import static org.cdpg.dx.util.Constants.POST_SEARCH;
  */
 public class SearchController implements ApiController {
     private static final Logger LOGGER = LogManager.getLogger(SearchController.class);
-    private static final String CLAIM_SUBJECT = "sub";
+    public static final String CLAIM_SUBJECT = "sub";
 
     private final SearchService searchService;
     private final AuditingHandler auditingHandler;
