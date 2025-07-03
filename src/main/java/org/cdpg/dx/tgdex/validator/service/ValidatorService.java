@@ -42,9 +42,9 @@ public interface ValidatorService {
   static ValidatorService createProxy(Vertx vertx, String address) {
     return new ValidatorServiceVertxEBProxy(vertx, address);
   }
-  Future<Void> validateSchema(JsonObject request);
+  Future<Void> validateSchema(JsonObject request);// CRUD api me
 
-  Future<Void> validateItem(JsonObject request);
+  Future<Void> validateItem(JsonObject request); // CRUD api me
 
   Future<Void> validateSearchQuery(JsonObject requestData);
 

@@ -2,10 +2,8 @@ package org.cdpg.dx.tgdex.validator.service;
 
 
 import com.github.fge.jsonschema.core.exceptions.ProcessingException;
-import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -24,12 +22,11 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cdpg.dx.database.elastic.ElasticClient;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryModel;
+import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.tgdex.validator.Validator;
 import org.cdpg.dx.tgdex.validator.util.SearchQueryValidatorHelper;
 
@@ -51,12 +48,7 @@ public class ValidatorServiceImpl implements ValidatorService {
 
   private static final Logger LOGGER = LogManager.getLogger(ValidatorServiceImpl.class);
 
-  /**
-   * ES client.
-   */
-  static ElasticClient client;
   private final String docIndex;
-  private final boolean isUacInstance;
   private final String vocContext;
   private Future<String> isValidSchema;
   private Validator aiModelValidator;
@@ -68,19 +60,16 @@ public class ValidatorServiceImpl implements ValidatorService {
   private Validator textSearchQueryValidator;
   private Validator filterSearchQueryValidator;
   private QueryDecoder queryDecoder;
-
+  private ElasticsearchService elasticsearchService;
   /**
    * Constructs a new ValidatorServiceImpl object with the specified ElasticClient and docIndex.
    *
-   * @param client   the ElasticClient object to use for interacting with the Elasticsearch instance
    * @param docIndex the index name to use for storing documents in Elasticsearch
    */
-  public ValidatorServiceImpl(
-          ElasticClient client, String docIndex, boolean isUacInstance, String vocContext) {
+  public ValidatorServiceImpl(ElasticsearchService elasticsearchService, String docIndex, String vocContext) {
+    this.elasticsearchService=elasticsearchService;
 
-    ValidatorServiceImpl.client = client;
     this.docIndex = docIndex;
-    this.isUacInstance = isUacInstance;
     this.vocContext = vocContext;
     this.queryDecoder=new QueryDecoder();
     try {
@@ -213,8 +202,8 @@ public class ValidatorServiceImpl implements ValidatorService {
 
   private void validateAppsItem(JsonObject request, String method,
                                 Promise<Void> promise) {
-    validateId(request, promise, isUacInstance);
-    if (!isUacInstance && !request.containsKey(ID)) {
+    validateId(request, promise);
+    if (request.containsKey(ID)) {
       UUID uuid = UUID.randomUUID();
       request.put(ID, uuid.toString());
     }
@@ -244,8 +233,8 @@ public class ValidatorServiceImpl implements ValidatorService {
 
   private void validateAiModelItem(JsonObject request, String method,
                                    Promise<Void> promise) {
-    validateId(request, promise, isUacInstance);
-    if (!isUacInstance && !request.containsKey(ID)) {
+    validateId(request, promise);
+    if (!request.containsKey(ID)) {
       UUID uuid = UUID.randomUUID();
       request.put(ID, uuid.toString());
     }
@@ -279,8 +268,8 @@ public class ValidatorServiceImpl implements ValidatorService {
 
   private void validateDataBankItem(JsonObject request, String method,
                                     Promise<Void> promise) {
-    validateId(request, promise, isUacInstance);
-    if (!isUacInstance && !request.containsKey(ID)) {
+    validateId(request, promise);
+    if (!request.containsKey(ID)) {
       UUID uuid = UUID.randomUUID();
       request.put(ID, uuid.toString());
     }
@@ -290,6 +279,7 @@ public class ValidatorServiceImpl implements ValidatorService {
 
     String checkQuery = ITEM_WITH_NAME_EXISTS_QUERY
             .replace("$1", ITEM_TYPE_DATA_BANK).replace("$2", request.getString(NAME));
+
 //    client.searchAsync(
 //            checkQuery,
 //            docIndex,
@@ -317,7 +307,7 @@ public class ValidatorServiceImpl implements ValidatorService {
   }
 
   private void validateId(
-          JsonObject request, Promise promise, boolean isUacInstance) {
+          JsonObject request, Promise promise) {
     if (request.containsKey(ID)) {
       String id = request.getString(ID);
       LOGGER.debug("id in the request body: " + id);
@@ -325,7 +315,7 @@ public class ValidatorServiceImpl implements ValidatorService {
       if (!isValidUuid(id)) {
         promise.fail("validation failed. Incorrect id");
       }
-    } else if (isUacInstance && !request.containsKey(ID)) {
+    } else if (!request.containsKey(ID)) {
       promise.fail("mandatory id field not present in request body");
     }
   }
