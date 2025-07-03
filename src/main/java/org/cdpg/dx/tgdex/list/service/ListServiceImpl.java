@@ -10,8 +10,6 @@ import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.tgdex.search.util.ResponseModel;
-import org.cdpg.dx.tgdex.validator.service.ValidatorService;
-
 import static org.cdpg.dx.database.elastic.util.Constants.*;
 
 public class ListServiceImpl implements ListService{
@@ -19,12 +17,9 @@ public class ListServiceImpl implements ListService{
     private static final Logger LOGGER = LogManager.getLogger(ListServiceImpl.class);
     private final QueryDecoder queryDecoder;
     String docIndex;
-    private final ValidatorService validatorService;
 
-    public ListServiceImpl(ElasticsearchService elasticsearchService , String docIndex,
-                            ValidatorService validatorService) {
+    public ListServiceImpl(ElasticsearchService elasticsearchService , String docIndex) {
         this.elasticsearchService=elasticsearchService;
-        this.validatorService = validatorService;
         this.queryDecoder = new QueryDecoder();
         this.docIndex=docIndex;
     }
@@ -37,7 +32,6 @@ public class ListServiceImpl implements ListService{
         if (filters == null || filters.isEmpty()) {
             return Future.failedFuture( "Missing or empty 'filter' array");
         }
-
         return validatorService.validateSearchQuery(body)
             .compose(validated -> {
                 QueryModel queryModel = queryDecoder.listMultipleItemTypesQuery(body);
