@@ -41,7 +41,7 @@ public class ListServiceImpl implements ListService{
         return validatorService.validateSearchQuery(body)
             .compose(validated -> {
                 QueryModel queryModel = queryDecoder.listMultipleItemTypesQuery(body);
-                return elasticsearchService.search(docIndex, queryModel, "AGGREGATION_LIST");
+                return elasticsearchService.search(docIndex, queryModel, AGGREGATION_LIST);
             })
             .map(ResponseModel::new)
             .onFailure(err -> LOGGER.error("Search execution failed: {}", err.getMessage()));

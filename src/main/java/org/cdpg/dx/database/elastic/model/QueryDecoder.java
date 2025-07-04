@@ -72,6 +72,12 @@ public class QueryDecoder {
       return q;
     }
 
+    for (QueryModel qm : queryMap.get(FilterType.FILTER)) {
+      if (qm.getIncludeFields() != null) {
+        q.setIncludeFields(qm.getIncludeFields());
+      }
+    }
+
     return q;
   }
 
@@ -135,7 +141,7 @@ public class QueryDecoder {
             VALUE, itemType
         )),
         new QueryModel(QueryType.TERM).setQueryParameters(Map.of(
-            FIELD, "dataUploadStatus",
+            FIELD, DATA_UPLOAD_STATUS,
             VALUE, false
         ))
     ));

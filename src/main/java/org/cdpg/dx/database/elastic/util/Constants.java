@@ -83,6 +83,9 @@ public class Constants {
   public static final String TAG_AQM = "aqm";
   public static final String DESCRIPTION_ATTR = "description";
   public static final String ACCESS_POLICY = "accessPolicy";
+  public static final String OPEN = "OPEN";
+  public static final String PRIVATE = "PRIVATE";
+  public static final String RESTRICTED = "RESTRICTED";
 
   /**
    * OldElasticClient search types.
@@ -94,6 +97,7 @@ public class Constants {
   public static final String FORWARD_SLASH = "/";
   public static final String WILDCARD_KEY = "wildcard";
   public static final String AGGREGATION_ONLY = "AGGREGATION";
+  public static final String AGGREGATION_LIST = "AGGREGATION_LIST";
   public static final String RATING_AGGREGATION_ONLY = "R_AGGREGATION";
   public static final String TYPE_KEYWORD = "type.keyword";
   public static final String WORD_VECTOR_KEY = "_word_vector";
@@ -470,6 +474,7 @@ public class Constants {
   public static final String INCLUDE_FIELDS = "includeFields";
   public static final String FIELD = "field";
   public static final String VALUES = "values";
+  public static final String DATA_UPLOAD_STATUS = "dataUploadStatus";
   public static final String QUERY_KEY = "query";
   public static final String HITS = "hits";
   public static final String TOTAL = "total";
