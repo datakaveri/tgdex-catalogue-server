@@ -1,7 +1,19 @@
 package org.cdpg.dx.database.elastic.service;
 
 import static org.cdpg.dx.database.elastic.util.Constants.AGGREGATIONS;
+import static org.cdpg.dx.database.elastic.util.Constants.AGGREGATION_LIST;
+import static org.cdpg.dx.database.elastic.util.Constants.AGGREGATION_ONLY;
+import static org.cdpg.dx.database.elastic.util.Constants.BUCKETS;
+import static org.cdpg.dx.database.elastic.util.Constants.DOC_IDS_ONLY;
+import static org.cdpg.dx.database.elastic.util.Constants.ID;
+import static org.cdpg.dx.database.elastic.util.Constants.KEY;
+import static org.cdpg.dx.database.elastic.util.Constants.SOURCE;
+import static org.cdpg.dx.database.elastic.util.Constants.SOURCE_AND_ID;
+import static org.cdpg.dx.database.elastic.util.Constants.SOURCE_AND_ID_GEOQUERY;
+import static org.cdpg.dx.database.elastic.util.Constants.SOURCE_ONLY;
 import static org.cdpg.dx.database.elastic.util.Constants.STRING_SIZE;
+import static org.cdpg.dx.database.elastic.util.Constants.SUMMARY_KEY;
+import static org.cdpg.dx.database.elastic.util.Constants.WORD_VECTOR_KEY;
 
 import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
@@ -11,6 +23,9 @@ import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.json.JsonpMapper;
 import co.elastic.clients.json.JsonpMapperFeatures;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -99,28 +114,36 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         JsonObject aggregationsJson = new JsonObject();
 
         // 1. Handle hits if needed
-        if (!options.startsWith("AGGREGATION")) {
+        if (!options.startsWith(AGGREGATION_ONLY)) {
           for (var hit : response.hits().hits()) {
             String id = hit.id();
             JsonObject source =
-                hit.source() != null ? JsonObject.mapFrom(hit.source()) : new JsonObject();
-
+                hit.source() != null
+                    ? new JsonObject(hit.source().toString())
+                    : new JsonObject();
+            JsonObject result = new JsonObject();
             switch (options) {
-              case "DOC_IDS_ONLY":
-                source = new JsonObject().put("id", id);
+              case DOC_IDS_ONLY:
+                result.put(ID, id);
                 break;
-
-              case "SOURCE_AND_ID":
-                source = new JsonObject().put("id", id).put("source", source);
+              case SOURCE_AND_ID:
+                result.put(ID, id).put(SOURCE, source);
                 break;
-
-              case "SOURCE_ONLY":
+              case SOURCE_AND_ID_GEOQUERY:
+                source.put("doc_id", id);
+                result.mergeIn(source);
+                break;
+              case SOURCE_ONLY:
+                source.remove(SUMMARY_KEY);
+                source.remove(WORD_VECTOR_KEY);
+                result = source;
+                break;
               default:
-                // leave source as-is
+                result = source;
                 break;
             }
 
-            esResponses.add(new ElasticsearchResponse(id, source));
+            esResponses.add(new ElasticsearchResponse(id, result));
           }
 
           long totalHits = response.hits().total() != null ? response.hits().total().value() : 0;
@@ -128,9 +151,8 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         }
 
         // 2. Handle aggregations if needed
-        if (options.startsWith("AGGREGATION")) {
+        if (options.startsWith(AGGREGATION_ONLY)) {
           aggregationsJson = parseAggregations(response, options);
-          LOGGER.debug("parsed aggs: " + aggregationsJson);
         }
 
         if (!aggregationsJson.isEmpty()) {
@@ -148,7 +170,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
   }
 
   private int parseSize(String options, QueryModel model) {
-    if (options.startsWith("AGGREGATION")) {
+    if (options.startsWith(AGGREGATION_ONLY)) {
       return 0;
     }
     return model.getLimit() != null ? Integer.parseInt(model.getLimit()) : STRING_SIZE;
@@ -170,17 +192,14 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     // Parse the aggregations object from the serialized result
     JsonObject rawAggs = new JsonObject(result).getJsonObject(AGGREGATIONS);
 
-
-    LOGGER.debug("raAggs: " + rawAggs);
-
-    if ("AGGREGATION_LIST".equals(options)) {
+    if (AGGREGATION_LIST.equals(options)) {
       for (String aggKey : rawAggs.fieldNames()) {
         JsonArray keys = new JsonArray();
         JsonObject agg = rawAggs.getJsonObject(aggKey);
-        if (agg.containsKey("buckets")) {
-          JsonArray buckets = agg.getJsonArray("buckets");
+        if (agg.containsKey(BUCKETS)) {
+          JsonArray buckets = agg.getJsonArray(BUCKETS);
           for (int i = 0; i < buckets.size(); i++) {
-            keys.add(buckets.getJsonObject(i).getString("key"));
+            keys.add(buckets.getJsonObject(i).getString(KEY));
           }
         }
         aggResult.put(aggKey, keys);
@@ -188,7 +207,6 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     } else {
       aggResult.mergeIn(rawAggs);
     }
-    LOGGER.debug("agg list: " + aggResult);
 
     return aggResult;
   }

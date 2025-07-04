@@ -49,7 +49,7 @@ public class SearchServiceImpl implements SearchService {
                 .compose(validated -> {
                     requestBody.put(SEARCH,true);
                     QueryModel queryModel = queryDecoder.getQueryModel(requestBody);
-                    return elasticsearchService.search(docIndex, queryModel, "SOURCE");
+                    return elasticsearchService.search(docIndex, queryModel, SOURCE_ONLY);
                 })
                 .map(results -> new ResponseModel(
                         results,
