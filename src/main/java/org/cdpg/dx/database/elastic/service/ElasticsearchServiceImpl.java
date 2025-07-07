@@ -1,20 +1,5 @@
 package org.cdpg.dx.database.elastic.service;
 
-import static org.cdpg.dx.database.elastic.util.Constants.AGGREGATIONS;
-import static org.cdpg.dx.database.elastic.util.Constants.AGGREGATION_LIST;
-import static org.cdpg.dx.database.elastic.util.Constants.AGGREGATION_ONLY;
-import static org.cdpg.dx.database.elastic.util.Constants.BUCKETS;
-import static org.cdpg.dx.database.elastic.util.Constants.DOC_IDS_ONLY;
-import static org.cdpg.dx.database.elastic.util.Constants.ID;
-import static org.cdpg.dx.database.elastic.util.Constants.KEY;
-import static org.cdpg.dx.database.elastic.util.Constants.SOURCE;
-import static org.cdpg.dx.database.elastic.util.Constants.SOURCE_AND_ID;
-import static org.cdpg.dx.database.elastic.util.Constants.SOURCE_AND_ID_GEOQUERY;
-import static org.cdpg.dx.database.elastic.util.Constants.SOURCE_ONLY;
-import static org.cdpg.dx.database.elastic.util.Constants.STRING_SIZE;
-import static org.cdpg.dx.database.elastic.util.Constants.SUMMARY_KEY;
-import static org.cdpg.dx.database.elastic.util.Constants.WORD_VECTOR_KEY;
-
 import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
@@ -42,8 +27,11 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxInternalServerErrorException;
 import org.cdpg.dx.database.elastic.ElasticClient;
+import org.cdpg.dx.database.elastic.model.AggregationResponse;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryModel;
+
+import static org.cdpg.dx.database.elastic.util.Constants.*;
 
 
 public class ElasticsearchServiceImpl implements ElasticsearchService {
@@ -251,6 +239,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         }
       } else {
         try {
+          LOGGER.info("COUNT "+response);
           Integer count = Math.toIntExact(response.count());
           LOGGER.debug("Total document count: {}", count);
           promise.complete(count);
@@ -263,4 +252,74 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
 
     return promise.future();
   }
+
+
+@Override
+public Future<AggregationResponse> countByAggregation(String index, QueryModel queryModel) {
+    Promise<AggregationResponse> promise = Promise.promise();
+
+    // Prepare aggregations
+    Map<String, Aggregation> aggregations = new HashMap<>();
+    if (queryModel.getAggregations() != null) {
+      queryModel.getAggregations().forEach(agg ->
+              aggregations.put(agg.getAggregationName(), agg.toElasticsearchAggregations()));
+    }
+
+    // Prepare search request with size 0 (we only need aggregations)
+    SearchRequest.Builder requestBuilder = new SearchRequest.Builder().index(index);
+    requestBuilder.size(0);
+
+    QueryModel queries = queryModel.getQueries();
+    if (queries != null && queries.toElasticsearchQuery() != null) {
+      requestBuilder.query(queries.toElasticsearchQuery());
+    }
+
+    if (!aggregations.isEmpty()) {
+      requestBuilder.aggregations(aggregations);
+    }
+
+    SearchRequest request = requestBuilder.build();
+    LOGGER.debug("Count-as-aggregation SearchRequest: {}", request);
+
+    asyncClient.search(request, ObjectNode.class).whenComplete((response, error) -> {
+      if (error != null) {
+        LOGGER.error("Count aggregation search failed: {}", error.getMessage(), error);
+        promise.fail(new DxInternalServerErrorException(error.getMessage(), error));
+        return;
+      }
+
+      try {
+        // Parse response to extract bucketed counts
+        JsonpMapper mapper = asyncClient._jsonpMapper()
+                .withAttribute(JsonpMapperFeatures.SERIALIZE_TYPED_KEYS, false);
+        StringWriter writer = new StringWriter();
+        try (JsonGenerator generator = mapper.jsonProvider().createGenerator(writer)) {
+          mapper.serialize(response, generator);
+        }
+
+        JsonObject raw = new JsonObject(writer.toString());
+        JsonObject aggs = raw.getJsonObject(AGGREGATIONS);
+        JsonObject resultsAgg = aggs != null ? aggs.getJsonObject(RESULTS) : null;
+
+        if (resultsAgg != null && resultsAgg.containsKey(BUCKETS)) {
+          JsonArray buckets = resultsAgg.getJsonArray(BUCKETS);
+          JsonObject counts = new JsonObject();
+          for (int i = 0; i < buckets.size(); i++) {
+            JsonObject bucket = buckets.getJsonObject(i);
+            counts.put(bucket.getString(KEY), bucket.getInteger(DOC_COUNT));
+          }
+          JsonArray results = new JsonArray().add(counts);
+          promise.complete(new AggregationResponse(results));
+        } else {
+          promise.complete(new AggregationResponse(new JsonArray()));
+        }
+
+      } catch (Exception e) {
+        LOGGER.error("Failed to parse count aggregation result", e);
+        promise.fail(new DxInternalServerErrorException("Failed to parse aggregation result", e));
+      }
+    });
+
+    return promise.future();
+}
 }

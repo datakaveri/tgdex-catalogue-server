@@ -43,7 +43,7 @@ public class ControllerFactory {
     ValidatorService validatorService= new ValidatorServiceImpl(esService,docIndex,vocContext);
 
     final ItemController crudController = ItemControllerFactory.createCrudController(auditingHandler,esService);
-    final ListController listController = ListControllerFactory.createListController(esService, auditingHandler, docIndex);
+    final ListController listController = ListControllerFactory.createListController(esService, auditingHandler, docIndex,validatorService);
     final SearchController searchController = SearchControllerFactory.createSearchController(esService, auditingHandler,docIndex, validatorService);
     return List.of(crudController,listController,searchController);
   }
