@@ -15,6 +15,7 @@ import org.cdpg.dx.catalogue.service.CatalogueService;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.databroker.service.DataBrokerService;
 import org.cdpg.dx.tgdex.validator.service.ValidatorService;
+import org.cdpg.dx.tgdex.validator.service.ValidatorServiceImpl;
 
 import java.util.List;
 
@@ -28,6 +29,9 @@ public class ControllerFactory {
 
   public static List<ApiController> createControllers(Vertx vertx, JsonObject config) {
     LOGGER.info("Creating controllers...");
+    final String docIndex = config.getString("docIndex");
+    final String vocContext = config.getString("vocContext");
+
     // Service proxies
     final ElasticsearchService esService =
         ElasticsearchService.createProxy(vertx, ELASTIC_SERVICE_ADDRESS);
@@ -35,10 +39,9 @@ public class ControllerFactory {
         DataBrokerService.createProxy(vertx, DATA_BROKER_SERVICE_ADDRESS);
     final CatalogueService catService =
         CatalogueService.createProxy(vertx, CATALOGUE_SERVICE_ADDRESS);
-    final ValidatorService validatorService =
-        ValidatorService.createProxy(vertx, VALIDATOR_SERVICE_ADDRESS);
     final AuditingHandler auditingHandler = new AuditingHandler(brokerService);
-    final String docIndex = config.getString("docIndex");
+    ValidatorService validatorService= new ValidatorServiceImpl(esService,docIndex,vocContext);
+
     final ItemController crudController = ItemControllerFactory.createCrudController(auditingHandler,esService);
     final ListController listController = ListControllerFactory.createListController(esService, auditingHandler, docIndex,validatorService);
     final SearchController searchController = SearchControllerFactory.createSearchController(esService, auditingHandler,docIndex, validatorService);

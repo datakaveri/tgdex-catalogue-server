@@ -9,7 +9,7 @@ import org.cdpg.dx.tgdex.validator.service.ValidatorService;
 
 public  class ListControllerFactory {
 
-    public static ListController createListController(ElasticsearchService elasticsearchService, AuditingHandler auditingHandler, String docIndex, ValidatorService validatorService) {
+    public static ListController createListController(ElasticsearchService elasticsearchService, AuditingHandler auditingHandler, String docIndex ,ValidatorService validatorService ){
         ListService listService = new ListServiceImpl(elasticsearchService,docIndex,validatorService);
         return new ListController(auditingHandler,listService);
     }

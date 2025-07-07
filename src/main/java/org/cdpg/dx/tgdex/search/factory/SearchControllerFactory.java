@@ -6,6 +6,7 @@ import org.cdpg.dx.tgdex.search.service.SearchService;
 import org.cdpg.dx.tgdex.search.service.SearchServiceImpl;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.tgdex.validator.service.ValidatorService;
+import org.cdpg.dx.tgdex.validator.service.ValidatorServiceImpl;
 
 public class SearchControllerFactory {
 

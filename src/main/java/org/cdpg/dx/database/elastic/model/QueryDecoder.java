@@ -180,4 +180,15 @@ public class QueryDecoder {
     return boolQuery;
   }
 
+  public QueryModel setCountAggregations() {
+    QueryModel agg = new QueryModel();
+    agg.setAggregationType(AggregationType.TERMS);
+    agg.setAggregationName(RESULTS);
+    Map<String, Object> aggParams = Map.of(
+            FIELD, TYPE_KEYWORD
+    );
+    agg.setAggregationParameters(aggParams);
+    return agg;
+  }
+
 }

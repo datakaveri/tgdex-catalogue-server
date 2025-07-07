@@ -26,6 +26,7 @@ public class Constants {
   public static final String LIST_AVAILABLE_FILTER="listAvailableFilters";
   public static final String GET_LIST="listTypes";
   public static final String POST_SEARCH="search";
-
+  public static final String POST_COUNT_SEARCH= "count";
   public static final String ID = "id";
+  public static final String ASSET_SEARCH="myAssetsSearch";
 }

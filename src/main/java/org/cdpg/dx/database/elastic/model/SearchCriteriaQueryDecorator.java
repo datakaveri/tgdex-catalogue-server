@@ -88,6 +88,7 @@ public class SearchCriteriaQueryDecorator implements ElasticsearchQueryDecorator
 
       }
     }
+    LOGGER.info("Done with query");
     return queryMap;
   }
 
