@@ -14,9 +14,6 @@ public final class CheckIfTokenPresent implements Handler<RoutingContext> {
     private static final String MISSING_TOKEN_MSG = "Missing or invalid Authorization header";
     private static final String UNAUTHORIZED_MSG = "Missing Bearer token";
 
-    private CheckIfTokenPresent() {
-        // prevent external instantiation
-    }
 
     @Override
     public void handle(RoutingContext ctx) {
