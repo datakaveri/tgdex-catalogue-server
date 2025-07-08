@@ -1,7 +1,7 @@
 package org.cdpg.dx.tgdex.search.controller;
 
-
-import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.Future;
+import io.vertx.core.MultiMap;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.openapi.RouterBuilder;
@@ -9,9 +9,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.response.ResponseBuilder;
-import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.tgdex.apiserver.ApiController;
 import org.cdpg.dx.tgdex.search.service.SearchService;
+import org.cdpg.dx.util.CheckIfTokenPresent;
+
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import static org.cdpg.dx.database.elastic.util.Constants.*;
 import static org.cdpg.dx.tgdex.util.Constants.*;
@@ -22,6 +25,7 @@ import static org.cdpg.dx.util.Constants.*;
  */
 public class SearchController implements ApiController {
     private static final Logger LOGGER = LogManager.getLogger(SearchController.class);
+    private static final CheckIfTokenPresent TOKEN_CHECK = new CheckIfTokenPresent();
 
     private final SearchService searchService;
     private final AuditingHandler auditingHandler;
@@ -33,45 +37,71 @@ public class SearchController implements ApiController {
 
     @Override
     public void register(RouterBuilder builder) {
-        builder
-                .operation(POST_SEARCH)
-                .handler(this::handlePostSearch)
-                .handler(auditingHandler::handleApiAudit);
-        builder
-                .operation(POST_COUNT_SEARCH)
-                .handler(this::handlePostCount)
+        builder.operation(POST_SEARCH)
+                .handler(this::handleSearch)
                 .handler(auditingHandler::handleApiAudit);
 
-        builder
-                .operation(ASSET_SEARCH)
-                .handler(this::handlePostCount)
+        builder.operation(POST_COUNT_SEARCH)
+                .handler(this::handleCount)
                 .handler(auditingHandler::handleApiAudit);
 
+        builder.operation(ASSET_SEARCH)
+                .handler(TOKEN_CHECK)
+                .handler(this::handleAsset)
+                .handler(auditingHandler::handleApiAudit);
 
-        LOGGER.debug("Registered SearchController for operation '{}'.", POST_SEARCH);
+        LOGGER.debug("Registered SearchController operations: {}, {}, {}",
+                POST_SEARCH, POST_COUNT_SEARCH, ASSET_SEARCH);
     }
 
-    private void handlePostSearch(RoutingContext ctx) {
+    private void handleSearch(RoutingContext ctx) {
         LOGGER.debug("Received POST request on '{}'", POST_SEARCH);
-        JsonObject body = prepareRequestBody(ctx);
-        if (body == null) return;
-
-        searchService.postSearch(body)
-                .onSuccess(response -> {
-                    LOGGER.info("TOTAL HITS {}", response.getTotalHits());
-                    ResponseBuilder.sendSuccess(ctx, response.getElasticsearchResponses(), response.getPaginationInfo(), response.getTotalHits());
-                })
-                .onFailure(err -> handleSearchFailure(ctx, err));
+        process(ctx,
+                searchService::postSearch,
+                (c, resp) -> ResponseBuilder.sendSuccess(c,
+                        resp.getElasticsearchResponses(),
+                        resp.getPaginationInfo(),
+                        resp.getTotalHits()));
     }
 
-    private void handlePostCount(RoutingContext ctx) {
+    private void handleCount(RoutingContext ctx) {
         LOGGER.debug("Received POST Count request on '{}'", POST_COUNT_SEARCH);
+        process(ctx,
+                searchService::postCount,
+                (c, results) -> ResponseBuilder.sendSuccess(c, results.getResults()));
+    }
+
+    private void handleAsset(RoutingContext ctx) {
+        LOGGER.debug("Received POST Asset request on '{}'", ASSET_SEARCH);
         JsonObject body = prepareRequestBody(ctx);
         if (body == null) return;
 
-        searchService.postCount(body)
-                .onSuccess(response -> ResponseBuilder.sendSuccess(ctx, response.getResults()))
-                .onFailure(err -> handleSearchFailure(ctx, err));
+        MultiMap params = ctx.request().params();
+        params.forEach(entry -> body.put(entry.getKey(), entry.getValue()));
+        body.put(MY_ASSETS_REQ, true);
+        LOGGER.debug("Asset request body: {}", body);
+
+        // Reuse search handler logic
+        process(ctx,
+                searchService::postSearch,
+                (c, resp) -> ResponseBuilder.sendSuccess(c,
+                        resp.getElasticsearchResponses(),
+                        resp.getPaginationInfo(),
+                        resp.getTotalHits()));
+    }
+
+    /**
+     * Generic request processor: prepares body, invokes service, and handles success/failure.
+     */
+    private <T> void process(RoutingContext ctx,
+                             Function<JsonObject, Future<T>> serviceCall,
+                             BiConsumer<RoutingContext, T> onSuccess) {
+        JsonObject body = prepareRequestBody(ctx);
+        if (body == null) return;
+
+        serviceCall.apply(body)
+                .onSuccess(result -> onSuccess.accept(ctx, result))
+                .onFailure(err -> handleFailure(ctx, err));
     }
 
     private JsonObject prepareRequestBody(RoutingContext ctx) {
@@ -81,13 +111,12 @@ public class SearchController implements ApiController {
             ctx.fail(400);
             return null;
         }
-
-        injectSubjectClaim(ctx, body);
-        addPaginationParams(ctx, body);
+        injectSubject(ctx, body);
+        addPagination(ctx, body);
         return body;
     }
 
-    private void injectSubjectClaim(RoutingContext ctx, JsonObject body) {
+    private void injectSubject(RoutingContext ctx, JsonObject body) {
         try {
             if (ctx.user() != null) {
                 String subject = ctx.user().principal().getString(SUB);
@@ -98,30 +127,24 @@ public class SearchController implements ApiController {
         }
     }
 
-    private void addPaginationParams(RoutingContext ctx, JsonObject body) {
-        int size = parseIntOrDefault(ctx.request().getParam(SIZE_KEY), DEFAULT_MAX_PAGE_SIZE);
-        int page = parseIntOrDefault(ctx.request().getParam(PAGE_KEY), DEFAULT_PAGE_NUMBER);
-        body.put(SIZE_KEY, size);
-        body.put(PAGE_KEY, page);
+    private void addPagination(RoutingContext ctx, JsonObject body) {
+        int size = parseOrDefault(ctx.request().getParam(SIZE_KEY), DEFAULT_MAX_PAGE_SIZE);
+        int page = parseOrDefault(ctx.request().getParam(PAGE_KEY), DEFAULT_PAGE_NUMBER);
+        body.put(SIZE_KEY, size).put(PAGE_KEY, page);
     }
 
-    private void handleSearchFailure(RoutingContext ctx, Throwable err) {
+    private int parseOrDefault(String val, int defaultVal) {
+        if (val == null) return defaultVal;
+        try {
+            return Integer.parseInt(val);
+        } catch (NumberFormatException e) {
+            LOGGER.warn("Invalid integer '{}', using default {}", val, defaultVal);
+            return defaultVal;
+        }
+    }
+
+    private void handleFailure(RoutingContext ctx, Throwable err) {
         LOGGER.error("Search request failed: {}", err.getMessage(), err);
         ctx.fail(err);
-    }
-
-    /**
-     * Parses a string to int, falling back to a default value if parsing fails or input is null.
-     */
-    private int parseIntOrDefault(String value, int defaultValue) {
-        if (value == null) {
-            return defaultValue;
-        }
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            LOGGER.warn("Invalid integer '{}', using default {}", value, defaultValue);
-            return defaultValue;
-        }
     }
 }

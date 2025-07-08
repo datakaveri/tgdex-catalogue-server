@@ -24,9 +24,7 @@ public class SearchServiceImpl implements SearchService {
     private final String docIndex;
     private final ValidatorService validatorService;
 
-    public SearchServiceImpl(ElasticsearchService elasticsearchService,
-                             String docIndex,
-                             ValidatorService validatorService) {
+    public SearchServiceImpl(ElasticsearchService elasticsearchService, String docIndex, ValidatorService validatorService) {
         this.elasticsearchService = elasticsearchService;
         this.queryDecoder = new QueryDecoder();
         this.docIndex = docIndex;
@@ -42,18 +40,11 @@ public class SearchServiceImpl implements SearchService {
             return Future.failedFuture(e);
         }
 
-        return validatorService.validateSearchQuery(requestBody)
-                .compose(validated -> {
-                    requestBody.put(SEARCH, true);
-                    QueryModel queryModel = queryDecoder.getQueryModel(requestBody);
-                    return elasticsearchService.search(docIndex, queryModel, SOURCE_ONLY);
-                })
-                .map(results -> new ResponseModel(
-                        results,
-                        requestBody.getInteger(SIZE_KEY),
-                        requestBody.getInteger(PAGE_KEY)
-                ))
-                .onFailure(err -> LOGGER.error("Search execution failed: {}", err.getMessage()));
+        return validatorService.validateSearchQuery(requestBody).compose(validated -> {
+            requestBody.put(SEARCH, true);
+            QueryModel queryModel = queryDecoder.getQueryModel(requestBody);
+            return elasticsearchService.search(docIndex, queryModel, SOURCE_ONLY);
+        }).map(results -> new ResponseModel(results, getIntValue(requestBody, SIZE_KEY), getIntValue(requestBody, PAGE_KEY))).onFailure(err -> LOGGER.error("Search execution failed: {}", err.getMessage()));
     }
 
     @Override
@@ -65,17 +56,16 @@ public class SearchServiceImpl implements SearchService {
             return Future.failedFuture(e);
         }
 
-        return validatorService.validateSearchQuery(requestBody)
-                .compose(validated -> {
-                    QueryModel queryModel = queryDecoder.getQueryModel(requestBody);
-                    queryModel.setAggregations(List.of(queryDecoder.setCountAggregations()));
-                    return elasticsearchService.countByAggregation(docIndex, queryModel);
-                })
-                .onFailure(err -> LOGGER.error("Count execution failed: {}", err.getMessage()));
+        return validatorService.validateSearchQuery(requestBody).compose(validated -> {
+            QueryModel queryModel = queryDecoder.getQueryModel(requestBody);
+            queryModel.setAggregations(List.of(queryDecoder.setCountAggregations()));
+            return elasticsearchService.countByAggregation(docIndex, queryModel);
+        }).onFailure(err -> LOGGER.error("Count execution failed: {}", err.getMessage()));
     }
 
     /**
      * Sets the SEARCH_TYPE in the request body based on present filters.
+     *
      * @throws DxBadRequestException if no valid filter is provided.
      */
     private void setSearchType(JsonObject body) {
@@ -86,14 +76,14 @@ public class SearchServiceImpl implements SearchService {
 
     /**
      * Builds the SEARCH_TYPE string based on present filters in the request body.
+     *
      * @throws DxBadRequestException if no valid filter is provided.
      */
     private String buildSearchType(JsonObject body) {
         boolean hasFilter = false;
         StringBuilder typeBuilder = new StringBuilder();
 
-        if (body.getJsonArray(SEARCH_CRITERIA_KEY) != null
-                && !body.getJsonArray(SEARCH_CRITERIA_KEY).isEmpty()) {
+        if (body.getJsonArray(SEARCH_CRITERIA_KEY) != null && !body.getJsonArray(SEARCH_CRITERIA_KEY).isEmpty()) {
             typeBuilder.append(SEARCH_TYPE_CRITERIA);
             hasFilter = true;
         }
@@ -101,9 +91,7 @@ public class SearchServiceImpl implements SearchService {
             typeBuilder.append(SEARCH_TYPE_TEXT);
             hasFilter = true;
         }
-        if (body.containsKey(FILTER)
-                && body.getJsonArray(FILTER) != null
-                && !body.getJsonArray(FILTER).isEmpty()) {
+        if (body.containsKey(FILTER) && body.getJsonArray(FILTER) != null && !body.getJsonArray(FILTER).isEmpty()) {
             typeBuilder.append(RESPONSE_FILTER);
             hasFilter = true;
         }
@@ -111,5 +99,20 @@ public class SearchServiceImpl implements SearchService {
             throw new DxBadRequestException("Mandatory field(s) not provided");
         }
         return typeBuilder.toString();
+    }
+
+    private Integer getIntValue(JsonObject obj, String key) {
+        Object value = obj.getValue(key);
+        if (value instanceof Integer) {
+            return (Integer) value;
+        } else if (value instanceof String) {
+            try {
+                return Integer.parseInt((String) value);
+            } catch (NumberFormatException e) {
+                LOGGER.warn("Invalid integer format for key {}: {}", key, value);
+                return null;
+            }
+        }
+        return null;
     }
 }

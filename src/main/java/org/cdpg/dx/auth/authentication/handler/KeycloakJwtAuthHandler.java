@@ -21,15 +21,16 @@ public class KeycloakJwtAuthHandler implements AuthenticationHandler {
 
     @Override
     public void handle(RoutingContext ctx ) {
-        String token = BearerTokenExtractor.extract(ctx);
-        boolean isTokenNotPresent = token != null && !token.isBlank();
 
-        if ( isTokenNotPresent && !isTokenRequired) {
+        LOGGER.info("Inside token handler");
+        String token = BearerTokenExtractor.extract(ctx);
+        boolean isTokenPresent = token != null && !token.isBlank();
+        if ( !isTokenPresent && !isTokenRequired) {
             LOGGER.warn("Token not present and not required.");
             return;
         }
 
-        else if (isTokenNotPresent) {
+        else if (!isTokenPresent) {
             LOGGER.warn("Missing or invalid Authorization header");
             ctx.fail(new DxUnauthorizedException("Missing Bearer token"));
             return;
@@ -38,6 +39,7 @@ public class KeycloakJwtAuthHandler implements AuthenticationHandler {
 
         jwtAuth.authenticate(new JsonObject().put("token", token))
                 .onSuccess(user -> {
+                    LOGGER.info("PRESENT success");
                     ctx.setUser(user);
                     ctx.next();
                 })

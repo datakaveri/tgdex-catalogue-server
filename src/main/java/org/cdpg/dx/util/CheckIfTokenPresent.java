@@ -7,23 +7,29 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.auth.authentication.util.BearerTokenExtractor;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 
-public class CheckIfTokenPresent implements Handler<RoutingContext> {
-
+public final class CheckIfTokenPresent implements Handler<RoutingContext> {
     private static final Logger LOGGER = LogManager.getLogger(CheckIfTokenPresent.class);
+    public static final CheckIfTokenPresent INSTANCE = new CheckIfTokenPresent();
+
+    private static final String MISSING_TOKEN_MSG = "Missing or invalid Authorization header";
+    private static final String UNAUTHORIZED_MSG = "Missing Bearer token";
+
+    private CheckIfTokenPresent() {
+        // prevent external instantiation
+    }
 
     @Override
     public void handle(RoutingContext ctx) {
-        String token = BearerTokenExtractor.extract(ctx);
-        boolean isTokenNotPresent = token != null && !token.isBlank();
-
-        // only checking if token is present or not
-        // if present we will already have the User from the KeycloakJwtAuthHandler
-
-        if (isTokenNotPresent) {
-            LOGGER.warn("Missing or invalid Authorization header");
-            ctx.fail(new DxUnauthorizedException("Missing Bearer token"));
+        if (tokenAbsent(ctx)) {
+            LOGGER.warn(MISSING_TOKEN_MSG);
+            ctx.fail(new DxUnauthorizedException(UNAUTHORIZED_MSG));
             return;
         }
-        else ctx.next();
+        ctx.next();
+    }
+
+    private boolean tokenAbsent(RoutingContext ctx) {
+        String token = BearerTokenExtractor.extract(ctx);
+        return token == null || token.isBlank();
     }
 }
