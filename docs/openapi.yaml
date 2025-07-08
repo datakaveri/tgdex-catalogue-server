@@ -388,7 +388,7 @@ paths:
       tags:
         - Discovery
       security:
-        - authorization: [ ]
+        - bearerAuth: []
       requestBody:
         description: Request body containing unified search filters
         required: true
@@ -941,7 +941,7 @@ tags:
     x-displayName: List
 components:
   securitySchemes:
-    authorization:
+    bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT

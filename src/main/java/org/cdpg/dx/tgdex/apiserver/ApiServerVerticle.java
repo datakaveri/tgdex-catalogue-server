@@ -83,7 +83,7 @@ try {
                                     new RouterBuilderOptions().setMountResponseContentTypeHandler(true);
                             routerBuilder.setOptions(factoryOptions);
                             routerBuilder.securityHandler("authorization", authHandler);
-
+                            routerBuilder.securityHandler("bearerAuth", authHandler);
                             controllers.forEach(controller -> controller.register(routerBuilder));
 
                             LOGGER.debug("Creating router...");
