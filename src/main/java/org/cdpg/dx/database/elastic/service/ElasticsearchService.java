@@ -5,8 +5,6 @@ import io.vertx.codegen.annotations.ProxyGen;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
-import org.cdpg.dx.database.elastic.model.AggregationResponse;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 
@@ -24,6 +22,5 @@ public interface ElasticsearchService {
   Future<List<ElasticsearchResponse>> search(String index, QueryModel queryModel, String options);
 
   Future<Integer> count(String index, QueryModel queryModel);
-  Future<AggregationResponse> countByAggregation(String index, QueryModel queryModel);
 
 }
