@@ -98,6 +98,7 @@ public class Constants {
   public static final String WILDCARD_KEY = "wildcard";
   public static final String AGGREGATION_ONLY = "AGGREGATION";
   public static final String AGGREGATION_LIST = "AGGREGATION_LIST";
+  public static final String COUNT_AGGREGATION_ONLY = "COUNT_AGGREGATION";
   public static final String RATING_AGGREGATION_ONLY = "R_AGGREGATION";
   public static final String TYPE_KEYWORD = "type.keyword";
   public static final String WORD_VECTOR_KEY = "_word_vector";

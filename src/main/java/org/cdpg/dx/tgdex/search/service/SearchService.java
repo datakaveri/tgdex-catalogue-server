@@ -9,5 +9,5 @@ import org.cdpg.dx.tgdex.search.util.ResponseModel;
 public interface SearchService {
 
     Future<ResponseModel> postSearch(JsonObject requestBody);
-    Future<AggregationResponse> postCount(JsonObject requestBody);
+    Future<ResponseModel> postCount(JsonObject requestBody);
 }
