@@ -13,7 +13,7 @@
         <micrometer.version>1.14.1</micrometer.version>
         <curator.version>5.7.1</curator.version>
         <junit-jupiter-engine.version>5.11.3</junit-jupiter-engine.version>
-        <apache-commons-lang3.version>3.17.0</apache-commons-lang3.version>
+        <apache-commons-lang3.version>3.18.0</apache-commons-lang3.version>
         <apache-log4j2.version>2.24.3</apache-log4j2.version>
         <lmax-disruptor.version>4.0.0</lmax-disruptor.version>
         <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
