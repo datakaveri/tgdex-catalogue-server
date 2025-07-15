@@ -5,11 +5,11 @@ import io.vertx.codegen.annotations.ProxyGen;
 import io.vertx.codegen.annotations.VertxGen;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 
 import java.util.List;
+import java.util.Map;
 
 @VertxGen
 @ProxyGen
@@ -27,4 +27,5 @@ public interface ElasticsearchService {
     Future<List<String>> createDocuments(String index, List<QueryModel> documentModels);
     Future<Void> deleteByQuery(String index,QueryModel queryModel);
     Future<ElasticsearchResponse> getSingleDocument(QueryModel queryModel, String docIndex);
+    Future<List<String>> updateDocuments(String index, Map<String, QueryModel> documentsWithIds);
 }

@@ -17,11 +17,7 @@ import io.vertx.core.json.JsonObject;
 import jakarta.json.stream.JsonGenerator;
 
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -421,4 +417,76 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     });
     return promise.future();
   }
+
+    @Override
+    public Future<List<String>> updateDocuments(String index, Map<String, QueryModel> documentsWithIds) {
+        Promise<List<String>> promise = Promise.promise();
+
+        if (index == null || index.isEmpty()) {
+            LOGGER.error("Index cannot be null or empty for bulk upsert operation");
+            promise.fail(new IllegalArgumentException("Index cannot be null or empty"));
+            return promise.future();
+        }
+
+        if (documentsWithIds == null || documentsWithIds.isEmpty()) {
+            LOGGER.error("Documents map cannot be null or empty for bulk upsert operation");
+            promise.fail(new IllegalArgumentException("Documents map cannot be null or empty"));
+            return promise.future();
+        }
+
+        LOGGER.info("Upserting {} documents into index “{}”", documentsWithIds.size(), index);
+
+        BulkRequest bulkRequest;
+        try {
+            bulkRequest = buildBulkRequest(index, documentsWithIds);
+        } catch (Exception e) {
+            LOGGER.error("Error while preparing bulk upsert for index: {}", index, e);
+            promise.fail(new RuntimeException("Failed to prepare bulk upsert", e));
+            return promise.future();
+        }
+
+        asyncClient.bulk(bulkRequest)
+                .whenComplete((response, throwable) -> {
+                    if (throwable != null) {
+                        LOGGER.error("Error during bulk upsert in index “{}”", index, throwable);
+                        promise.fail(new RuntimeException("Bulk upsert failed", throwable));
+                    } else {
+                        List<String> ids = response.items().stream()
+                                // keep only successful ops
+                                .filter(item -> item.error() == null)
+                                // extract the document _id
+                                .map(BulkResponseItem::id)
+                                .collect(Collectors.toList());
+
+                        LOGGER.info("Bulk upsert completed for index “{}”: processed={}, errors={}",
+                                index, ids.size(), response.errors());
+                        promise.complete(ids);
+                    }
+                });
+
+
+        return promise.future();
+    }
+
+    private static BulkRequest buildBulkRequest(String index, Map<String, QueryModel> docs) {
+        BulkRequest.Builder builder = new BulkRequest.Builder();
+
+        docs.forEach((id, model) -> {
+            JsonObject doc = model.extractDocumentFromQueryModel();
+            builder.operations(op -> op
+                    .update(u -> u
+                            .index(index)
+                            .id(id)
+                            .action(a -> a
+                                    .doc(doc)
+                                    .upsert(doc)
+                            )
+                    )
+            );
+        });
+
+        return builder.build();
+    }
+
+
 }
