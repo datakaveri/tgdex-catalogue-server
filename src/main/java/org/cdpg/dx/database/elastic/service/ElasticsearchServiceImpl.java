@@ -270,14 +270,13 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         }
 
         try {
-            LOGGER.info("Creating {} documents in index: {} from QueryModels", documentModels.size(), index);
-
-            // Build bulk request
+            LOGGER.debug("Creating {} documents in index: {} from QueryModels", documentModels.size(), index);
             BulkRequest.Builder requestBuilder = new BulkRequest.Builder();
 
             for (QueryModel documentModel : documentModels) {
-                JsonObject document = documentModel.getQueries().toJson();
-                requestBuilder.operations(op -> op.index(idx -> idx.index(index).document(document)));
+                JsonObject document = documentModel.extractDocumentFromQueryModel();
+                requestBuilder.operations(op -> op.index(idx -> idx.index(index)
+                        .document(document).id(document.getString("id"))));
             }
 
             BulkRequest request = requestBuilder.build();
@@ -287,8 +286,9 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
                     LOGGER.error("Error occurred during bulk document creation in index: {}", index, error);
                     promise.fail(new RuntimeException("Failed to create documents", error));
                 } else {
-                    List<String> documentIds = response.items().stream().map(BulkResponseItem::index).collect(Collectors.toList());
-                    LOGGER.info("Bulk document creation completed in index: {}. Created: {}, Errors: {}", index, documentIds.size(), response.errors());
+                    List<String> documentIds = response.items().stream().map(BulkResponseItem::id).collect(Collectors.toList());
+                    LOGGER.debug("Bulk document creation completed in index: {}. Created: {}, Errors: {}",
+                            index, documentIds.size(), response.errors());
                     promise.complete(documentIds);
                 }
             });
