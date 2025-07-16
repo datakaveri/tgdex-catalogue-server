@@ -3,6 +3,7 @@ package org.cdpg.dx.database.elastic.service;
 import static org.cdpg.dx.database.elastic.util.Constants.*;
 
 import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
+import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.*;
@@ -417,6 +418,50 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     }
 
     @Override
+    public Future<Void> deleteDocument(String index, String id) {
+        if (index == null || index.isEmpty()) {
+            LOGGER.error("Index cannot be null or empty for delete operation");
+            return Future.failedFuture(
+                    new IllegalArgumentException("Index cannot be null or empty"));
+        }
+        if (id == null || id.isEmpty()) {
+            LOGGER.error("Document ID cannot be null or empty for delete operation");
+            return Future.failedFuture(
+                    new IllegalArgumentException("Document ID cannot be null or empty"));
+        }
+
+        LOGGER.debug("Deleting document index={}, id={}", index, id);
+        DeleteRequest deleteRequest = DeleteRequest.of(d -> d
+                .index(index)
+                .id(id)
+        );
+
+        Promise<Void> promise = Promise.promise();
+        asyncClient.delete(deleteRequest)
+                .whenComplete((deleteResponse, deleteError) -> {
+                    LOGGER.error("Delete error "+deleteError);
+                    if (deleteError != null) {
+                        LOGGER.error("Error occurred during document delete: index={}, id={}, reason={}", index, id, deleteError.getMessage());
+                        promise.fail(new DxInternalServerErrorException("Failed to delete document", deleteError.getCause()));
+                    } else {
+                        LOGGER.error("Result "+deleteResponse);
+
+                        Result result = deleteResponse.result();
+                        if (result == Result.NotFound) {
+                            LOGGER.info("Document not found index={}, id={}", index, id);
+                            promise.fail("Document not found");
+                        } else {
+                            LOGGER.info("Document deleted successfully: index={}, id={}", index, id);
+                            promise.complete();
+                        }
+                    }
+                });
+
+        return promise.future();
+    }
+
+
+    @Override
     public Future<Void> updateDocument(String index, String id, QueryModel documentModel) {
         Promise<Void> promise = Promise.promise();
 
@@ -447,7 +492,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
             asyncClient.exists(existsRequest).whenComplete((existsResponse, existsError) -> {
                 LOGGER.debug("Exist response "+existsResponse.value());
                 if (existsError != null) {
-                    LOGGER.error("Error checking document existence: index={}, id={}", index, id, existsError);
+                    LOGGER.error("Error checking document existence: index={}, id={}, reason={}", index, id, existsError);
                     promise.fail(new RuntimeException("Failed to check document existence", existsError));
                     return;
                 }
