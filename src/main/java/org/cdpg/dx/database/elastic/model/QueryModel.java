@@ -708,5 +708,21 @@ public class QueryModel {
     // Return null if there's no script source provided in the QueryModel
     return null;
   }
-
+  public void createQueryModelFromDocument(JsonObject processedDocument) {
+    if(this.queries==null){
+      this.queries=new QueryModel();
+    }
+    Map<String, Object> documentFields = new HashMap<>();
+    processedDocument.forEach(entry -> {
+      documentFields.put(entry.getKey(), entry.getValue());
+    });
+    this.queries.setQueryParameters(documentFields);
+  }
+  public JsonObject extractDocumentFromQueryModel() {
+    JsonObject document = new JsonObject();
+    if (queries.getQueryParameters() != null) {
+      queries.getQueryParameters().forEach(document::put);
+    }
+    return document;
+  }
 }
