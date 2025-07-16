@@ -497,6 +497,7 @@ paths:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               properties:
                 searchCriteria:
                   type: array
@@ -507,6 +508,7 @@ paths:
                       - searchType
                       - field
                       - values
+                    additionalProperties: false
                     properties:
                       searchType:
                         type: string
@@ -624,7 +626,6 @@ paths:
           schema:
             type: string
             pattern: '^Bearer\s+[a-zA-Z0-9\-\._~\+\/]+=*$'
-            maxLength: 1024
 
       requestBody:
         required: true
@@ -721,7 +722,6 @@ paths:
           schema:
             type: string
             pattern: '^Bearer\s+[a-zA-Z0-9\-\._~\+\/]+=*$'
-            maxLength: 1024
 
       requestBody:
         required: true
@@ -799,7 +799,6 @@ paths:
           schema:
             type: string
             pattern: '^Bearer\s+[a-zA-Z0-9\-\._~\+\/]+=*$'
-            maxLength: 1024
         - name: id
           in: query
           description: ID of the DX Entity
@@ -1140,14 +1139,6 @@ components:
           items:
             type: string
           description: List of fields to return
-        limit:
-          type: integer
-          minimum: 1
-          default: 10
-        offset:
-          type: integer
-          minimum: 0
-          default: 0
       required:
         - searchCriteria
     TextSearchRequest:
@@ -1188,6 +1179,7 @@ components:
         - searchCriteria
     SearchCriteria:
       type: object
+      additionalProperties: false
       required:
         - field
         - searchType
@@ -3338,10 +3330,10 @@ components:
           maxLength: 512
         shortDescription:
           type: string
-          maxLength: 512
+          maxLength: 3200
         description:
           type: string
-          maxLength: 4000
+          maxLength: 12000
         tags:
           type: array
           items:
@@ -3437,10 +3429,10 @@ components:
           maxLength: 512
         shortDescription:
           type: string
-          maxLength: 512
+          maxLength: 3200
         description:
           type: string
-          maxLength: 4000
+          maxLength: 12000
         tags:
           type: array
           items:
@@ -3544,10 +3536,10 @@ components:
           maxLength: 512
         shortDescription:
           type: string
-          maxLength: 512
+          maxLength: 3200
         description:
           type: string
-          maxLength: 4000
+          maxLength: 12000
         tags:
           type: array
           items:
