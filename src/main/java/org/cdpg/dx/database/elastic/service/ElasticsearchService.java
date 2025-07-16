@@ -27,5 +27,5 @@ public interface ElasticsearchService {
     Future<List<String>> createDocuments(String index, List<QueryModel> documentModels);
     Future<Void> deleteByQuery(String index,QueryModel queryModel);
     Future<ElasticsearchResponse> getSingleDocument(QueryModel queryModel, String docIndex);
-    Future<List<String>> updateDocuments(String index, Map<String, QueryModel> documentsWithIds);
+    Future<Void> updateDocument(String index, String id, QueryModel documentModel);
 }

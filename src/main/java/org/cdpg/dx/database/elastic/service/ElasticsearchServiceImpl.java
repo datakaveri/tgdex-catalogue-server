@@ -248,56 +248,6 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
 
         return promise.future();
     }
-
-    @Override
-    public Future<List<String>> createDocuments(String index, List<QueryModel> documentModels) {
-        Promise<List<String>> promise = Promise.promise();
-
-        if (index == null || index.isEmpty()) {
-            LOGGER.error("Index cannot be null or empty for batch create operation");
-            promise.fail(new IllegalArgumentException("Index cannot be null or empty"));
-            return promise.future();
-        }
-
-        if (documentModels == null || documentModels.isEmpty()) {
-            LOGGER.error("DocumentModels list cannot be null or empty for batch create operation");
-            promise.fail(new IllegalArgumentException("DocumentModels list cannot be null or empty"));
-            return promise.future();
-        }
-
-        try {
-            LOGGER.debug("Creating {} documents in index: {} from QueryModels", documentModels.size(), index);
-            BulkRequest.Builder requestBuilder = new BulkRequest.Builder();
-
-            for (QueryModel documentModel : documentModels) {
-                JsonObject document = documentModel.extractDocumentFromQueryModel();
-                requestBuilder.operations(op -> op.index(idx -> idx.index(index)
-                        .document(document).id(document.getString("id"))));
-            }
-
-            BulkRequest request = requestBuilder.build();
-
-            asyncClient.bulk(request).whenComplete((response, error) -> {
-                if (error != null) {
-                    LOGGER.error("Error occurred during bulk document creation in index: {}", index, error);
-                    promise.fail(new RuntimeException("Failed to create documents", error));
-                } else {
-                    List<String> documentIds = response.items().stream().map(BulkResponseItem::id).collect(Collectors.toList());
-                    LOGGER.debug("Bulk document creation completed in index: {}. Created: {}, Errors: {}",
-                            index, documentIds.size(), response.errors());
-                    promise.complete(documentIds);
-                }
-            });
-
-        } catch (Exception e) {
-            LOGGER.error("Error while preparing bulk document creation for index: {}", index, e);
-            promise.fail(new RuntimeException("Failed to prepare bulk document creation", e));
-        }
-
-        return promise.future();
-    }
-
-
     @Override
     public Future<Void> deleteByQuery(String index, QueryModel queryModel) {
         Promise<Void> promise = Promise.promise();
@@ -419,74 +369,129 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
   }
 
     @Override
-    public Future<List<String>> updateDocuments(String index, Map<String, QueryModel> documentsWithIds) {
+    public Future<List<String>> createDocuments(String index, List<QueryModel> documentModels) {
         Promise<List<String>> promise = Promise.promise();
 
         if (index == null || index.isEmpty()) {
-            LOGGER.error("Index cannot be null or empty for bulk upsert operation");
+            LOGGER.error("Index cannot be null or empty for batch create operation");
             promise.fail(new IllegalArgumentException("Index cannot be null or empty"));
             return promise.future();
         }
 
-        if (documentsWithIds == null || documentsWithIds.isEmpty()) {
-            LOGGER.error("Documents map cannot be null or empty for bulk upsert operation");
-            promise.fail(new IllegalArgumentException("Documents map cannot be null or empty"));
+        if (documentModels == null || documentModels.isEmpty()) {
+            LOGGER.error("DocumentModels list cannot be null or empty for batch create operation");
+            promise.fail(new IllegalArgumentException("DocumentModels list cannot be null or empty"));
             return promise.future();
         }
 
-        LOGGER.info("Upserting {} documents into index “{}”", documentsWithIds.size(), index);
-
-        BulkRequest bulkRequest;
         try {
-            bulkRequest = buildBulkRequest(index, documentsWithIds);
+            LOGGER.debug("Creating {} documents in index: {} from QueryModels", documentModels.size(), index);
+            BulkRequest.Builder requestBuilder = new BulkRequest.Builder();
+
+            for (QueryModel documentModel : documentModels) {
+                JsonObject document = documentModel.extractDocumentFromQueryModel();
+                requestBuilder.operations(op -> op.index(idx -> idx.index(index)
+                        .document(document).id(document.getString("id"))));
+            }
+
+            BulkRequest request = requestBuilder.build();
+
+            asyncClient.bulk(request).whenComplete((response, error) -> {
+                if (error != null) {
+                    LOGGER.error("Error occurred during bulk document creation in index: {}", index, error);
+                    promise.fail(new RuntimeException("Failed to create documents", error));
+                } else {
+                    List<String> documentIds = response.items().stream().map(BulkResponseItem::id).collect(Collectors.toList());
+                    LOGGER.debug("Bulk document creation completed in index: {}. Created: {}, Errors: {}",
+                            index, documentIds.size(), response.errors());
+                    promise.complete(documentIds);
+                }
+            });
+
         } catch (Exception e) {
-            LOGGER.error("Error while preparing bulk upsert for index: {}", index, e);
-            promise.fail(new RuntimeException("Failed to prepare bulk upsert", e));
-            return promise.future();
+            LOGGER.error("Error while preparing bulk document creation for index: {}", index, e);
+            promise.fail(new RuntimeException("Failed to prepare bulk document creation", e));
         }
-
-        asyncClient.bulk(bulkRequest)
-                .whenComplete((response, throwable) -> {
-                    if (throwable != null) {
-                        LOGGER.error("Error during bulk upsert in index “{}”", index, throwable);
-                        promise.fail(new RuntimeException("Bulk upsert failed", throwable));
-                    } else {
-                        List<String> ids = response.items().stream()
-                                // keep only successful ops
-                                .filter(item -> item.error() == null)
-                                // extract the document _id
-                                .map(BulkResponseItem::id)
-                                .collect(Collectors.toList());
-
-                        LOGGER.info("Bulk upsert completed for index “{}”: processed={}, errors={}",
-                                index, ids.size(), response.errors());
-                        promise.complete(ids);
-                    }
-                });
-
 
         return promise.future();
     }
 
-    private static BulkRequest buildBulkRequest(String index, Map<String, QueryModel> docs) {
-        BulkRequest.Builder builder = new BulkRequest.Builder();
+    @Override
+    public Future<Void> updateDocument(String index, String id, QueryModel documentModel) {
+        Promise<Void> promise = Promise.promise();
 
-        docs.forEach((id, model) -> {
-            JsonObject doc = model.extractDocumentFromQueryModel();
-            builder.operations(op -> op
-                    .update(u -> u
+        if (index == null || index.isEmpty()) {
+            LOGGER.error("Index cannot be null or empty for update operation");
+            promise.fail(new IllegalArgumentException("Index cannot be null or empty"));
+            return promise.future();
+        }
+
+        if (id == null || id.isEmpty()) {
+            LOGGER.error("Document ID cannot be null or empty for update operation");
+            promise.fail(new IllegalArgumentException("Document ID cannot be null or empty"));
+            return promise.future();
+        }
+
+        if (documentModel == null) {
+            LOGGER.error("DocumentModel cannot be null for update operation");
+            promise.fail(new IllegalArgumentException("DocumentModel cannot be null"));
+            return promise.future();
+        }
+
+        try {
+            LOGGER.debug("Checking if document exists before update: index={}, id={}", index, id);
+
+            // First, check if the document exists
+            ExistsRequest existsRequest = ExistsRequest.of(e -> e.index(index).id(id));
+
+            asyncClient.exists(existsRequest).whenComplete((existsResponse, existsError) -> {
+                LOGGER.debug("Exist response "+existsResponse.value());
+                if (existsError != null) {
+                    LOGGER.error("Error checking document existence: index={}, id={}", index, id, existsError);
+                    promise.fail(new RuntimeException("Failed to check document existence", existsError));
+                    return;
+                }
+
+                if (!existsResponse.value()) {
+                    LOGGER.warn("Document not found for update: index={}, id={}", index, id);
+                    promise.fail(new IllegalArgumentException("Document not found with id: " + id));
+                    return;
+                }
+
+                // Document exists, proceed with update
+                LOGGER.debug("Document exists, proceeding with update: index={}, id={}", index, id);
+
+                try {
+                    JsonObject document = documentModel.extractDocumentFromQueryModel();
+
+                    UpdateRequest<String,JsonObject> updateRequest = UpdateRequest.of(u -> u
                             .index(index)
                             .id(id)
-                            .action(a -> a
-                                    .doc(doc)
-                                    .upsert(doc)
-                            )
-                    )
-            );
-        });
+                            .doc(document));
 
-        return builder.build();
+                    asyncClient.update(updateRequest, JsonObject.class).whenComplete((updateResponse, updateError) -> {
+                        if (updateError != null) {
+                            LOGGER.error("Error occurred during document update: index={}, id={}", index, id, updateError);
+                            promise.fail(new DxInternalServerErrorException("Failed to update document "+ updateError));
+                        } else {
+                            LOGGER.debug("Document updated successfully: index={}, id={}, result={}",
+                                    index, id, updateResponse.toString());
+                            promise.complete();
+                        }
+                    });
+
+                } catch (Exception e) {
+                    LOGGER.error("Error while preparing document update: index={}, id={}", index, id, e.getCause());
+                    promise.fail(new RuntimeException("Failed to prepare document update", e));
+                }
+            });
+
+        } catch (Exception e) {
+            LOGGER.error("Error while checking document existence: index={}, id={}", index, id, e);
+            promise.fail(new RuntimeException("Failed to check document existence", e));
+        }
+
+        return promise.future();
     }
-
 
 }
