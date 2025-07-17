@@ -3355,29 +3355,26 @@ components:
           type: string
         industry:
           type: string
-        uploadedBy:
-          type: string
         license:
           type: string
         fileSize:
           type: string
       required:
-        - type
         - name
+        - type
         - label
         - shortDescription
         - description
         - tags
-        - provider
         - accessPolicy
         - organizationType
-        - department
+        - organizationId
         - modelType
         - fileFormat
         - industry
-        - uploadedBy
         - license
         - fileSize
+      additionalProperties: true
       example:
         '@context': 'https://agrijson.org'
         id: '337545aa-1fa5-4ca0-bf3d-072144dec5b6'
@@ -3405,7 +3402,6 @@ components:
         modelType: 'ImageClassifier'
         fileFormat: 'ipynb'
         industry: 'Agriculture'
-        uploadedBy: 'john.doe@datakaveri.org'
         license: 'MIT'
         fileSize: '15MB'
     exampleEntityDataBank:
@@ -3454,8 +3450,6 @@ components:
           type: string
         industry:
           type: string
-        uploadedBy:
-          type: string
         geoCoverage:
           type: string
         yearRange:
@@ -3477,15 +3471,13 @@ components:
         - accessPolicy
         - organizationType
         - fileFormat
-        - department
-        - resourceType
         - industry
-        - uploadedBy
         - geoCoverage
         - yearRange
         - verifiedBy
         - uploadFrequency
         - license
+      additionalProperties: true
       example:
         name: 'subdistrict-weather-info'
         type:
@@ -3506,7 +3498,6 @@ components:
         department: 'Department of IT, Electronics and Communication'
         resourceType: 'DATASET'
         industry: 'Climate Research'
-        uploadedBy: 'john.doe@datakaveri.org'
         geoCoverage: 'Karnataka'
         yearRange: '2015-2023'
         verifiedBy: 'Ministry of Earth Sciences'
@@ -3514,91 +3505,92 @@ components:
         license: 'CC-BY 4.0'
     exampleEntityPotentialApps:
       type: object
-      title: ADeX Apps entity
-      description: An example ADeX Apps entity for onboarding (without system-generated fields like itemCreatedAt or itemStatus)
+      title: AI Use Case Template Schema
+      description: Schema for defining structured AI use case templates with sections, subsections, and bullet points.
+      required:
+        - sections
+        - name
+        - type
+        - tags
+        - label
+        - industry
+        - shortDescription
+        - description
+        - organizationType
+        - accessPolicy
       properties:
-        '@context':
-          type: string
-          format: uri
-        id:
-          type: string
-          pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
+        sections:
+          type: array
+          description: Main sections of the use case document
+          items:
+            type: object
+            required:
+              - title
+            properties:
+              title:
+                type: string
+              content:
+                type: string
+              points:
+                type: array
+                items:
+                  type: string
+              subsections:
+                type: array
+                items:
+                  type: object
+                  anyOf:
+                    - required: [ "subtitle", "points" ]
+                    - required: [ "subtitle", "content" ]
+                  properties:
+                    subtitle:
+                      type: string
+                    content:
+                      type: string
+                    points:
+                      type: array
+                      items:
+                        type: string
+            anyOf:
+              - required: [ "content" ]
+              - required: [ "points" ]
+              - required: [ "subsections" ]
         name:
           type: string
-          pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
           maxLength: 512
         type:
+          type: array
+          items:
+            type: string
+        tags:
           type: array
           items:
             type: string
         label:
           type: string
           maxLength: 512
+        industry:
+          type: string
         shortDescription:
           type: string
           maxLength: 3200
         description:
           type: string
           maxLength: 12000
-        tags:
-          type: array
-          items:
-            type: string
         organizationType:
           type: string
-          enum: [ 'Private', 'Public', 'Academic Institution', "NGO/Non-profit", 'NA', '' ]
-        department:
-          type: string
-        uploadedBy:
-          type: string
-        fileFormat:
-          type: string
+          enum: [ "Private", "Public", "Academic Institution", "NGO/Non-profit", "Other", "NA", "" ]
         accessPolicy:
           type: string
-        canBeUsedFor:
-          type: object
-          additionalProperties:
-            type: string
-            maxLength: 300
-        dataInputsAndAiTechniques:
-          type: object
-          properties:
-            Input Data Banks:
-              type: array
-              items:
-                type: string
-            Expected Output:
-              type: array
-              items:
-                type: string
-            AI Models:
-              type: array
-              items:
-                type: string
-            Potential Benefits:
-              type: array
-              items:
-                type: string
-      required:
-        - type
-        - name
-        - label
-        - shortDescription
-        - description
-        - tags
-        - organizationType
-        - department
-        - uploadedBy
-        - fileFormat
-        - accessPolicy
-        - canBeUsedFor
-        - dataInputsAndAiTechniques
+          pattern: "^(RESTRICTED|OPEN|PRIVATE)$"
+      additionalProperties: true
       example:
         '@context': 'https://agrijson.org'
         id: 'f2c6a437-8109-4a2c-8923-efc2a9e6df1d'
         type:
           - 'adex:Apps'
         name: 'crop-disease-detector-app'
+        industry: 'Agriculture'
         label: 'Crop Disease Detection Application'
         shortDescription: 'An AI-powered application to detect crop diseases early using leaf imagery.'
         description: 'A potential application designed to detect crop diseases from infected leaf images using AI/ML models. It supports early intervention and yield optimization by analyzing input data and recommending treatments.'
@@ -3614,28 +3606,12 @@ components:
           - training
           - algorithm
         organizationType: 'Private'
-        department: 'Agriculture and Co-operation'
-        uploadedBy: 'cdpg@datakaveri.org'
-        fileFormat: 'xlsx'
-        accessPolicy: 'Public'
-        canBeUsedFor:
-          cropMonitoring: 'Detect and classify diseases in crops using image input'
-          yieldOptimization: 'Improve crop yield by early detection of diseases'
-        dataInputsAndAiTechniques:
-          Input Data Banks:
-            - 'Annotated Leaf Image Dataset'
-            - 'Crop Type Classification Data'
-          Expected Output:
-            - 'Disease Type'
-            - 'Confidence Score'
-            - 'Recommended Treatment'
-          AI Models:
-            - 'Convolutional Neural Networks'
-            - 'Transfer Learning'
-          Potential Benefits:
-            - 'Early detection of crop diseases'
-            - 'Reduction in crop loss'
-            - 'Better planning and resource allocation'
+        "sections": [
+          {
+            "title": "Problem Statement",
+            "content": "Farmers often struggle with late-stage identification of crop diseases, leading to reduced yields and delayed treatments."
+          } ]
+
     unAuthorizedAccess:
       type: object
       title: Common to unauthorized access response
