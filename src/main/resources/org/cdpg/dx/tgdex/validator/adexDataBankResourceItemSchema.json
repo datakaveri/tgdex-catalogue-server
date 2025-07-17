@@ -19,13 +19,11 @@
       "organizationType": "Private",
       "fileFormat": "xlsx",
       "industry": "Climate Research",
-      "uploadedBy": "john.doe@datakaveri.org",
       "geoCoverage": "Pan India",
       "yearRange": "2015-2023",
       "verifiedBy": "Ministry of Earth Sciences",
       "uploadFrequency": "Weekly",
-      "license": "CC-BY 4.0",
-      "department": "Department of IT, Electronics and Communication"
+      "license": "CC-BY 4.0"
     }
   ],
   "required": [
@@ -39,9 +37,7 @@
     "organizationType",
     "organizationId",
     "fileFormat",
-    "department",
     "industry",
-    "uploadedBy",
     "geoCoverage",
     "yearRange",
     "verifiedBy",
@@ -57,7 +53,7 @@
       "default": "",
       "examples": ["SomePlace"],
       "maxLength": 512,
-      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;./)(]*$"
     },
     "id": {
       "$id": "#/properties/id",
@@ -125,7 +121,7 @@
     "description": {
       "type": "string",
       "title": "The description schema",
-      "maxLength": 4000
+      "maxLength": 12000
     },
     "organizationId": {
       "$id": "#/properties/organizationId",
@@ -147,7 +143,7 @@
     "shortDescription": {
       "type": "string",
       "title": "",
-      "maxLength": 512
+      "maxLength": 3200
     },
     "industry" : {
       "type": "string",
@@ -196,6 +192,16 @@
     "@context": {
       "type": "string",
       "format": "uri"
+    },
+    "dataUploadStatus": {
+      "type": "boolean",
+      "title": "Indicates whether data has been successfully uploaded",
+      "description": "This field is set by the server once data is uploaded and report generation is successful.",
+      "default": false
+    },
+    "mediaURL": {
+      "type": "string",
+      "description": "URL to the external resource"
     }
   },
   "additionalProperties": true
