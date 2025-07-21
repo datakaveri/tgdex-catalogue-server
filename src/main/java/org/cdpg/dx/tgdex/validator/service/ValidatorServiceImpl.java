@@ -211,7 +211,7 @@ public class ValidatorServiceImpl implements ValidatorService {
             .put(ITEM_CREATED_AT, getUtcDatetimeAsString());
     String checkQuery = ITEM_WITH_NAME_EXISTS_QUERY
             .replace("$1", ITEM_TYPE_APPS).replace("$2", request.getString(NAME));
-    QueryModel queryModel = queryDecoder.getQueryModel(request);
+    //QueryModel queryModel = queryDecoder.getQueryModel(request);
     LOGGER.debug(checkQuery);
 //    client.searchGetId(
 //            checkQuery,
