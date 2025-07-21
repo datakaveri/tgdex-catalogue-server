@@ -4,10 +4,12 @@ import static org.cdpg.dx.database.elastic.util.Constants.*;
 
 import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
 import co.elastic.clients.elasticsearch._types.Result;
+import co.elastic.clients.elasticsearch._types.Script;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
+import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.JsonpMapper;
 import co.elastic.clients.json.JsonpMapperFeatures;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -249,294 +251,236 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
 
         return promise.future();
     }
-    @Override
-    public Future<Void> deleteByQuery(String index, QueryModel queryModel) {
-        Promise<Void> promise = Promise.promise();
+        // Public API methods
 
-        if (queryModel == null) {
-            LOGGER.error("QueryModel cannot be null for delete operation");
-            promise.fail(new DxInternalServerErrorException("QueryModel cannot be null"));
-            return promise.future();
+        @Override
+        public Future<Void> deleteByQuery(String index, QueryModel queryModel) {
+            return validateIndex(index)
+                    .compose(v -> validateQueryModel(queryModel))
+                    .compose(v -> executeDeleteByQuery(index, queryModel));
         }
 
-        if (index == null || index.isEmpty()) {
-            LOGGER.error("Indices array cannot be null or empty for delete operation");
-            promise.fail(new DxBadRequestException("Indices array cannot be null or empty"));
-            return promise.future();
+        @Override
+        public Future<ElasticsearchResponse> getSingleDocument(String index, QueryModel queryModel) {
+            return validateIndex(index)
+                    .compose(v -> performSingleSearch(index, queryModel));
         }
 
-        try {
-            Query elasticsearchQuery = queryModel.toElasticsearchQuery();
+        @Override
+        public Future<List<String>> createDocuments(String index, List<QueryModel> documentModels) {
+            return validateIndex(index)
+                    .compose(v -> validateDocumentModels(documentModels))
+                    .compose(v -> executeBulkIndex(index, documentModels));
+        }
 
-            LOGGER.info("Executing delete by query for index: {} with query: {}", String.join(",", index), queryModel.toJson());
+        @Override
+        public Future<Void> deleteDocument(String index, String id) {
+            return validateIndex(index)
+                    .compose(v -> validateId(id))
+                    .compose(v -> executeDeleteDocument(index, id));
+        }
 
-            // Build the delete by query request for multiple index
-            DeleteByQueryRequest.Builder requestBuilder = new DeleteByQueryRequest.Builder().index(index).query(elasticsearchQuery);
+        @Override
+        public Future<Void> updateDocument(String index, String id, QueryModel queryModel) {
+        LOGGER.debug("Update document with index: {}, id: {}, queryModel: {}", index, id, queryModel);
+            return validateIndex(index)
+                    .compose(v -> validateId(id))
+                    .compose(v -> validateQueryModel(queryModel))
+                    .compose(v -> executeExistenceCheck(index, id))
+                    .compose(v -> executeUpdate(index, id, queryModel));
+        }
 
-            DeleteByQueryRequest request = requestBuilder.build();
+        @Override
+        public Future<Void> updateDocumentsByQuery(QueryModel queryModel, String index) {
+            return validateIndex(index)
+                    .compose(v -> validateQueryModel(queryModel))
+                    .compose(v -> executeUpdateByQuery(index, queryModel));
+        }
 
-            // Execute the delete by query operation asynchronously
-            asyncClient.deleteByQuery(request).whenComplete((response, error) -> {
-                if (error != null) {
-                    LOGGER.error("Error occurred during delete by query operation for index: {} with query: {} ", index, queryModel.toJson(), error);
-                    promise.fail(new RuntimeException("Failed to execute delete by query", error));
+        // Validation helpers
+
+        private Future<Void> validateIndex(String index) {
+            if (index == null || index.trim().isEmpty()) {
+                String msg = "Index cannot be null or empty";
+                LOGGER.error(msg);
+                return Future.failedFuture(new IllegalArgumentException(msg));
+            }
+            return Future.succeededFuture();
+        }
+
+        private Future<Void> validateId(String id) {
+            if (id == null || id.trim().isEmpty()) {
+                String msg = "Document ID cannot be null or empty";
+                LOGGER.error(msg);
+                return Future.failedFuture(new IllegalArgumentException(msg));
+            }
+            return Future.succeededFuture();
+        }
+
+        private Future<Void> validateQueryModel(QueryModel model) {
+            if (model == null) {
+                String msg = "QueryModel cannot be null";
+                LOGGER.error(msg);
+                return Future.failedFuture(new IllegalArgumentException(msg));
+            }
+            return Future.succeededFuture();
+        }
+
+        private Future<Void> validateDocumentModels(List<QueryModel> models) {
+            if (models == null || models.isEmpty()) {
+                String msg = "DocumentModels list cannot be null or empty";
+                LOGGER.error(msg);
+                return Future.failedFuture(new IllegalArgumentException(msg));
+            }
+            return Future.succeededFuture();
+        }
+
+        // Execution logic
+
+        private Future<Void> executeDeleteByQuery(String indices, QueryModel queryModel) {
+            Promise<Void> promise = Promise.promise();
+            DeleteByQueryRequest request = new DeleteByQueryRequest.Builder()
+                    .index(indices)
+                    .query(queryModel.toElasticsearchQuery())
+                    .build();
+            LOGGER.debug("DeleteByQuery Request: {}", request);
+            asyncClient.deleteByQuery(request).whenComplete((resp, err) -> {
+                if (err != null) {
+                    LOGGER.error("deleteByQuery failed {}", err.getMessage());
+                    promise.fail(new RuntimeException("Failed to execute deleteByQuery", err));
                 } else {
-                    LOGGER.info("Delete by query completed successfully for index: {}. Deleted: {},", index, response.deleted());
+                    LOGGER.info("Deleted {} documents", resp.deleted());
                     promise.complete();
                 }
             });
-
-        } catch (Exception e) {
-            LOGGER.error("Error while preparing delete by query for index: {} with QueryModel: {}",index, queryModel.toJson(), e);
-            promise.fail(new RuntimeException("Failed to prepare delete by query", e));
-        }
-
-        return promise.future();
-    }
-
-    @Override
-    public Future<ElasticsearchResponse> getSingleDocument(QueryModel queryModel, String docIndex) {
-
-    LOGGER.debug("Executing single document search on index: {} with QueryModel: {}", docIndex, queryModel.toJson());
-    Promise<ElasticsearchResponse> promise = Promise.promise();
-
-    // Build the search request optimized for single document retrieval
-    SearchRequest.Builder searchRequestBuilder = new SearchRequest.Builder()
-            .index(docIndex)
-            .size(10)  // Only get one document
-            .from(0); // Start from beginning
-
-    // Get the main query from QueryModel
-    if (queryModel.getQueries() != null) {
-      Query elasticsearchQuery = queryModel.getQueries().toElasticsearchQuery();
-      searchRequestBuilder.query(elasticsearchQuery);
-      LOGGER.debug("Applied query: {}", elasticsearchQuery);
-    }
-
-
-    SearchRequest request = searchRequestBuilder.build();
-    LOGGER.debug("Applied query: {}", request);
-
-    asyncClient.search(request, ObjectNode.class).whenComplete((response, error) -> {
-      if (response.hits().hits().isEmpty()) {
-        LOGGER.debug("No document found matching the criteria");
-        promise.complete(null); // or handle as appropriate for your use case
-        return;
-      }
-
-      try {
-        LOGGER.debug("Response total hits: {}", response.hits().total().value());
-        LOGGER.debug("Response "+response);
-        // Since size is 1, we expect at most one document
-        if (response.hits().hits().isEmpty()) {
-          LOGGER.debug("No document found matching the criteria");
-          promise.complete(null); // or handle as appropriate for your use case
-          return;
-        }
-
-        // Extract the single document source
-        ObjectNode documentSource = response.hits().hits().get(0).source();
-
-        if (documentSource != null) {
-          LOGGER.debug("Document source: {}", documentSource);
-
-          // Convert ObjectNode to JsonObject if needed
-          JsonObject result = new JsonObject(documentSource.toString());
-          LOGGER.debug("Result source {}",result);
-          // Complete the promise with the document
-          promise.complete(new ElasticsearchResponse(result));
-        } else {
-          LOGGER.warn("Document found but source is null");
-          promise.complete(null);
-        }
-
-        // Handle aggregations if present (though unlikely for single document queries)
-        if (response.aggregations() != null && !response.aggregations().isEmpty()) {
-          JsonObject aggregationsJson = new JsonObject();
-          response.aggregations().forEach((key, aggregation) -> {
-            // Process aggregations if needed
-            LOGGER.debug("Aggregation {}: {}", key, aggregation);
-            // Add aggregation processing logic here if required
-          });
-        }
-
-      } catch (Exception e) {
-        LOGGER.error("Error processing search response", e);
-        promise.fail(new DxInternalServerErrorException("Error processing search response", e));
-      }
-
-    });
-    return promise.future();
-  }
-
-    @Override
-    public Future<List<String>> createDocuments(String index, List<QueryModel> documentModels) {
-        Promise<List<String>> promise = Promise.promise();
-
-        if (index == null || index.isEmpty()) {
-            LOGGER.error("Index cannot be null or empty for batch create operation");
-            promise.fail(new IllegalArgumentException("Index cannot be null or empty"));
             return promise.future();
         }
 
-        if (documentModels == null || documentModels.isEmpty()) {
-            LOGGER.error("DocumentModels list cannot be null or empty for batch create operation");
-            promise.fail(new IllegalArgumentException("DocumentModels list cannot be null or empty"));
-            return promise.future();
-        }
+        private Future<ElasticsearchResponse> performSingleSearch(String index, QueryModel model) {
+            Promise<ElasticsearchResponse> promise = Promise.promise();
+            LOGGER.debug("Query 12 "+model.toElasticsearchQuery()
+            );
+            SearchRequest.Builder builder = new SearchRequest.Builder()
+                    .index(index)
+                    .query(model.toElasticsearchQuery())
+                    .size(1)
+                    .from(0);
 
-        try {
-            LOGGER.debug("Creating {} documents in index: {} from QueryModels", documentModels.size(), index);
-            BulkRequest.Builder requestBuilder = new BulkRequest.Builder();
-
-            for (QueryModel documentModel : documentModels) {
-                JsonObject document = documentModel.extractDocumentFromQueryModel();
-                requestBuilder.operations(op -> op.index(idx -> idx.index(index)
-                        .document(document).id(document.getString("id"))));
-            }
-
-            BulkRequest request = requestBuilder.build();
-
-            asyncClient.bulk(request).whenComplete((response, error) -> {
-                if (error != null) {
-                    LOGGER.error("Error occurred during bulk document creation in index: {}", index, error);
-                    promise.fail(new RuntimeException("Failed to create documents", error));
-                } else {
-                    List<String> documentIds = response.items().stream().map(BulkResponseItem::id).collect(Collectors.toList());
-                    LOGGER.debug("Bulk document creation completed in index: {}. Created: {}, Errors: {}",
-                            index, documentIds.size(), response.errors());
-                    promise.complete(documentIds);
-                }
-            });
-
-        } catch (Exception e) {
-            LOGGER.error("Error while preparing bulk document creation for index: {}", index, e);
-            promise.fail(new RuntimeException("Failed to prepare bulk document creation", e));
-        }
-
-        return promise.future();
-    }
-
-    @Override
-    public Future<Void> deleteDocument(String index, String id) {
-        if (index == null || index.isEmpty()) {
-            LOGGER.error("Index cannot be null or empty for delete operation");
-            return Future.failedFuture(
-                    new IllegalArgumentException("Index cannot be null or empty"));
-        }
-        if (id == null || id.isEmpty()) {
-            LOGGER.error("Document ID cannot be null or empty for delete operation");
-            return Future.failedFuture(
-                    new IllegalArgumentException("Document ID cannot be null or empty"));
-        }
-
-        LOGGER.debug("Deleting document index={}, id={}", index, id);
-        DeleteRequest deleteRequest = DeleteRequest.of(d -> d
-                .index(index)
-                .id(id)
-        );
-
-        Promise<Void> promise = Promise.promise();
-        asyncClient.delete(deleteRequest)
-                .whenComplete((deleteResponse, deleteError) -> {
-                    LOGGER.error("Delete error "+deleteError);
-                    if (deleteError != null) {
-                        LOGGER.error("Error occurred during document delete: index={}, id={}, reason={}", index, id, deleteError.getMessage());
-                        promise.fail(new DxInternalServerErrorException("Failed to delete document", deleteError.getCause()));
-                    } else {
-                        LOGGER.error("Result "+deleteResponse);
-
-                        Result result = deleteResponse.result();
-                        if (result == Result.NotFound) {
-                            LOGGER.info("Document not found index={}, id={}", index, id);
-                            promise.fail("Document not found");
-                        } else {
-                            LOGGER.info("Document deleted successfully: index={}, id={}", index, id);
+            asyncClient.search(builder.build(), ObjectNode.class)
+                    .whenComplete((resp, err) -> {
+                        LOGGER.debug("Response "+resp);
+                        if (err != null) {
+                            promise.fail(new RuntimeException("Search error", err));
+                        } else if (resp.hits().total().value()==0) {
+                            LOGGER.debug("No documents found ");
                             promise.complete();
-                        }
-                    }
-                });
-
-        return promise.future();
-    }
-
-
-    @Override
-    public Future<Void> updateDocument(String index, String id, QueryModel documentModel) {
-        Promise<Void> promise = Promise.promise();
-
-        if (index == null || index.isEmpty()) {
-            LOGGER.error("Index cannot be null or empty for update operation");
-            promise.fail(new IllegalArgumentException("Index cannot be null or empty"));
-            return promise.future();
-        }
-
-        if (id == null || id.isEmpty()) {
-            LOGGER.error("Document ID cannot be null or empty for update operation");
-            promise.fail(new IllegalArgumentException("Document ID cannot be null or empty"));
-            return promise.future();
-        }
-
-        if (documentModel == null) {
-            LOGGER.error("DocumentModel cannot be null for update operation");
-            promise.fail(new IllegalArgumentException("DocumentModel cannot be null"));
-            return promise.future();
-        }
-
-        try {
-            LOGGER.debug("Checking if document exists before update: index={}, id={}", index, id);
-
-            // First, check if the document exists
-            ExistsRequest existsRequest = ExistsRequest.of(e -> e.index(index).id(id));
-
-            asyncClient.exists(existsRequest).whenComplete((existsResponse, existsError) -> {
-                LOGGER.debug("Exist response "+existsResponse.value());
-                if (existsError != null) {
-                    LOGGER.error("Error checking document existence: index={}, id={}, reason={}", index, id, existsError);
-                    promise.fail(new RuntimeException("Failed to check document existence", existsError));
-                    return;
-                }
-
-                if (!existsResponse.value()) {
-                    LOGGER.warn("Document not found for update: index={}, id={}", index, id);
-                    promise.fail(new IllegalArgumentException("Document not found with id: " + id));
-                    return;
-                }
-
-                // Document exists, proceed with update
-                LOGGER.debug("Document exists, proceeding with update: index={}, id={}", index, id);
-
-                try {
-                    JsonObject document = documentModel.extractDocumentFromQueryModel();
-
-                    UpdateRequest<String,JsonObject> updateRequest = UpdateRequest.of(u -> u
-                            .index(index)
-                            .id(id)
-                            .doc(document));
-
-                    asyncClient.update(updateRequest, JsonObject.class).whenComplete((updateResponse, updateError) -> {
-                        if (updateError != null) {
-                            LOGGER.error("Error occurred during document update: index={}, id={}", index, id, updateError);
-                            promise.fail(new DxInternalServerErrorException("Failed to update document "+ updateError));
                         } else {
-                            LOGGER.debug("Document updated successfully: index={}, id={}, result={}",
-                                    index, id, updateResponse.toString());
-                            promise.complete();
+                            Hit <ObjectNode> hit = resp.hits().hits().getFirst();
+                            LOGGER.debug("Single document found: {}", resp.hits());
+                            promise.complete(new ElasticsearchResponse(hit.id(),new JsonObject(hit.source().toString())));
                         }
                     });
-
-                } catch (Exception e) {
-                    LOGGER.error("Error while preparing document update: index={}, id={}", index, id, e.getCause());
-                    promise.fail(new RuntimeException("Failed to prepare document update", e));
-                }
-            });
-
-        } catch (Exception e) {
-            LOGGER.error("Error while checking document existence: index={}, id={}", index, id, e);
-            promise.fail(new RuntimeException("Failed to check document existence", e));
+            return promise.future();
         }
 
-        return promise.future();
-    }
+        private Future<List<String>> executeBulkIndex(String index, List<QueryModel> models) {
+            Promise<List<String>> promise = Promise.promise();
+            LOGGER.debug("Index "+index);
+            BulkRequest.Builder bulkBuilder = new BulkRequest.Builder();
+            models.forEach(queryModel -> {
+                JsonObject doc = queryModel.extractDocumentFromQueryModel();
+                bulkBuilder.operations(operation -> operation.index(docs -> docs.index(index)
+                        .id(doc.getString("id"))
+                        .document(doc)));
+            });
 
-}
+            asyncClient.bulk(bulkBuilder.build()).whenComplete((bulkResponse,error) -> {
+                LOGGER.debug("bulk Response "+bulkResponse);
+                LOGGER.error("Error "+error.getMessage());
+                if (bulkResponse.errors()) {
+                    LOGGER.error("bulk index failed");
+                    promise.fail(new RuntimeException("Bulk index error"));
+                } else {
+                    LOGGER.debug("bulk Response "+bulkResponse);
+                    List<String> ids = bulkResponse.items().stream().map(BulkResponseItem::id).collect(Collectors.toList());
+                    promise.complete(ids);
+                }
+            });
+            return promise.future();
+        }
+
+        private Future<Void> executeDeleteDocument(String index, String id) {
+            LOGGER.debug("Deleting document with ID: {}", id);
+            Promise<Void> promise = Promise.promise();
+            DeleteRequest req = DeleteRequest.of(d -> d.index(index).id(id));
+            asyncClient.delete(req).whenComplete((resp, err) -> {
+
+                if (err != null) {
+                    LOGGER.error("delete failed", err);
+                    promise.fail(new RuntimeException("Delete error", err.getMessage()));
+                } else if (resp.result() == Result.NotFound ){
+                    LOGGER.warn("Document not found: {}", id);
+                    promise.fail(new RuntimeException("Document not found"));
+                } else {
+                    promise.complete();
+                }
+            });
+            return promise.future();
+        }
+
+        private Future<Void> executeExistenceCheck(String index, String id) {
+            Promise<Void> promise = Promise.promise();
+            ExistsRequest req = ExistsRequest.of(e -> e.index(index).id(id));
+            asyncClient.exists(req).whenComplete((res, err) -> {
+                if (err != null || !res.value()) {
+                    String msg = err != null ? "Existence check failed" : "Document not found";
+                    LOGGER.error(msg, err);
+                    promise.fail(new RuntimeException(msg, err));
+                } else {
+                    promise.complete();
+                }
+            });
+            return promise.future();
+        }
+
+        private Future<Void> executeUpdate(String index, String id, QueryModel model) {
+            Promise<Void> promise = Promise.promise();
+            UpdateRequest<String, JsonObject> req = UpdateRequest.of(u -> u
+                    .index(index)
+                    .id(id)
+                    .doc(model.extractDocumentFromQueryModel()));
+            asyncClient.update(req, JsonObject.class).whenComplete((res, err) -> {
+                if (err != null) {
+                    LOGGER.error("update failed {}", err.getMessage());
+                    promise.fail(new RuntimeException("Update error", err));
+                } else {
+                    promise.complete();
+                }
+            });
+            return promise.future();
+        }
+
+        private Future<Void> executeUpdateByQuery(String index, QueryModel model) {
+            Promise<Void> promise = Promise.promise();
+            UpdateByQueryRequest.Builder builder = new UpdateByQueryRequest.Builder()
+                    .index(index)
+                    .query(model.toElasticsearchQuery());
+
+            Script script = model.toElasticsearchScript();
+            if (script != null) {
+                builder.script(script);
+            }
+            UpdateByQueryRequest request = builder.build();
+            LOGGER.debug("UpdateByQuery Request: {}", request);
+            asyncClient.updateByQuery(request).whenComplete((res, err) -> {
+                if (err != null) {
+                    LOGGER.error("updateByQuery failed {}", err.getMessage());
+                    promise.fail(new RuntimeException("UpdateByQuery error", err));
+                } else {
+                    LOGGER.info("Updated {} documents", res);
+                    promise.complete();
+                }
+            });
+            return promise.future();
+        }
+    }

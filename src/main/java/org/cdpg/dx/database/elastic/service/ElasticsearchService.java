@@ -25,8 +25,13 @@ public interface ElasticsearchService {
     Future<Integer> count(String index, QueryModel queryModel);
 
     Future<List<String>> createDocuments(String index, List<QueryModel> documentModels);
-    Future<Void> deleteByQuery(String index,QueryModel queryModel);
+    Future<ElasticsearchResponse>  getSingleDocument(String docIndex,QueryModel queryModel);
+
     Future<Void> deleteDocument(String index, String id);
-    Future<ElasticsearchResponse> getSingleDocument(QueryModel queryModel, String docIndex);
-    Future<Void> updateDocument(String index, String id, QueryModel documentModel);
+
+    Future<Void> updateDocument(String index, String id, QueryModel queryModel);
+
+
+    Future<Void> updateDocumentsByQuery(QueryModel queryModel, String docIndex);
+    Future<Void> deleteByQuery(String index,QueryModel queryModel);
 }
