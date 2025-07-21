@@ -112,7 +112,6 @@ public class ValidatorServiceImpl implements ValidatorService {
   }
 
   private static String getItemType(JsonObject request,Promise promise) {
-      new JsonArray().getList();
       Set<String> type = new HashSet<String>(new JsonArray().getList());
     try {
       type = new HashSet<String>(request.getJsonArray(TYPE).getList());
