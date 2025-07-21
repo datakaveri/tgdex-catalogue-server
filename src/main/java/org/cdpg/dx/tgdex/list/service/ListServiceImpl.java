@@ -6,7 +6,6 @@ import io.vertx.core.Future;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
-import org.cdpg.dx.database.elastic.model.QueryDecoderNew;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
@@ -37,8 +36,8 @@ public class ListServiceImpl implements ListService {
         || queryDecoderRequestDTO.getFilter().isEmpty()) {
       return Future.failedFuture("Missing or empty 'filter' array");
     }
-    QueryDecoderNew queryDecoderNew = new QueryDecoderNew();
-    QueryModel queryModel = queryDecoderNew.getQueryModel(queryDecoderRequestDTO);
+    QueryDecoder queryDecoder = new QueryDecoder();
+    QueryModel queryModel = queryDecoder.getQueryModel(queryDecoderRequestDTO);
     return elasticsearchService
         .search(docIndex, queryModel, AGGREGATION_LIST)
         .map(ResponseModel::new)

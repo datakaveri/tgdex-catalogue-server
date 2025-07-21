@@ -11,7 +11,7 @@ import org.cdpg.dx.tgdex.validator.service.ValidatorServiceImpl;
 public class SearchControllerFactory {
 
     public static SearchController createSearchController(ElasticsearchService elasticsearchService, AuditingHandler auditingHandler, String docIndex, ValidatorService validatorService) {
-        SearchService searchService = new SearchServiceImpl(elasticsearchService,docIndex,validatorService);
+        SearchService searchService = new SearchServiceImpl(elasticsearchService,docIndex);
         return new SearchController(searchService, auditingHandler);
     }
 }

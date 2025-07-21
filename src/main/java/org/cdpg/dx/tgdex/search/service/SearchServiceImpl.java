@@ -9,7 +9,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
-import org.cdpg.dx.database.elastic.model.QueryDecoderNew;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
@@ -22,16 +21,13 @@ public class SearchServiceImpl implements SearchService {
   private final ElasticsearchService elasticsearchService;
   private final QueryDecoder queryDecoder;
   private final String docIndex;
-  private final ValidatorService validatorService;
 
   public SearchServiceImpl(
       ElasticsearchService elasticsearchService,
-      String docIndex,
-      ValidatorService validatorService) {
+      String docIndex) {
     this.elasticsearchService = elasticsearchService;
     this.queryDecoder = new QueryDecoder();
     this.docIndex = docIndex;
-    this.validatorService = validatorService;
   }
 
   @Override
@@ -42,8 +38,8 @@ public class SearchServiceImpl implements SearchService {
       LOGGER.info("search type {}", searchType);
 
       // Use the new decoder to get the QueryModel
-      QueryDecoderNew queryDecoderNew = new QueryDecoderNew();
-      QueryModel queryModel = queryDecoderNew.getQueryModel(queryDecoderRequestDTO);
+      QueryDecoder queryDecoder = new QueryDecoder();
+      QueryModel queryModel = queryDecoder.getQueryModel(queryDecoderRequestDTO);
 
       // Perform search
       return elasticsearchService
@@ -67,11 +63,11 @@ public class SearchServiceImpl implements SearchService {
       LOGGER.info("count search type {}", searchType);
 
       // Use QueryDecoderNew to build QueryModel
-      QueryDecoderNew queryDecoderNew = new QueryDecoderNew();
-      QueryModel queryModel = queryDecoderNew.getQueryModel(queryDecoderRequestDTO);
+      QueryDecoder queryDecoder = new QueryDecoder();
+      QueryModel queryModel = queryDecoder.getQueryModel(queryDecoderRequestDTO);
 
       // Set aggregation specific to count
-      queryModel.setAggregations(List.of(queryDecoderNew.setCountAggregations()));
+      queryModel.setAggregations(List.of(queryDecoder.setCountAggregations()));
 
       // Run ES query
       return elasticsearchService
