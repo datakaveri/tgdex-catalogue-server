@@ -11,8 +11,8 @@ import org.cdpg.dx.common.util.PaginationInfo;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 
 public class ResponseModel {
-  private List<JsonObject> elasticsearchResponses;
   JsonObject response;
+  private List<JsonObject> elasticsearchResponses;
   private int totalHits;
   private PaginationInfo paginationInfo;
 
