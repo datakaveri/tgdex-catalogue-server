@@ -166,6 +166,17 @@ public class QueryDecoder {
     return boolQuery;
   }
 
+  public QueryModel buildGetItemWithNameExistsQuery(String type, String name) {
+    QueryModel typeMatchQuery = new QueryModel(QueryType.MATCH);
+    typeMatchQuery.setQueryParameters(Map.of(FIELD, TYPE_KEY, VALUE, type));
+    QueryModel nameMatchQuery = new QueryModel(QueryType.MATCH);
+    nameMatchQuery.setQueryParameters(Map.of(FIELD, NAME + KEYWORD_KEY, VALUE, name));
+
+    QueryModel boolQuery = new QueryModel(QueryType.BOOL);
+    boolQuery.setMustQueries(List.of(typeMatchQuery, nameMatchQuery));
+    return boolQuery;
+  }
+
   private QueryModel getBoolQuery(Map<FilterType, List<QueryModel>> filterQueries) {
     QueryModel boolQuery = new QueryModel(QueryType.BOOL);
 

@@ -8,8 +8,9 @@ import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 
 public class ItemControllerFactory {
 
-    public static ItemController createCrudController(AuditingHandler auditingHandler, ElasticsearchService elasticsearchService) {
-        ItemService crudService = new ItemServiceImpl(elasticsearchService);
+    public static ItemController createCrudController(AuditingHandler auditingHandler,
+                                                      ElasticsearchService elasticsearchService, String docIndex) {
+        ItemService crudService = new ItemServiceImpl(elasticsearchService, docIndex);
         return new ItemController(auditingHandler,crudService);
     }
 }

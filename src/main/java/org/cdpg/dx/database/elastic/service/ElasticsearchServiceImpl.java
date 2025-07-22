@@ -417,7 +417,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
 
                 if (err != null) {
                     LOGGER.error("delete failed", err);
-                    promise.fail(new RuntimeException("Delete error", err.getMessage()));
+                    promise.fail(new RuntimeException(err.getLocalizedMessage()));
                 } else if (resp.result() == Result.NotFound ){
                     LOGGER.warn("Document not found: {}", id);
                     promise.fail(new RuntimeException("Document not found"));
