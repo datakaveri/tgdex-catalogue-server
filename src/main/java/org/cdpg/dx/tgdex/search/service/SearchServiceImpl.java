@@ -13,7 +13,6 @@ import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
 import org.cdpg.dx.database.elastic.model.QueryModel;
 import org.cdpg.dx.database.elastic.service.ElasticsearchService;
 import org.cdpg.dx.tgdex.search.util.ResponseModel;
-import org.cdpg.dx.tgdex.validator.service.ValidatorService;
 
 public class SearchServiceImpl implements SearchService {
   private static final Logger LOGGER = LogManager.getLogger(SearchServiceImpl.class);

@@ -42,7 +42,8 @@ public class ControllerFactory {
     final AuditingHandler auditingHandler = new AuditingHandler(brokerService);
     ValidatorService validatorService= new ValidatorServiceImpl(esService,docIndex,vocContext);
 
-    final ItemController crudController = ItemControllerFactory.createCrudController(auditingHandler,esService);
+    final ItemController crudController =
+        ItemControllerFactory.createCrudController(auditingHandler, esService, docIndex, vocContext);
     final ListController listController = ListControllerFactory.createListController(esService, auditingHandler, docIndex,validatorService);
     final SearchController searchController = SearchControllerFactory.createSearchController(esService, auditingHandler,docIndex, validatorService);
     return List.of(crudController,listController,searchController);
