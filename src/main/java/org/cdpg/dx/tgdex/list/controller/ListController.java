@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
 import org.cdpg.dx.common.request.PostSearchRequestBuilder;
 import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
 import org.cdpg.dx.tgdex.apiserver.ApiController;
 import org.cdpg.dx.tgdex.list.service.ListService;
 
@@ -33,7 +34,7 @@ public class ListController implements ApiController {
   }
 
   private void handleGetAvailableFilters(RoutingContext routingContext) {
-    var queryDecoder =
+    QueryDecoderRequestDTO queryDecoder =
         PostSearchRequestBuilder.fromRoutingContext(routingContext)
             .setAssetSearch(false)
             .setCountApi(false)

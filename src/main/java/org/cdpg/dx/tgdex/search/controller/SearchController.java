@@ -58,12 +58,11 @@ public class SearchController implements ApiController {
   private void handleSearch(RoutingContext ctx) {
     LOGGER.debug("Received POST request on at search'{}'", POST_SEARCH);
     try {
-      var queryDecoder =
+      QueryDecoderRequestDTO queryDecoder =
           PostSearchRequestBuilder.fromRoutingContext(ctx)
               .setAssetSearch(false)
               .setCountApi(false)
               .build();
-      LOGGER.info(queryDecoder);
       searchService
           .postSearch(queryDecoder)
           .onSuccess(
