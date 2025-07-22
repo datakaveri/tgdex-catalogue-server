@@ -15,7 +15,6 @@ import org.cdpg.dx.tgdex.validator.service.ValidatorService;
 public class ListServiceImpl implements ListService {
   private static final Logger LOGGER = LogManager.getLogger(ListServiceImpl.class);
   private final QueryDecoder queryDecoder;
-  private final ValidatorService validatorService;
   ElasticsearchService elasticsearchService;
   String docIndex;
 
@@ -26,7 +25,6 @@ public class ListServiceImpl implements ListService {
     this.elasticsearchService = elasticsearchService;
     this.queryDecoder = new QueryDecoder();
     this.docIndex = docIndex;
-    this.validatorService = validatorService;
   }
 
   @Override
@@ -37,7 +35,7 @@ public class ListServiceImpl implements ListService {
       return Future.failedFuture("Missing or empty 'filter' array");
     }
     QueryDecoder queryDecoder = new QueryDecoder();
-    QueryModel queryModel = queryDecoder.getQueryModel(queryDecoderRequestDTO);
+    QueryModel queryModel = queryDecoder.listMultipleItemTypesQuery(queryDecoderRequestDTO);
     return elasticsearchService
         .search(docIndex, queryModel, AGGREGATION_LIST)
         .map(ResponseModel::new)
