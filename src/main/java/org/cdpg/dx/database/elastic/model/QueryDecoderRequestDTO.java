@@ -3,108 +3,128 @@ package org.cdpg.dx.database.elastic.model;
 import java.util.List;
 
 public class QueryDecoderRequestDTO {
-    private String searchType;
-    private Integer size;
-    private Integer page;
-    private String id;
-    private List<String> filter;
-    private TextSearchRequestDTO textSearchRequest;
-    private SearchCriteriaRequestDTO searchCriteriaRequest;
-    private AccessPolicyRequestDTO accessPolicyRequest;
-    private InstanceFilterRequestDTO instanceFilterRequest;
-    private ResponseFilterRequestDTO responseFilterRequest;
+  private String searchType;
+  private Integer size;
+  private Integer page;
+  private String id;
+  private List<String> filter;
+  private TextSearchRequestDTO textSearchRequest;
+  private SearchCriteriaRequestDTO searchCriteriaRequest;
+  private AccessPolicyRequestDTO accessPolicyRequest;
+  private InstanceFilterRequestDTO instanceFilterRequest;
+  private ResponseFilterRequestDTO responseFilterRequest;
+  private List<OrderBy> sort;
 
-    public QueryDecoderRequestDTO(String searchType, Integer size, Integer page, String id, List<String> filter, TextSearchRequestDTO textSearchRequest, SearchCriteriaRequestDTO searchCriteriaRequest, AccessPolicyRequestDTO accessPolicyRequest, InstanceFilterRequestDTO instanceFilterRequest, ResponseFilterRequestDTO responseFilterRequest) {
-        this.searchType = searchType;
-        this.size = size;
-        this.page = page;
-        this.id = id;
-        this.filter = filter;
-        this.textSearchRequest = textSearchRequest;
-        this.searchCriteriaRequest = searchCriteriaRequest;
-        this.accessPolicyRequest = accessPolicyRequest;
-        this.instanceFilterRequest = instanceFilterRequest;
-        this.responseFilterRequest = responseFilterRequest;
-    }
+  public QueryDecoderRequestDTO(
+      String searchType,
+      Integer size,
+      Integer page,
+      String id,
+      List<String> filter,
+      TextSearchRequestDTO textSearchRequest,
+      SearchCriteriaRequestDTO searchCriteriaRequest,
+      AccessPolicyRequestDTO accessPolicyRequest,
+      InstanceFilterRequestDTO instanceFilterRequest,
+      ResponseFilterRequestDTO responseFilterRequest,
+      List<OrderBy> sort) {
+    this.searchType = searchType;
+    this.size = size;
+    this.page = page;
+    this.id = id;
+    this.filter = filter;
+    this.textSearchRequest = textSearchRequest;
+    this.searchCriteriaRequest = searchCriteriaRequest;
+    this.accessPolicyRequest = accessPolicyRequest;
+    this.instanceFilterRequest = instanceFilterRequest;
+    this.responseFilterRequest = responseFilterRequest;
+    this.sort = sort;
+  }
 
-    public Integer getSize() {
-        return size;
-    }
+  public List<OrderBy> getSort() {
+    return sort;
+  }
 
-    public void setSize(Integer size) {
-        this.size = size;
-    }
+  public void setSort(List<OrderBy> sort) {
+    this.sort = sort;
+  }
 
-    public Integer getPage() {
-        return page;
-    }
+  public Integer getSize() {
+    return size;
+  }
 
-    public void setPage(Integer page) {
-        this.page = page;
-    }
+  public void setSize(Integer size) {
+    this.size = size;
+  }
 
-    public String getSearchType() {
-        return searchType;
-    }
+  public Integer getPage() {
+    return page;
+  }
 
-    public void setSearchType(String searchType) {
-        this.searchType = searchType;
-    }
+  public void setPage(Integer page) {
+    this.page = page;
+  }
 
-    public String getId() {
-        return id;
-    }
+  public String getSearchType() {
+    return searchType;
+  }
 
-    public void setId(String id) {
-        this.id = id;
-    }
+  public void setSearchType(String searchType) {
+    this.searchType = searchType;
+  }
 
-    public List<String> getFilter() {
-        return filter;
-    }
+  public String getId() {
+    return id;
+  }
 
-    public void setFilter(List<String> filter) {
-        this.filter = filter;
-    }
+  public void setId(String id) {
+    this.id = id;
+  }
 
-    public TextSearchRequestDTO getTextSearchRequest() {
-        return textSearchRequest;
-    }
+  public List<String> getFilter() {
+    return filter;
+  }
 
-    public void setTextSearchRequest(TextSearchRequestDTO textSearchRequest) {
-        this.textSearchRequest = textSearchRequest;
-    }
+  public void setFilter(List<String> filter) {
+    this.filter = filter;
+  }
 
-    public SearchCriteriaRequestDTO getSearchCriteriaRequest() {
-        return searchCriteriaRequest;
-    }
+  public TextSearchRequestDTO getTextSearchRequest() {
+    return textSearchRequest;
+  }
 
-    public void setSearchCriteriaRequest(SearchCriteriaRequestDTO searchCriteriaRequest) {
-        this.searchCriteriaRequest = searchCriteriaRequest;
-    }
+  public void setTextSearchRequest(TextSearchRequestDTO textSearchRequest) {
+    this.textSearchRequest = textSearchRequest;
+  }
 
-    public AccessPolicyRequestDTO getAccessPolicyRequest() {
-        return accessPolicyRequest;
-    }
+  public SearchCriteriaRequestDTO getSearchCriteriaRequest() {
+    return searchCriteriaRequest;
+  }
 
-    public void setAccessPolicyRequest(AccessPolicyRequestDTO accessPolicyRequest) {
-        this.accessPolicyRequest = accessPolicyRequest;
-    }
+  public void setSearchCriteriaRequest(SearchCriteriaRequestDTO searchCriteriaRequest) {
+    this.searchCriteriaRequest = searchCriteriaRequest;
+  }
 
-    public InstanceFilterRequestDTO getInstanceFilterRequest() {
-        return instanceFilterRequest;
-    }
+  public AccessPolicyRequestDTO getAccessPolicyRequest() {
+    return accessPolicyRequest;
+  }
 
-    public void setInstanceFilterRequest(InstanceFilterRequestDTO instanceFilterRequest) {
-        this.instanceFilterRequest = instanceFilterRequest;
-    }
+  public void setAccessPolicyRequest(AccessPolicyRequestDTO accessPolicyRequest) {
+    this.accessPolicyRequest = accessPolicyRequest;
+  }
 
-    public ResponseFilterRequestDTO getResponseFilterRequest() {
-        return responseFilterRequest;
-    }
+  public InstanceFilterRequestDTO getInstanceFilterRequest() {
+    return instanceFilterRequest;
+  }
 
-    public void setResponseFilterRequest(ResponseFilterRequestDTO responseFilterRequest) {
-        this.responseFilterRequest = responseFilterRequest;
-    }
+  public void setInstanceFilterRequest(InstanceFilterRequestDTO instanceFilterRequest) {
+    this.instanceFilterRequest = instanceFilterRequest;
+  }
+
+  public ResponseFilterRequestDTO getResponseFilterRequest() {
+    return responseFilterRequest;
+  }
+
+  public void setResponseFilterRequest(ResponseFilterRequestDTO responseFilterRequest) {
+    this.responseFilterRequest = responseFilterRequest;
+  }
 }
-

@@ -62,7 +62,7 @@ public class QueryDecoder {
       int size = request.getSize();
       q.setLimit(String.valueOf(size));
       if (request.getPage() != null) {
-        int offset = request.getPage();
+        int offset = (request.getPage() - 1) * size;
         q.setOffset(String.valueOf(offset));
       }
       return q;

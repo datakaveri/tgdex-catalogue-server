@@ -29,7 +29,6 @@ public class SearchCriteriaQueryDecorator implements ElasticsearchQueryDecorator
     if (request.getSearchCriteria() == null) {
       return queryMap;
     }
-    LOGGER.info("Adding searchCriteria query decorator DTO {}", request);
     List<SearchCriteriaDTO> criteria = request.getSearchCriteria();
     if (criteria == null || criteria.isEmpty()) {
       throw new DxEsException("Invalid Property Value: Empty searchCriteria");
