@@ -166,35 +166,10 @@ public class PostSearchRequestBuilder {
         requestBody.getJsonArray(FILTER, new JsonArray()).getList());
   }
 
-  /*private List<String> getSort(MultiMap params) {
-    List<String> sortList = new ArrayList<>();
-    String sortParam = params.get("sort");
-    if (sortParam != null && !sortParam.isEmpty()) {
-      String[] items = sortParam.split(";");
-      for (String item : items) {
-        String[] parts = item.split(":");
-        if (parts.length != 2) {
-          throw new DxBadRequestException(
-              "Invalid sort format: " + item + ". Expected field:order");
-        }
-        String field = parts[0];
-        String order = parts[1].toLowerCase();
-        if (!order.equals("asc") && !order.equals("desc")) {
-          throw new DxBadRequestException("Invalid order: " + order + ". Use 'asc' or 'desc'.");
-        }
-        sortList.add(field + ":" + order);
-      }
-    } else if (defaultSortBy != null) {
-      sortList.add(defaultSortBy + ":" + defaultOrder);
-    }
-    LOGGER.info("sortList: {}", sortList);
-    return sortList;
-  }*/
-
   private List<OrderBy> extractSortOrders() {
     List<OrderBy> orderByList = new ArrayList<>();
     MultiMap params = routingContext.request().params(true);
-    if(params.get("sort") == null) {
+    if (params.get("sort") == null) {
       LOGGER.debug("No sort parameter found in request.");
       return null;
     }
@@ -211,13 +186,12 @@ public class PostSearchRequestBuilder {
         String[] parts = item.split(":");
         if (parts.length != 2) {
           throw new DxBadRequestException(
-                  "Invalid sort format: " + item + ". Expected field:order");
+              "Invalid sort format: " + item + ". Expected field:order");
         }
 
         String field = parts[0].trim();
         String direction = parts[1].trim().toLowerCase();
-        if (!field.endsWith(KEYWORD_KEY)
-                && (!field.equalsIgnoreCase("itemCreatedAt"))) {
+        if (!field.endsWith(KEYWORD_KEY) && (!field.equalsIgnoreCase("itemCreatedAt"))) {
           field = field + KEYWORD_KEY;
         }
         if (!direction.equals("asc") && !direction.equals("desc")) {
@@ -228,7 +202,7 @@ public class PostSearchRequestBuilder {
       }
     } else if (defaultSortBy != null) {
       orderByList.add(
-              new OrderBy(defaultSortBy, OrderBy.Direction.valueOf(defaultOrder.toUpperCase())));
+          new OrderBy(defaultSortBy, OrderBy.Direction.valueOf(defaultOrder.toUpperCase())));
     }
 
     return orderByList;
