@@ -101,7 +101,6 @@ public class ItemServiceImpl implements ItemService {
                     LOGGER.error("Error retrieving item with ID {}: {}", request.getItemId(), err.getMessage());
                     promise.fail("Failed to retrieve item: " + err.getMessage());
                 });
-
         return promise.future();
     }
 
@@ -217,5 +216,4 @@ public class ItemServiceImpl implements ItemService {
         }
         return true;
     }
-
 }
