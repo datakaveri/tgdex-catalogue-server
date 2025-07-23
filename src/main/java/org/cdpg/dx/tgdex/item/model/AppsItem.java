@@ -1,12 +1,20 @@
 package org.cdpg.dx.tgdex.item.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AppsItem implements Item {
+  private static final Set<String> knownFields = Set.of(
+      "name", "type", "label", "shortDescription", "description",
+      "tags", "accessPolicy", "organizationType", "organizationId",
+      "industry", "department", "id", "itemStatus", "itemCreatedAt",
+      "@context", "sections"
+  );
   private String name;
   private List<String> type;
   private String label;
@@ -20,90 +28,108 @@ public class AppsItem implements Item {
   private String department;
   private String id;
   private String itemStatus;
-  private LocalDateTime itemCreatedAt;
+  private String itemCreatedAt;
   private String context;
-
+  private JsonObject additionalProperties = new JsonObject();
   private List<Section> sections;
 
-  public static class Section {
-    private String title;
-    private String content;
-    private List<String> points;
-    private List<SubSection> subsections;
-
-    public static class SubSection {
-      private String subtitle;
-      private String content;
-      private List<String> points;
-      private List<SubSection> subsections;
-
-      public String getSubtitle() {
-        return subtitle;
+  private static JsonArray toSubSectionJsonArray(List<Section.SubSection> list) {
+    JsonArray array = new JsonArray();
+    for (Section.SubSection ss : list) {
+      JsonObject obj = new JsonObject()
+          .put("subtitle", ss.getSubtitle())
+          .put("content", ss.getContent())
+          .put("points", ss.getPoints());
+      if (ss.getSubsections() != null) {
+        obj.put("subsections", toSubSectionJsonArray(ss.getSubsections()));
       }
+      array.add(obj);
+    }
+    return array;
+  }
 
-      public void setSubtitle(String subtitle) {
-        this.subtitle = subtitle;
+  public static AppsItem fromJson(JsonObject json) {
+    AppsItem item = new AppsItem();
+    item.setName(json.getString("name"));
+    item.setType(json.getJsonArray("type").getList());
+    item.setLabel(json.getString("label"));
+    item.setShortDescription(json.getString("shortDescription"));
+    item.setDescription(json.getString("description"));
+    item.setTags(json.getJsonArray("tags").getList());
+    item.setAccessPolicy(json.getString("accessPolicy"));
+    item.setOrganizationType(json.getString("organizationType"));
+    item.setOrganizationId(json.getString("organizationId"));
+    item.setIndustry(json.getString("industry"));
+    item.setDepartment(json.getString("department"));
+    item.setId(json.getString("id"));
+    item.setItemStatus(json.getString("itemStatus"));
+    item.setItemCreatedAt(json.getString("itemCreatedAt"));
+    item.setContext(json.getString("@context"));
+
+    if (json.containsKey("sections")) {
+      List<Section> sections = json.getJsonArray("sections").stream()
+          .map(o -> (JsonObject) o)
+          .map(AppsItem::parseSection)
+          .collect(Collectors.toList());
+      item.setSections(sections);
+    }
+
+    JsonObject additional = new JsonObject();
+    for (String key : json.fieldNames()) {
+      if (!knownFields.contains(key)) {
+        additional.put(key, json.getValue(key));
       }
-
-      public String getContent() {
-        return content;
-      }
-
-      public void setContent(String content) {
-        this.content = content;
-      }
-
-      public List<String> getPoints() {
-        return points;
-      }
-
-      public void setPoints(List<String> points) {
-        this.points = points;
-      }
-
-      public List<SubSection> getSubsections() {
-        return subsections;
-      }
-
-      public void setSubsections(
-          List<SubSection> subsections) {
-        this.subsections = subsections;
-      }
     }
-    // Getters/setters
+    item.setAdditionalProperties(additional);
 
-    public String getTitle() {
-      return title;
+
+    return item;
+  }
+
+  private static Section parseSection(JsonObject json) {
+    Section section = new Section();
+    section.setTitle(json.getString("title"));
+    section.setContent(json.getString("content"));
+    section.setPoints(json.getJsonArray("points") != null
+        ? json.getJsonArray("points").getList()
+        : null);
+
+    if (json.containsKey("subsections")) {
+      List<Section.SubSection> subs = json.getJsonArray("subsections").stream()
+          .map(o -> (JsonObject) o)
+          .map(AppsItem::parseSubSection)
+          .collect(Collectors.toList());
+      section.setSubsections(subs);
     }
 
-    public void setTitle(String title) {
-      this.title = title;
+    return section;
+  }
+
+  private static Section.SubSection parseSubSection(JsonObject json) {
+    Section.SubSection ss = new Section.SubSection();
+    ss.setSubtitle(json.getString("subtitle"));
+    ss.setContent(json.getString("content"));
+    ss.setPoints(json.getJsonArray("points") != null
+        ? json.getJsonArray("points").getList()
+        : null);
+
+    if (json.containsKey("subsections")) {
+      List<Section.SubSection> nestedSubs = json.getJsonArray("subsections").stream()
+          .map(o -> (JsonObject) o)
+          .map(AppsItem::parseSubSection)
+          .collect(Collectors.toList());
+      ss.setSubsections(nestedSubs);
     }
 
-    public String getContent() {
-      return content;
-    }
+    return ss;
+  }
 
-    public void setContent(String content) {
-      this.content = content;
-    }
+  public JsonObject getAdditionalProperties() {
+    return additionalProperties;
+  }
 
-    public List<String> getPoints() {
-      return points;
-    }
-
-    public void setPoints(List<String> points) {
-      this.points = points;
-    }
-
-    public List<SubSection> getSubsections() {
-      return subsections;
-    }
-
-    public void setSubsections(
-        List<SubSection> subsections) {
-      this.subsections = subsections;
-    }
+  public void setAdditionalProperties(JsonObject additionalProperties) {
+    this.additionalProperties = additionalProperties;
   }
 
   @Override
@@ -224,11 +250,11 @@ public class AppsItem implements Item {
   }
 
   @Override
-  public LocalDateTime getItemCreatedAt() {
+  public String getItemCreatedAt() {
     return itemCreatedAt;
   }
 
-  public void setItemCreatedAt(LocalDateTime itemCreatedAt) {
+  public void setItemCreatedAt(String itemCreatedAt) {
     this.itemCreatedAt = itemCreatedAt;
   }
 
@@ -284,90 +310,90 @@ public class AppsItem implements Item {
       json.put("sections", sectionArray);
     }
 
+    for (String key : additionalProperties.fieldNames()) {
+      json.put(key, additionalProperties.getValue(key));
+    }
     return json;
   }
 
-  private static JsonArray toSubSectionJsonArray(List<Section.SubSection> list) {
-    JsonArray array = new JsonArray();
-    for (Section.SubSection ss : list) {
-      JsonObject obj = new JsonObject()
-          .put("subtitle", ss.getSubtitle())
-          .put("content", ss.getContent())
-          .put("points", ss.getPoints());
-      if (ss.getSubsections() != null) {
-        obj.put("subsections", toSubSectionJsonArray(ss.getSubsections()));
+  public static class Section {
+    private String title;
+    private String content;
+    private List<String> points;
+    private List<SubSection> subsections;
+
+    public String getTitle() {
+      return title;
+    }
+    // Getters/setters
+
+    public void setTitle(String title) {
+      this.title = title;
+    }
+
+    public String getContent() {
+      return content;
+    }
+
+    public void setContent(String content) {
+      this.content = content;
+    }
+
+    public List<String> getPoints() {
+      return points;
+    }
+
+    public void setPoints(List<String> points) {
+      this.points = points;
+    }
+
+    public List<SubSection> getSubsections() {
+      return subsections;
+    }
+
+    public void setSubsections(
+        List<SubSection> subsections) {
+      this.subsections = subsections;
+    }
+
+    public static class SubSection {
+      private String subtitle;
+      private String content;
+      private List<String> points;
+      private List<SubSection> subsections;
+
+      public String getSubtitle() {
+        return subtitle;
       }
-      array.add(obj);
+
+      public void setSubtitle(String subtitle) {
+        this.subtitle = subtitle;
+      }
+
+      public String getContent() {
+        return content;
+      }
+
+      public void setContent(String content) {
+        this.content = content;
+      }
+
+      public List<String> getPoints() {
+        return points;
+      }
+
+      public void setPoints(List<String> points) {
+        this.points = points;
+      }
+
+      public List<SubSection> getSubsections() {
+        return subsections;
+      }
+
+      public void setSubsections(
+          List<SubSection> subsections) {
+        this.subsections = subsections;
+      }
     }
-    return array;
-  }
-
-  public static AppsItem fromJson(JsonObject json) {
-    AppsItem item = new AppsItem();
-    item.setName(json.getString("name"));
-    item.setType(json.getJsonArray("type").getList());
-    item.setLabel(json.getString("label"));
-    item.setShortDescription(json.getString("shortDescription"));
-    item.setDescription(json.getString("description"));
-    item.setTags(json.getJsonArray("tags").getList());
-    item.setAccessPolicy(json.getString("accessPolicy"));
-    item.setOrganizationType(json.getString("organizationType"));
-    item.setOrganizationId(json.getString("organizationId"));
-    item.setIndustry(json.getString("industry"));
-    item.setDepartment(json.getString("department"));
-    item.setId(json.getString("id"));
-    item.setItemStatus(json.getString("itemStatus"));
-    item.setItemCreatedAt(json.getString("itemCreatedAt") != null
-        ? LocalDateTime.parse(json.getString("itemCreatedAt"))
-        : null);
-    item.setContext(json.getString("@context"));
-
-    if (json.containsKey("sections")) {
-      List<Section> sections = json.getJsonArray("sections").stream()
-          .map(o -> (JsonObject) o)
-          .map(AppsItem::parseSection)
-          .collect(Collectors.toList());
-      item.setSections(sections);
-    }
-
-    return item;
-  }
-
-  private static Section parseSection(JsonObject json) {
-    Section section = new Section();
-    section.setTitle(json.getString("title"));
-    section.setContent(json.getString("content"));
-    section.setPoints(json.getJsonArray("points") != null
-        ? json.getJsonArray("points").getList()
-        : null);
-
-    if (json.containsKey("subsections")) {
-      List<Section.SubSection> subs = json.getJsonArray("subsections").stream()
-          .map(o -> (JsonObject) o)
-          .map(AppsItem::parseSubSection)
-          .collect(Collectors.toList());
-      section.setSubsections(subs);
-    }
-
-    return section;
-  }
-
-  private static Section.SubSection parseSubSection(JsonObject json) {
-    Section.SubSection ss = new Section.SubSection();
-    ss.setSubtitle(json.getString("subtitle"));
-    ss.setContent(json.getString("content"));
-    ss.setPoints(json.getJsonArray("points") != null
-        ? json.getJsonArray("points").getList()
-        : null);
-
-    if (json.containsKey("subsections")) {
-      List<Section.SubSection> nestedSubs = json.getJsonArray("subsections").stream()
-          .map(o -> (JsonObject) o)
-          .map(AppsItem::parseSubSection)
-          .collect(Collectors.toList());
-      ss.setSubsections(nestedSubs);
-    }
-
-    return ss;
   }
 }

@@ -34,10 +34,15 @@ public class VerifyItemTypeAndRole implements Handler<RoutingContext> {
         }
         createMap();
         String itemType = routingContext.body().asJsonObject().getJsonArray("type").getString(0);
+
         JsonArray userRoles = realmAccess.getJsonArray("roles");
-        ItemType requestedType = ItemType.valueOf(itemType);
-        System.out.println("userRoles: " + userRoles);
-        System.out.println("requestedType: " + requestedType);
+        ItemType requestedType;
+        try {
+            requestedType = ItemType.fromTypeValue(itemType);
+        } catch (IllegalArgumentException e) {
+            routingContext.fail(new DxForbiddenException("Unsupported item type: " + itemType));
+            return;
+        }
 
         boolean allowed = userRoles.stream()
                 .map(Object::toString)

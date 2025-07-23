@@ -1,9 +1,15 @@
 package org.cdpg.dx.tgdex.item.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.vertx.core.json.JsonObject;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DataBankItem implements Item {
   private String name;
   private List<String> type;
@@ -18,7 +24,7 @@ public class DataBankItem implements Item {
   private String department;
   private String id;
   private String itemStatus;
-  private LocalDateTime itemCreatedAt;
+  private String itemCreatedAt;
   private String context;
 
   private String fileFormat;
@@ -31,7 +37,66 @@ public class DataBankItem implements Item {
   private Boolean dataUploadStatus;
   private String mediaURL;
 
-  // Getters and setters for all fields...
+  // New field to store additional/unknown fields
+  private JsonObject additionalFields = new JsonObject();
+
+  public static DataBankItem fromJson(JsonObject json) {
+    DataBankItem item = new DataBankItem();
+
+    item.setName(json.getString("name"));
+    item.setType(json.getJsonArray("type") != null ? json.getJsonArray("type").getList() : null);
+    item.setLabel(json.getString("label"));
+    item.setShortDescription(json.getString("shortDescription"));
+    item.setDescription(json.getString("description"));
+    item.setTags(json.getJsonArray("tags") != null ? json.getJsonArray("tags").getList() : null);
+    item.setAccessPolicy(json.getString("accessPolicy"));
+    item.setOrganizationType(json.getString("organizationType"));
+    item.setOrganizationId(json.getString("organizationId"));
+    item.setIndustry(json.getString("industry"));
+    item.setDepartment(json.getString("department"));
+    item.setId(json.getString("id"));
+    item.setItemStatus(json.getString("itemStatus"));
+
+    item.setItemCreatedAt(json.getString("itemCreatedAt"));
+
+    item.setContext(json.getString("@context"));
+
+    item.setFileFormat(json.getString("fileFormat"));
+    item.setGeoCoverage(json.getString("geoCoverage"));
+    item.setYearRange(json.getString("yearRange"));
+    item.setVerifiedBy(json.getString("verifiedBy"));
+    item.setUploadFrequency(json.getString("uploadFrequency"));
+    item.setLicense(json.getString("license"));
+    item.setUploadedBy(json.getString("uploadedBy"));
+    item.setDataUploadStatus(json.getBoolean("dataUploadStatus"));
+    item.setMediaURL(json.getString("mediaURL"));
+
+    // Extract unknown fields
+    Set<String> knownFields = new HashSet<>(Set.of(
+        "name", "type", "label", "shortDescription", "description", "tags", "accessPolicy",
+        "organizationType", "organizationId", "industry", "department", "id", "itemStatus",
+        "itemCreatedAt", "@context", "fileFormat", "geoCoverage", "yearRange", "verifiedBy",
+        "uploadFrequency", "license", "uploadedBy", "dataUploadStatus", "mediaURL"
+    ));
+
+    JsonObject extras = new JsonObject();
+    for (String key : json.fieldNames()) {
+      if (!knownFields.contains(key)) {
+        extras.put(key, json.getValue(key));
+      }
+    }
+    item.setAdditionalFields(extras);
+
+    return item;
+  }
+
+  public JsonObject getAdditionalFields() {
+    return additionalFields;
+  }
+
+  public void setAdditionalFields(JsonObject additionalFields) {
+    this.additionalFields = additionalFields;
+  }
 
   @Override
   public String getName() {
@@ -151,11 +216,11 @@ public class DataBankItem implements Item {
   }
 
   @Override
-  public LocalDateTime getItemCreatedAt() {
+  public String getItemCreatedAt() {
     return itemCreatedAt;
   }
 
-  public void setItemCreatedAt(LocalDateTime itemCreatedAt) {
+  public void setItemCreatedAt(String itemCreatedAt) {
     this.itemCreatedAt = itemCreatedAt;
   }
 
@@ -269,43 +334,8 @@ public class DataBankItem implements Item {
     json.put("dataUploadStatus", dataUploadStatus);
     json.put("mediaURL", mediaURL);
 
+    // Include additional fields
+    json.mergeIn(additionalFields, true);
     return json;
-  }
-
-  public static DataBankItem fromJson(JsonObject json) {
-    DataBankItem item = new DataBankItem();
-
-    item.setName(json.getString("name"));
-    item.setType(json.getJsonArray("type").getList());
-    item.setLabel(json.getString("label"));
-    item.setShortDescription(json.getString("shortDescription"));
-    item.setDescription(json.getString("description"));
-    item.setTags(json.getJsonArray("tags") != null ? json.getJsonArray("tags").getList() : null);
-    item.setAccessPolicy(json.getString("accessPolicy"));
-    item.setOrganizationType(json.getString("organizationType"));
-    item.setOrganizationId(json.getString("organizationId"));
-    item.setIndustry(json.getString("industry"));
-    item.setDepartment(json.getString("department"));
-    item.setId(json.getString("id"));
-    item.setItemStatus(json.getString("itemStatus"));
-
-    String createdAtStr = json.getString("itemCreatedAt");
-    if (createdAtStr != null) {
-      item.setItemCreatedAt(LocalDateTime.parse(createdAtStr));
-    }
-
-    item.setContext(json.getString("@context"));
-
-    item.setFileFormat(json.getString("fileFormat"));
-    item.setGeoCoverage(json.getString("geoCoverage"));
-    item.setYearRange(json.getString("yearRange"));
-    item.setVerifiedBy(json.getString("verifiedBy"));
-    item.setUploadFrequency(json.getString("uploadFrequency"));
-    item.setLicense(json.getString("license"));
-    item.setUploadedBy(json.getString("uploadedBy"));
-    item.setDataUploadStatus(json.getBoolean("dataUploadStatus"));
-    item.setMediaURL(json.getString("mediaURL"));
-
-    return item;
   }
 }

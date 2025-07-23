@@ -1,6 +1,5 @@
 package org.cdpg.dx.tgdex.item.controller;
 
-import static org.cdpg.dx.database.elastic.util.Constants.TYPE_KEY;
 import static org.cdpg.dx.tgdex.util.Constants.*;
 import static org.cdpg.dx.tgdex.validator.Constants.*;
 import static org.cdpg.dx.util.Constants.CREATE_ITEM;
@@ -85,21 +84,22 @@ public class ItemController implements ApiController {
     String itemType = extractAndValidateItemType(ctx, body, response);
     if(itemType == null) return;
 
-    injectKeycloakInfoIfApplicable(ctx, body, itemType);
+    JsonObject doc = injectKeycloakInfoIfApplicable(ctx, body, itemType);
 
     String method = ctx.request().method().toString();
-    body.put(HTTP_METHOD, method);
-    body.put(CONTEXT, vocContext);
+    doc.put(HTTP_METHOD, method);
+    doc.put(CONTEXT, vocContext);
 
     Promise<JsonObject> validationPromise = Promise.promise();
-    validateItemExistence(response, itemType, body, method, validationPromise);
+    validateItemExistence(response, itemType, doc, method, validationPromise);
+
+    doc.remove(HTTP_METHOD);
 
     validationPromise.future().onComplete(result -> {
       if (result.failed()) {
         handleValidationFailure(response, result.cause());
         return;
       }
-
       processItemCreationOrUpdate(response, method, result.result());
     });
   }
@@ -130,16 +130,18 @@ public class ItemController implements ApiController {
     }
   }
 
-  private void injectKeycloakInfoIfApplicable(RoutingContext ctx, JsonObject body,
+  private JsonObject injectKeycloakInfoIfApplicable(RoutingContext ctx, JsonObject body,
                                               String itemType) {
     if (ITEM_TYPE_AI_MODEL.equals(itemType) || ITEM_TYPE_DATA_BANK.equals(itemType) ||
         ITEM_TYPE_APPS.equals(itemType)) {
+
       String kcId = ctx.user().principal().getString(SUB);
-      String orgName = ctx.user().principal().getString(ORGANIZATION_NAME);
+      String orgName = ctx.user().principal().getString(ORG_NAME);
       body.put(PROVIDER_USER_ID, kcId)
           .put(DEPARTMENT, orgName)
           .put(UPLOADED_BY, orgName);
     }
+    return body;
   }
 
   private void validateItemExistence(HttpServerResponse response, String itemType,
@@ -168,14 +170,14 @@ public class ItemController implements ApiController {
                                            JsonObject body) {
     try {
       Item item = ItemFactory.parse(body);
-
       if (REQUEST_POST.equalsIgnoreCase(method)) {
         itemService.createItem(item)
-            .onSuccess(res -> sendSuccess(response, 201, "Item created successfully"))
+            .onSuccess(res -> sendSuccess(response, 201, "Success: Item created", item.toJson()))
             .onFailure(err -> handleOperationError(response, err));
       } else {
         itemService.updateItem(item)
-            .onSuccess(res -> sendSuccess(response, 200, "Item updated successfully"))
+            .onSuccess(res -> sendSuccess(response, 200, "Success: Item updated successfully",
+                item.toJson()))
             .onFailure(err -> handleOperationError(response, err));
       }
     } catch (Exception e) {
@@ -190,9 +192,10 @@ public class ItemController implements ApiController {
         .end(new RespBuilder().withType(type).withTitle(title).withDetail(detail).getResponse());
   }
 
-  private void sendSuccess(HttpServerResponse res, int status, String detail) {
+  private void sendSuccess(HttpServerResponse res, int status, String detail, JsonObject doc) {
     res.setStatusCode(status).end(
         new RespBuilder().withType(TYPE_SUCCESS).withTitle(TITLE_SUCCESS).withDetail(detail)
+            .withResult(doc)
             .getResponse());
   }
 
