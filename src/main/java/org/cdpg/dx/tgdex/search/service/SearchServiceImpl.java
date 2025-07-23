@@ -5,9 +5,12 @@ import static org.cdpg.dx.database.elastic.util.Constants.SOURCE_ONLY;
 
 import io.vertx.core.Future;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.exception.DxBadRequestException;
+import org.cdpg.dx.database.elastic.model.OrderBy;
 import org.cdpg.dx.database.elastic.model.QueryDecoder;
 import org.cdpg.dx.database.elastic.model.QueryDecoderRequestDTO;
 import org.cdpg.dx.database.elastic.model.QueryModel;
@@ -21,9 +24,7 @@ public class SearchServiceImpl implements SearchService {
   private final QueryDecoder queryDecoder;
   private final String docIndex;
 
-  public SearchServiceImpl(
-      ElasticsearchService elasticsearchService,
-      String docIndex) {
+  public SearchServiceImpl(ElasticsearchService elasticsearchService, String docIndex) {
     this.elasticsearchService = elasticsearchService;
     this.queryDecoder = new QueryDecoder();
     this.docIndex = docIndex;
@@ -39,6 +40,13 @@ public class SearchServiceImpl implements SearchService {
       // Use the new decoder to get the QueryModel
       QueryDecoder queryDecoder = new QueryDecoder();
       QueryModel queryModel = queryDecoder.getQueryModel(queryDecoderRequestDTO);
+      if (queryDecoderRequestDTO.getSort() != null && !queryDecoderRequestDTO.getSort().isEmpty()) {
+        Map<String, String> sortFields =
+            queryDecoderRequestDTO.getSort().stream()
+                .collect(
+                    Collectors.toMap(OrderBy::getColumn, sort -> sort.getDirection().toString()));
+        queryModel.setSortFields(sortFields);
+      }
 
       // Perform search
       return elasticsearchService

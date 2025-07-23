@@ -194,6 +194,8 @@ paths:
         - Limits: The sum of the internally calculated `offset` and `size` must be less than or equal to `10,000` to prevent overly large queries.
 
       operationId: search
+      security:
+        - authorization: []
       parameters:
         - name: page
           in: query
@@ -415,7 +417,7 @@ paths:
       tags:
         - Discovery
       security:
-        - bearerAuth: []
+        - authorization: []
       requestBody:
         description: Request body containing unified search filters
         required: true
@@ -638,6 +640,7 @@ paths:
     post:
       tags:
         - Entity
+
       description: |
         Insert an item into the catalogue where the item's body specifies the type of item and 
         instance name. id, itemCreatedAt and itemStatus are added by server. Items maybe subClasses of type 
@@ -645,6 +648,7 @@ paths:
       operationId: create item
       security:
         - bearerAuth: []
+
       requestBody:
         required: true
         content:
@@ -798,17 +802,9 @@ paths:
 
         If a Bearer token is provided in the Authorization header, the request will be authenticated and an audit log entry will be created for a **View** operation.
       operationId: get item
+      security:
+        - authorization: []
       parameters:
-        - name: Authorization
-          in: header
-          description: >
-            Bearer token for authorization. Example: "Bearer <keycloak_token>"
-
-            If provided, audit logging will record a View operation for this request.
-          required: false
-          schema:
-            type: string
-            pattern: '^Bearer\s+[a-zA-Z0-9\-\._~\+\/]+=*$'
         - name: id
           in: query
           description: ID of the DX Entity
@@ -859,17 +855,9 @@ paths:
         - Entity
       description: Delete an item
       operationId: delete item
+      security:
+        - authorization: []
       parameters:
-        - name: Authorization
-          in: header
-          description:
-            Bearer token for authorization.
-          example: "Bearer <keycloak_token>"
-          required: true
-          schema:
-            type: string
-            pattern: '^Bearer\s+[a-zA-Z0-9\-\._~\+\/]+=*$'
-            maxLength: 1024
         - name: id
           in: query
           description: ID of the DX Entity
@@ -950,7 +938,7 @@ tags:
     x-displayName: List
 components:
   securitySchemes:
-    bearerAuth:
+    authorization:
       type: http
       scheme: bearer
       bearerFormat: JWT

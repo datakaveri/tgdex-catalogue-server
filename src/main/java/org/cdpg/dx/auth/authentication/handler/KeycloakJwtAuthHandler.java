@@ -20,13 +20,14 @@ public class KeycloakJwtAuthHandler implements AuthenticationHandler {
     }
 
     @Override
-    public void handle(RoutingContext ctx ) {
+    public void handle(RoutingContext ctx) {
 
         LOGGER.info("Inside token handler");
         String token = BearerTokenExtractor.extract(ctx);
         boolean isTokenPresent = token != null && !token.isBlank();
         if ( !isTokenPresent && !isTokenRequired) {
             LOGGER.warn("Token not present and not required.");
+            ctx.next();
             return;
         }
 

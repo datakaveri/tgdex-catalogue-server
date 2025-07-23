@@ -18,10 +18,7 @@ import io.vertx.core.net.KeyStoreOptions;
 import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.AuthenticationHandler;
-import io.vertx.ext.web.handler.BodyHandler;
-import io.vertx.ext.web.handler.CorsHandler;
-import io.vertx.ext.web.handler.TimeoutHandler;
+import io.vertx.ext.web.handler.*;
 import io.vertx.ext.web.openapi.RouterBuilder;
 import io.vertx.ext.web.openapi.RouterBuilderOptions;
 import io.vertx.serviceproxy.HelperUtils;
@@ -83,7 +80,9 @@ try {
                                     new RouterBuilderOptions().setMountResponseContentTypeHandler(true);
                             routerBuilder.setOptions(factoryOptions);
                             routerBuilder.securityHandler("authorization", authHandler);
-                            routerBuilder.securityHandler("bearerAuth", authHandler);
+
+//                            routerBuilder.securityHandler("authorization", JWTAuthHandler.create(jwtAuth));
+
                             controllers.forEach(controller -> controller.register(routerBuilder));
 
                             LOGGER.debug("Creating router...");

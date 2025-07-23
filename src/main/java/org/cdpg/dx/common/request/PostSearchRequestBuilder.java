@@ -24,6 +24,8 @@ public class PostSearchRequestBuilder {
   boolean isCountApi = false;
   boolean isAssetSearch = false;
   private RoutingContext routingContext;
+  private String defaultSortBy = "itemCreatedAt";
+  private String defaultOrder = "desc";
 
   public PostSearchRequestBuilder(RoutingContext routingContext) {
     this.routingContext = routingContext;
@@ -56,7 +58,8 @@ public class PostSearchRequestBuilder {
         getSearchCriteriaRequest(requestBody),
         getAccessPolicyRequest(isAssetSearch, getSub(routingContext)),
         getInstanceFilterRequest(requestBody),
-        getResponseFilterRequest(requestBody));
+        getResponseFilterRequest(requestBody),
+        extractSortOrders());
   }
 
   public int getSize(MultiMap params) {
@@ -73,13 +76,12 @@ public class PostSearchRequestBuilder {
         return ctx.user().subject();
       }
     } catch (Exception e) {
-
+      throw new DxBadRequestException("User subject not found in context", e);
     }
     return null;
   }
 
   private List<String> getFilters(JsonObject requestBody) {
-    LOGGER.info(requestBody.getJsonArray("filter"));
     if (!requestBody.containsKey("filter")) {
       return new ArrayList<>();
     }
@@ -162,5 +164,47 @@ public class PostSearchRequestBuilder {
         isCountApi,
         requestBody.getJsonArray(ATTRIBUTE, new JsonArray()).getList(),
         requestBody.getJsonArray(FILTER, new JsonArray()).getList());
+  }
+
+  private List<OrderBy> extractSortOrders() {
+    List<OrderBy> orderByList = new ArrayList<>();
+    MultiMap params = routingContext.request().params(true);
+    if (params.get("sort") == null) {
+      LOGGER.debug("No sort parameter found in request.");
+      return null;
+    }
+    String sortParam = params.get("sort");
+    final int MAX_SORT_FIELDS = 3;
+
+    if (sortParam != null && !sortParam.isEmpty()) {
+      String[] items = sortParam.split(";");
+      if (items.length > MAX_SORT_FIELDS) {
+        throw new DxBadRequestException("Too many sort fields. Max allowed is " + MAX_SORT_FIELDS);
+      }
+
+      for (String item : items) {
+        String[] parts = item.split(":");
+        if (parts.length != 2) {
+          throw new DxBadRequestException(
+              "Invalid sort format: " + item + ". Expected field:order");
+        }
+
+        String field = parts[0].trim();
+        String direction = parts[1].trim().toLowerCase();
+        if (!field.endsWith(KEYWORD_KEY) && (!field.equalsIgnoreCase("itemCreatedAt"))) {
+          field = field + KEYWORD_KEY;
+        }
+        if (!direction.equals("asc") && !direction.equals("desc")) {
+          throw new DxBadRequestException("Invalid sort order: " + direction);
+        }
+
+        orderByList.add(new OrderBy(field, OrderBy.Direction.valueOf(direction.toUpperCase())));
+      }
+    } else if (defaultSortBy != null) {
+      orderByList.add(
+          new OrderBy(defaultSortBy, OrderBy.Direction.valueOf(defaultOrder.toUpperCase())));
+    }
+
+    return orderByList;
   }
 }

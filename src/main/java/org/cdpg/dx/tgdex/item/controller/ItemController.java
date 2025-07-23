@@ -19,6 +19,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.auditing.handler.AuditingHandler;
+import org.cdpg.dx.common.response.ResponseBuilder;
 import org.cdpg.dx.tgdex.apiserver.ApiController;
 import org.cdpg.dx.tgdex.item.model.Item;
 import org.cdpg.dx.tgdex.item.service.ItemService;
@@ -28,6 +29,7 @@ import org.cdpg.dx.tgdex.item.util.RespBuilder;
 import org.cdpg.dx.util.CheckIfTokenPresent;
 import org.cdpg.dx.util.VerifyItemTypeAndRole;
 
+import org.cdpg.dx.tgdex.item.util.GetItemRequest;
 public class ItemController implements ApiController {
   private static final Logger LOGGER = LogManager.getLogger(ItemController.class);
 
@@ -202,39 +204,6 @@ public class ItemController implements ApiController {
     LOGGER.error("Item operation failed", err);
     sendError(res, 400, TYPE_OPERATION_NOT_ALLOWED, TITLE_OPERATION_NOT_ALLOWED, err.getMessage());
   }
-
-  private void handleGetItem(RoutingContext ctx) {
-    String id = ctx.pathParam("id");
-    String type = ctx.request().getParam(TYPE_KEY);
-
-    if (id == null || id.isBlank()) {
-      ctx.response().setStatusCode(400).end(
-          new RespBuilder()
-              .withType(TYPE_INVALID_SYNTAX)
-              .withTitle(TITLE_INVALID_SYNTAX)
-              .withDetail(DETAIL_ID_NOT_FOUND)
-              .getResponse());
-      return;
-    }
-
-    itemService.getItem(id, type)
-        .onSuccess(item -> ctx.response().setStatusCode(200).end(
-            new RespBuilder()
-                .withType(TYPE_SUCCESS)
-                .withTitle(TITLE_SUCCESS)
-                .withResult(JsonObject.mapFrom(item).encode())
-                .getResponse()))
-        .onFailure(err -> {
-          LOGGER.error("Get item failed", err);
-          ctx.response().setStatusCode(404).end(
-              new RespBuilder()
-                  .withType(TYPE_ITEM_NOT_FOUND)
-                  .withTitle(TITLE_ITEM_NOT_FOUND)
-                  .withDetail(err.getMessage())
-                  .getResponse());
-        });
-  }
-
   private void handleDeleteItem(RoutingContext ctx) {
     String id = ctx.pathParam("id");
 
@@ -265,4 +234,34 @@ public class ItemController implements ApiController {
                   .getResponse());
         });
   }
+    private void handleGetItem(RoutingContext routingContext) {
+        String itemId = routingContext.queryParams().get("id");
+        LOGGER.debug("Received GET request for item with ID '{}'", itemId);
+
+        if (itemId == null || itemId.isBlank()) {
+            routingContext.fail(400, new IllegalArgumentException("Item ID is required"));
+            return;
+        }
+
+        String subId = "";
+        if (routingContext.user() != null) {
+            subId = routingContext.user().principal().getString("sub");
+        }
+        LOGGER.debug("Extracted subId: '{}'", routingContext.user().principal());
+        GetItemRequest request = new GetItemRequest(itemId, subId);
+        itemService.getItem(request)
+                .onSuccess(responseModel -> {
+                    LOGGER.debug("Item retrieved successfully for ID '{}'", itemId);
+                    ResponseBuilder.sendSuccess(
+                            routingContext,
+                            responseModel.getElasticsearchResponses(),
+                            null,
+                            responseModel.getTotalHits()
+                    );
+                })
+                .onFailure(err -> {
+                    LOGGER.error("Error retrieving item with ID '{}': {}", itemId, err.getMessage());
+                    routingContext.fail(500, err);
+                });
+    }
 }

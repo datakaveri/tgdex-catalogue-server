@@ -1,37 +1,13 @@
 package org.cdpg.dx.database.elastic.service;
 
-import static org.cdpg.dx.database.elastic.util.Constants.AGGREGATIONS;
-import static org.cdpg.dx.database.elastic.util.Constants.AGGREGATION_LIST;
-import static org.cdpg.dx.database.elastic.util.Constants.AGGREGATION_ONLY;
-import static org.cdpg.dx.database.elastic.util.Constants.BUCKETS;
-import static org.cdpg.dx.database.elastic.util.Constants.COUNT_AGGREGATION_ONLY;
-import static org.cdpg.dx.database.elastic.util.Constants.DOC_COUNT;
-import static org.cdpg.dx.database.elastic.util.Constants.DOC_IDS_ONLY;
-import static org.cdpg.dx.database.elastic.util.Constants.ID;
-import static org.cdpg.dx.database.elastic.util.Constants.KEY;
-import static org.cdpg.dx.database.elastic.util.Constants.RESULTS;
-import static org.cdpg.dx.database.elastic.util.Constants.SOURCE;
-import static org.cdpg.dx.database.elastic.util.Constants.SOURCE_AND_ID;
-import static org.cdpg.dx.database.elastic.util.Constants.SOURCE_AND_ID_GEOQUERY;
-import static org.cdpg.dx.database.elastic.util.Constants.SOURCE_ONLY;
-import static org.cdpg.dx.database.elastic.util.Constants.STRING_SIZE;
-import static org.cdpg.dx.database.elastic.util.Constants.SUMMARY_KEY;
-import static org.cdpg.dx.database.elastic.util.Constants.WORD_VECTOR_KEY;
+import static org.cdpg.dx.database.elastic.util.Constants.*;
 
 import co.elastic.clients.elasticsearch.ElasticsearchAsyncClient;
 import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch._types.Script;
 import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import co.elastic.clients.elasticsearch.core.BulkRequest;
-import co.elastic.clients.elasticsearch.core.CountRequest;
-import co.elastic.clients.elasticsearch.core.DeleteByQueryRequest;
-import co.elastic.clients.elasticsearch.core.DeleteRequest;
-import co.elastic.clients.elasticsearch.core.ExistsRequest;
-import co.elastic.clients.elasticsearch.core.SearchRequest;
-import co.elastic.clients.elasticsearch.core.SearchResponse;
-import co.elastic.clients.elasticsearch.core.UpdateByQueryRequest;
-import co.elastic.clients.elasticsearch.core.UpdateRequest;
+import co.elastic.clients.elasticsearch.core.*;
 import co.elastic.clients.elasticsearch.core.bulk.BulkResponseItem;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.json.JsonData;
@@ -43,13 +19,11 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.json.stream.JsonGenerator;
+
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.exception.DxBadRequestException;
@@ -71,15 +45,13 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
   }
 
   @Override
-  public Future<List<ElasticsearchResponse>> search(String index, QueryModel queryModel,
-                                                    String options) {
+  public Future<List<ElasticsearchResponse>> search(String index, QueryModel queryModel, String options) {
     Promise<List<ElasticsearchResponse>> promise = Promise.promise();
 
     Map<String, Aggregation> aggregations = new HashMap<>();
 
     if (queryModel.getAggregations() != null) {
-      queryModel.getAggregations().forEach(
-          agg -> aggregations.put(agg.getAggregationName(), agg.toElasticsearchAggregations()));
+      queryModel.getAggregations().forEach(agg -> aggregations.put(agg.getAggregationName(), agg.toElasticsearchAggregations()));
     }
 
     SearchRequest.Builder requestBuilder = new SearchRequest.Builder().index(index);
@@ -125,8 +97,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         if (!options.startsWith(AGGREGATION_ONLY)) {
           for (var hit : response.hits().hits()) {
             String id = hit.id();
-            JsonObject source =
-                hit.source() != null ? new JsonObject(hit.source().toString()) : new JsonObject();
+            JsonObject source = hit.source() != null ? new JsonObject(hit.source().toString()) : new JsonObject();
             JsonObject result = new JsonObject();
             switch (options) {
               case DOC_IDS_ONLY:
@@ -188,8 +159,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
 
   private JsonObject parseAggregations(SearchResponse<ObjectNode> response, String options) {
     JsonObject aggResult = new JsonObject();
-    JsonpMapper mapper =
-        asyncClient._jsonpMapper().withAttribute(JsonpMapperFeatures.SERIALIZE_TYPED_KEYS, false);
+    JsonpMapper mapper = asyncClient._jsonpMapper().withAttribute(JsonpMapperFeatures.SERIALIZE_TYPED_KEYS, false);
     StringWriter writer = new StringWriter();
     try (JsonGenerator generator = mapper.jsonProvider().createGenerator(writer)) {
       mapper.serialize(response, generator);
@@ -238,8 +208,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
   @Override
   public Future<Integer> count(String index, QueryModel queryModel) {
     // Convert QueryModel into Elasticsearch Query
-    Query query =
-        queryModel.getQueries() == null ? null : queryModel.getQueries().toElasticsearchQuery();
+    Query query = queryModel.getQueries() == null ? null : queryModel.getQueries().toElasticsearchQuery();
     LOGGER.debug("Count query {}", query);
     // Create a CountRequest.Builder for the count query
     CountRequest.Builder requestBuilder = new CountRequest.Builder().index(index);
@@ -261,8 +230,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     asyncClient.count(request).whenComplete((response, error) -> {
       if (error != null) {
         // Log specific error type for better debugging
-        LOGGER.error("Count operation failed. Error type: {}, Message: {}",
-            error.getClass().getSimpleName(), error.getMessage());
+        LOGGER.error("Count operation failed. Error type: {}, Message: {}", error.getClass().getSimpleName(), error.getMessage());
 
         // You might want to handle specific exceptions differently
         {
@@ -391,27 +359,24 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
 
   private Future<ElasticsearchResponse> performSingleSearch(String index, QueryModel model) {
     Promise<ElasticsearchResponse> promise = Promise.promise();
-    LOGGER.debug("Query 12 " + model.toElasticsearchQuery()
-    );
     SearchRequest.Builder builder = new SearchRequest.Builder()
         .index(index)
         .query(model.toElasticsearchQuery())
         .size(1)
         .from(0);
-
     asyncClient.search(builder.build(), ObjectNode.class)
         .whenComplete((resp, err) -> {
           if (err != null) {
             promise.fail(new RuntimeException("Search error", err));
-          } else if (resp.hits().total().value() == 0) {
+          } else if (resp.hits().total().value()==0) {
             LOGGER.debug("No documents found ");
             promise.complete();
           } else {
-            Hit<ObjectNode> hit = resp.hits().hits().getFirst();
-            LOGGER.debug("Single document found: {}", resp.hits());
+            Hit <ObjectNode> hit = resp.hits().hits().getFirst();
+            LOGGER.debug("Single document found with ID: {}", hit.id());
+            ElasticsearchResponse response = new ElasticsearchResponse(hit.id(), new JsonObject(hit.source().toString()));
             ElasticsearchResponse.setTotalHits((int) resp.hits().total().value());
-            promise.complete(
-                new ElasticsearchResponse(hit.id(), new JsonObject(hit.source().toString())));
+            promise.complete(response);
           }
         });
     return promise.future();
@@ -455,7 +420,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
       if (err != null) {
         LOGGER.error("delete failed", err);
         promise.fail(new RuntimeException("Delete error"));
-      } else if (resp.result() == Result.NotFound) {
+      } else if (resp.result() == Result.NotFound ){
         LOGGER.warn("Document not found: {}", id);
         promise.fail(new RuntimeException("Document not found"));
       } else {

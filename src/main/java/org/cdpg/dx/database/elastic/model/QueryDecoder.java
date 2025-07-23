@@ -62,7 +62,7 @@ public class QueryDecoder {
       int size = request.getSize();
       q.setLimit(String.valueOf(size));
       if (request.getPage() != null) {
-        int offset = request.getPage();
+        int offset = (request.getPage() - 1) * size;
         q.setOffset(String.valueOf(offset));
       }
       return q;
@@ -169,6 +169,19 @@ public class QueryDecoder {
     QueryModel boolQuery = new QueryModel(QueryType.BOOL);
     boolQuery.setMustQueries(List.of(typeMatchQuery, nameMatchQuery));
     return boolQuery;
+  }
+  public QueryModel getItemQueryModel(String id){
+
+    QueryModel q = new QueryModel();
+
+    QueryModel boolQuery=new QueryModel(QueryType.BOOL);
+    QueryModel idTermQuery = new QueryModel(QueryType.TERM);
+    idTermQuery.setQueryParameters(Map.of(FIELD,ID_KEYWORD,VALUE,id));
+
+
+    boolQuery.setMustQueries(List.of(idTermQuery));
+    q.setQueries(boolQuery);
+    return q;
   }
 
   private QueryModel getBoolQuery(Map<FilterType, List<QueryModel>> filterQueries) {
