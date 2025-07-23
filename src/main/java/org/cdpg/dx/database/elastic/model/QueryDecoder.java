@@ -170,6 +170,19 @@ public class QueryDecoder {
     boolQuery.setMustQueries(List.of(typeMatchQuery, nameMatchQuery));
     return boolQuery;
   }
+  public QueryModel getItemQueryModel(String id){
+
+    QueryModel q = new QueryModel();
+
+    QueryModel boolQuery=new QueryModel(QueryType.BOOL);
+    QueryModel idTermQuery = new QueryModel(QueryType.TERM);
+    idTermQuery.setQueryParameters(Map.of(FIELD,ID_KEYWORD,VALUE,id));
+
+
+    boolQuery.setMustQueries(List.of(idTermQuery));
+    q.setQueries(boolQuery);
+    return q;
+  }
 
   private QueryModel getBoolQuery(Map<FilterType, List<QueryModel>> filterQueries) {
     QueryModel boolQuery = new QueryModel(QueryType.BOOL);
