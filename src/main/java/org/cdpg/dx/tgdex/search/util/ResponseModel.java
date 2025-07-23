@@ -32,10 +32,13 @@ public class ResponseModel {
     this.response = new JsonObject();
     this.response.put(RESULTS, setAggregationsList());
   }
-  public ResponseModel(Integer elasticSearchCountResponses) {
+
+  public ResponseModel (ElasticsearchResponse elasticsearchResponse){
+    this.response= new JsonObject();
+    this.response.put(RESULTS, elasticsearchResponse.getSource());
+    setTotalHits(ElasticsearchResponse.getTotalHits());
 
   }
-
   private JsonArray setAggregationsList() {
     JsonArray results = new JsonArray();
     // Fetch all aggregations from the response JSON
