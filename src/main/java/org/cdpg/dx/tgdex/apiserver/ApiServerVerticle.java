@@ -64,7 +64,6 @@ try {
     Future.all(routerFuture, authFuture)
             .onSuccess(
                     cf -> {
-                        LOGGER.debug("RouterBuilder and JWTAuth successfully created {}", cf.result());
                         RouterBuilder routerBuilder = cf.resultAt(0);
                         JWTAuth jwtAuth = cf.resultAt(1);
                         AuthenticationHandler authHandler = new KeycloakJwtAuthHandler(jwtAuth, config().getBoolean("isTokenRequired"));
