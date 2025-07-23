@@ -13,6 +13,5 @@ public class ItemControllerFactory {
                                                       String docIndex, String vocContext) {
         ItemService crudService = new ItemServiceImpl(elasticsearchService, docIndex);
         return new ItemController(auditingHandler, crudService, vocContext);
-
     }
 }
