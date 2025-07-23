@@ -1,6 +1,5 @@
 package org.cdpg.dx.tgdex.item.controller;
 
-import static org.cdpg.dx.database.elastic.util.Constants.TYPE_KEY;
 import static org.cdpg.dx.tgdex.util.Constants.*;
 import static org.cdpg.dx.tgdex.validator.Constants.*;
 import static org.cdpg.dx.util.Constants.CREATE_ITEM;
