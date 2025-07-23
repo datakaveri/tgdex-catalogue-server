@@ -41,7 +41,7 @@ public interface ValidatorService {
   }
   Future<Void> validateSchema(JsonObject request);// CRUD api me
 
-  Future<Void> validateItem(JsonObject request); // CRUD api me
+  Future<JsonObject> validateItem(JsonObject request); // CRUD api me
 
   Future<Void> validateSearchQuery(JsonObject requestData);
 
