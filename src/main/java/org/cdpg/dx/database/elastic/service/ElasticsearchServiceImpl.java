@@ -358,17 +358,13 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
 
         private Future<ElasticsearchResponse> performSingleSearch(String index, QueryModel model) {
             Promise<ElasticsearchResponse> promise = Promise.promise();
-            LOGGER.debug("Query 12 "+model.toElasticsearchQuery()
-            );
             SearchRequest.Builder builder = new SearchRequest.Builder()
                     .index(index)
                     .query(model.toElasticsearchQuery())
                     .size(1)
                     .from(0);
-
             asyncClient.search(builder.build(), ObjectNode.class)
                     .whenComplete((resp, err) -> {
-                        LOGGER.debug("Response "+resp);
                         if (err != null) {
                             promise.fail(new RuntimeException("Search error", err));
                         } else if (resp.hits().total().value()==0) {
@@ -376,8 +372,10 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
                             promise.complete();
                         } else {
                             Hit <ObjectNode> hit = resp.hits().hits().getFirst();
-                            LOGGER.debug("Single document found: {}", resp.hits());
-                            promise.complete(new ElasticsearchResponse(hit.id(),new JsonObject(hit.source().toString())));
+                            LOGGER.debug("Single document found with ID: {}", hit.id());
+                            ElasticsearchResponse response = new ElasticsearchResponse(hit.id(), new JsonObject(hit.source().toString()));
+                            ElasticsearchResponse.setTotalHits((int) resp.hits().total().value());
+                            promise.complete(response);
                         }
                     });
             return promise.future();
