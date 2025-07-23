@@ -21,7 +21,7 @@ public interface Item {
   String getDepartment();
   String getId();
   String getItemStatus();
-  LocalDateTime getItemCreatedAt();
+  String getItemCreatedAt();
   String getContext();
 
   // Serialize this object to JsonObject

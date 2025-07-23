@@ -176,12 +176,16 @@ public class ItemServiceImpl implements ItemService {
         elasticsearchService.getSingleDocument(docIndex, queryModel)
             .onSuccess(result -> {
                 if (result == null || ElasticsearchResponse.getTotalHits() == 0) {
-                    promise.fail("Item not found");
+                    promise.fail(DETAIL_ITEM_NOT_FOUND);
                 } else {
+                    LOGGER.debug("result: " + result.getSource());
                     promise.complete(ItemFactory.from(result.getSource()));
                 }
             })
-            .onFailure(promise::fail);
+            .onFailure(err -> {
+                LOGGER.debug("Error from elastic service: " + err.getCause());
+                promise.fail(err.getLocalizedMessage());
+            });
         return promise.future();
     }
 

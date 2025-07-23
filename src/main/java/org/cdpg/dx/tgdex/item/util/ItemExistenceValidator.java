@@ -1,6 +1,7 @@
 package org.cdpg.dx.tgdex.item.util;
 
 import static org.cdpg.dx.database.elastic.util.Constants.DATA_UPLOAD_STATUS;
+import static org.cdpg.dx.database.elastic.util.Constants.DETAIL_ITEM_NOT_FOUND;
 import static org.cdpg.dx.database.elastic.util.Constants.MEDIA_URL;
 import static org.cdpg.dx.database.elastic.util.Constants.PENDING;
 import static org.cdpg.dx.database.elastic.util.Constants.PUBLISH_STATUS;
@@ -77,8 +78,12 @@ public class ItemExistenceValidator {
 
     itemService.itemWithTheNameExists(ITEM_TYPE_APPS, request.getString(NAME))
         .onFailure(err -> {
-          LOGGER.debug("Fail: DB Error");
-          promise.fail(VALIDATION_FAILURE_MSG);
+          if (err.getMessage().equals(DETAIL_ITEM_NOT_FOUND)) {
+            promise.complete(request);
+          } else {
+            LOGGER.debug("Fail: DB Error: " + err.getLocalizedMessage());
+            promise.fail(VALIDATION_FAILURE_MSG);
+          }
         })
         .onSuccess(res -> {
           if (REQUEST_POST.equalsIgnoreCase(method) && ElasticsearchResponse.getTotalHits() > 0) {
@@ -95,7 +100,14 @@ public class ItemExistenceValidator {
     setCommonFields(request);
 
     itemService.itemWithTheNameExists(ITEM_TYPE_AI_MODEL, request.getString(NAME))
-        .onFailure(err -> promise.fail(VALIDATION_FAILURE_MSG))
+        .onFailure(err -> {
+          if (err.getMessage().equals(DETAIL_ITEM_NOT_FOUND)) {
+            promise.complete(request);
+          } else {
+            LOGGER.debug("Fail: DB Error: " + err.getLocalizedMessage());
+            promise.fail(VALIDATION_FAILURE_MSG);
+          }
+        })
         .onSuccess(res -> {
           String returnType = getReturnTypeForValidation(res.toJson());
           if (REQUEST_POST.equalsIgnoreCase(method) && returnType.contains(ITEM_TYPE_AI_MODEL)) {
@@ -131,7 +143,14 @@ public class ItemExistenceValidator {
     setCommonFields(request);
 
     itemService.itemWithTheNameExists(ITEM_TYPE_DATA_BANK, request.getString(NAME))
-        .onFailure(err -> promise.fail(VALIDATION_FAILURE_MSG))
+        .onFailure(err -> {
+          if (err.getMessage().equals(DETAIL_ITEM_NOT_FOUND)) {
+            promise.complete(request);
+          } else {
+            LOGGER.debug("Fail: DB Error: " + err.getLocalizedMessage());
+            promise.fail(VALIDATION_FAILURE_MSG);
+          }
+        })
         .onSuccess(res -> {
           String returnType = getReturnTypeForValidation(res.toJson());
           if (REQUEST_POST.equalsIgnoreCase(method) && returnType.contains(ITEM_TYPE_DATA_BANK)) {
@@ -180,8 +199,6 @@ public class ItemExistenceValidator {
       if (!isValidUuid(id)) {
         promise.fail("validation failed. Incorrect id");
       }
-    } else if (!request.containsKey(ID)) {
-      promise.fail("mandatory id field not present in request body");
     }
   }
   private boolean isValidUuid(String uuidString) {

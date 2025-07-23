@@ -20,6 +20,8 @@ public class VerifyItemTypeAndRole implements Handler<RoutingContext> {
 
     @Override
     public void handle(RoutingContext routingContext) {
+        System.out.println("userRoles: " + routingContext.user().principal());
+
         User user = routingContext.user();
         if (user == null) {
             routingContext.fail(new DxUnauthorizedException("No User Found")); // 401
@@ -34,8 +36,16 @@ public class VerifyItemTypeAndRole implements Handler<RoutingContext> {
         }
         createMap();
         String itemType = routingContext.body().asJsonObject().getJsonArray("type").getString(0);
+
         JsonArray userRoles = realmAccess.getJsonArray("roles");
-        ItemType requestedType = ItemType.valueOf(itemType);
+        System.out.println("ItemType: " + Arrays.toString(ItemType.values()));
+        ItemType requestedType;
+        try {
+            requestedType = ItemType.fromTypeValue(itemType);
+        } catch (IllegalArgumentException e) {
+            routingContext.fail(new DxForbiddenException("Unsupported item type: " + itemType));
+            return;
+        }
         System.out.println("userRoles: " + userRoles);
         System.out.println("requestedType: " + requestedType);
 

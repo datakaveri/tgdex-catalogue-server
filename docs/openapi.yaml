@@ -643,17 +643,8 @@ paths:
         instance name. id, itemCreatedAt and itemStatus are added by server. Items maybe subClasses of type 
         [IUDXEntity](https://voc.iudx.org.in/IUDXEntity). Depending on this, some properties maybe mandatory. The json schema for the different types can be found [here](https://github.com/datakaveri/iudx-catalogue-server/tree/master/src/main/resources/iudx/catalogue/server/validator). In the future, we will serve schemas from our own servers.
       operationId: create item
-      parameters:
-        - name: Authorization
-          in: header
-          description:
-            Bearer token for authorization.
-          example: "Bearer <keycloak_token>"
-          required: true
-          schema:
-            type: string
-            pattern: '^Bearer\s+[a-zA-Z0-9\-\._~\+\/]+=*$'
-
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -739,16 +730,8 @@ paths:
            - type (1st element in array non-modifiable)
            - itemStatus
       operationId: update item
-      parameters:
-        - name: Authorization
-          in: header
-          description:
-            Bearer token for authorization.
-          example: "Bearer <keycloak_token>"
-          required: true
-          schema:
-            type: string
-            pattern: '^Bearer\s+[a-zA-Z0-9\-\._~\+\/]+=*$'
+      security:
+        - bearerAuth: [ ]
 
       requestBody:
         required: true
@@ -756,9 +739,9 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: '#/components/schemas/exampleEntityWIdAIModel'
-                - $ref: '#/components/schemas/exampleEntityWIdDataBankResource'
-                - $ref: '#/components/schemas/exampleEntityWIdAdexApps'
+                - $ref: '#/components/schemas/exampleEntityAIModel'
+                - $ref: '#/components/schemas/exampleEntityDataBank'
+                - $ref: '#/components/schemas/exampleEntityPotentialApps'
       responses:
         '200':
           description: Successfully inserted
@@ -1543,147 +1526,6 @@ components:
         license: CC-BY 4.0
         department: Department of IT, Electronics and Communication
         resourceType: DATASET
-    exampleEntityWIdAdexApps:
-      type: object
-      title: ADeX App entity
-      description: An example ADeX potential application entity for onboarding
-      properties:
-        '@context':
-          type: string
-          format: uri
-        id:
-          type: string
-          pattern: '^[a-zA-Z0-9]{8}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{12}$'
-        name:
-          type: string
-          pattern: "^[a-zA-Z0-9][a-zA-Z0-9 _\\-:,;)(]*$"
-          maxLength: 512
-        type:
-          type: array
-          items:
-            type: string
-        tags:
-          type: array
-          items:
-            type: string
-        label:
-          type: string
-          maxLength: 512
-        shortDescription:
-          type: string
-          maxLength: 512
-        description:
-          type: string
-          maxLength: 4000
-        organizationType:
-          type: string
-          enum: [ 'Private', 'Public', 'Academic Institution', "NGO/Non-profit", 'NA', '' ]
-        department:
-          type: string
-        canBeUsedFor:
-          type: object
-          additionalProperties:
-            type: string
-            maxLength: 300
-          maxProperties: 5
-        dataInputsAndAiTechniques:
-          type: object
-          properties:
-            Input Data Banks:
-              type: array
-              items:
-                type: string
-                maxLength: 200
-            Expected Output:
-              type: array
-              items:
-                type: string
-                maxLength: 200
-            AI Models:
-              type: array
-              items:
-                type: string
-                maxLength: 200
-            Potential Benefits:
-              type: array
-              items:
-                type: string
-                maxLength: 200
-          required:
-            - Input Data Banks
-            - Expected Output
-            - AI Models
-            - Potential Benefits
-          additionalProperties: false
-        itemStatus:
-          type: string
-          enum: [ 'ACTIVE', 'INACTIVE' ]
-        itemCreatedAt:
-          type: string
-          format: date-time
-        uploadedBy:
-          type: string
-          format: email
-        fileFormat:
-          type: string
-        accessPolicy:
-          type: string
-          enum: [ 'Public', 'Private' ]
-      required:
-        - name
-        - type
-        - tags
-        - label
-        - shortDescription
-        - description
-        - organizationType
-        - department
-        - uploadedBy
-        - fileFormat
-        - accessPolicy
-        - canBeUsedFor
-        - dataInputsAndAiTechniques
-      example:
-        type:
-          - 'adex:Apps'
-        name: 'crop-disease-app'
-        tags:
-          - ai
-          - ml
-          - model
-          - ai-model
-          - ml-model
-          - machine
-          - learning
-          - machine learning
-          - training
-          - algorithm
-        label: 'Test-Crop Disease Detection Model'
-        shortDescription: 'A test potential application item for detecting crop disease'
-        description: 'A test potential application item for detecting crop disease with the help of infected leaf images.'
-        organizationType: 'Private'
-        department: 'Agriculture and Co-operation'
-        uploadedBy: 'cdpg@datakaveri.org'
-        fileFormat: 'xlsx'
-        accessPolicy: 'Public'
-        canBeUsedFor:
-          cropMonitoring: 'Detect and classify diseases in crops using image input'
-          yieldOptimization: 'Improve crop yield by early detection of diseases'
-        dataInputsAndAiTechniques:
-          Input Data Banks:
-            - 'Annotated Leaf Image Dataset'
-            - 'Crop Type Classification Data'
-          Expected Output:
-            - 'Disease Type'
-            - 'Confidence Score'
-            - 'Recommended Treatment'
-          AI Models:
-            - 'Convolutional Neural Networks'
-            - 'Transfer Learning'
-          Potential Benefits:
-            - 'Early detection of crop diseases'
-            - 'Reduction in crop loss'
-            - 'Better planning and resource allocation'
     successResponseForCreateAIModelEntity:
       type: object
       title: AI Model Entity

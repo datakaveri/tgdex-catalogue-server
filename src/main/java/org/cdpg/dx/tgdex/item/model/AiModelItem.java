@@ -1,9 +1,12 @@
 package org.cdpg.dx.tgdex.item.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.vertx.core.json.JsonObject;
-import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AiModelItem implements Item {
   private String name;
   private List<String> type;
@@ -18,7 +21,7 @@ public class AiModelItem implements Item {
   private String department;
   private String id;
   private String itemStatus;
-  private LocalDateTime itemCreatedAt;
+  private String itemCreatedAt;
   private String context;
 
   private String modelType;
@@ -29,7 +32,62 @@ public class AiModelItem implements Item {
   private Boolean dataUploadStatus;
   private String mediaURL;
 
-  // Getters and setters for all fields...
+  private JsonObject additionalFields = new JsonObject();
+
+  public static AiModelItem fromJson(JsonObject json) {
+    AiModelItem item = new AiModelItem();
+
+    item.setName(json.getString("name"));
+    item.setType(json.getJsonArray("type") != null ? json.getJsonArray("type").getList() : null);
+    item.setLabel(json.getString("label"));
+    item.setShortDescription(json.getString("shortDescription"));
+    item.setDescription(json.getString("description"));
+    item.setTags(json.getJsonArray("tags") != null ? json.getJsonArray("tags").getList() : null);
+    item.setAccessPolicy(json.getString("accessPolicy"));
+    item.setOrganizationType(json.getString("organizationType"));
+    item.setOrganizationId(json.getString("organizationId"));
+    item.setIndustry(json.getString("industry"));
+    item.setDepartment(json.getString("department"));
+    item.setId(json.getString("id"));
+    item.setItemStatus(json.getString("itemStatus"));
+
+    item.setItemCreatedAt(json.getString("itemCreatedAt"));
+    item.setContext(json.getString("@context"));
+    item.setModelType(json.getString("modelType"));
+    item.setFileFormat(json.getString("fileFormat"));
+    item.setUploadedBy(json.getString("uploadedBy"));
+    item.setLicense(json.getString("license"));
+    item.setFileSize(json.getString("fileSize"));
+    item.setDataUploadStatus(json.getBoolean("dataUploadStatus"));
+    item.setMediaURL(json.getString("mediaURL"));
+
+    // Handle additional fields
+    Set<String> knownKeys = new HashSet<>(Set.of(
+        "name", "type", "label", "shortDescription", "description", "tags",
+        "accessPolicy", "organizationType", "organizationId", "industry", "department",
+        "id", "itemStatus", "itemCreatedAt", "@context",
+        "modelType", "fileFormat", "uploadedBy", "license", "fileSize",
+        "dataUploadStatus", "mediaURL"
+    ));
+
+    JsonObject extras = new JsonObject();
+    for (String key : json.fieldNames()) {
+      if (!knownKeys.contains(key)) {
+        extras.put(key, json.getValue(key));
+      }
+    }
+    item.setAdditionalFields(extras);
+
+    return item;
+  }
+
+  public JsonObject getAdditionalFields() {
+    return additionalFields;
+  }
+
+  public void setAdditionalFields(JsonObject additionalFields) {
+    this.additionalFields = additionalFields;
+  }
 
   @Override
   public String getName() {
@@ -149,11 +207,11 @@ public class AiModelItem implements Item {
   }
 
   @Override
-  public LocalDateTime getItemCreatedAt() {
+  public String getItemCreatedAt() {
     return itemCreatedAt;
   }
 
-  public void setItemCreatedAt(LocalDateTime itemCreatedAt) {
+  public void setItemCreatedAt(String itemCreatedAt) {
     this.itemCreatedAt = itemCreatedAt;
   }
 
@@ -248,38 +306,9 @@ public class AiModelItem implements Item {
     json.put("fileSize", fileSize);
     json.put("dataUploadStatus", dataUploadStatus);
     json.put("mediaURL", mediaURL);
+
+    json.mergeIn(additionalFields, true);
+
     return json;
   }
-
-  public static AiModelItem fromJson(JsonObject json) {
-    AiModelItem item = new AiModelItem();
-    item.setName(json.getString("name"));
-    item.setType(json.getJsonArray("type").getList());
-    item.setLabel(json.getString("label"));
-    item.setShortDescription(json.getString("shortDescription"));
-    item.setDescription(json.getString("description"));
-    item.setTags(json.getJsonArray("tags").getList());
-    item.setAccessPolicy(json.getString("accessPolicy"));
-    item.setOrganizationType(json.getString("organizationType"));
-    item.setOrganizationId(json.getString("organizationId"));
-    item.setIndustry(json.getString("industry"));
-    item.setDepartment(json.getString("department"));
-    item.setId(json.getString("id"));
-    item.setItemStatus(json.getString("itemStatus"));
-    item.setItemCreatedAt(json.getString("itemCreatedAt") != null
-        ? LocalDateTime.parse(json.getString("itemCreatedAt"))
-        : null);
-    item.setContext(json.getString("@context"));
-
-    item.setModelType(json.getString("modelType"));
-    item.setFileFormat(json.getString("fileFormat"));
-    item.setUploadedBy(json.getString("uploadedBy"));
-    item.setLicense(json.getString("license"));
-    item.setFileSize(json.getString("fileSize"));
-    item.setDataUploadStatus(json.getBoolean("dataUploadStatus"));
-    item.setMediaURL(json.getString("mediaURL"));
-
-    return item;
-  }
-
 }

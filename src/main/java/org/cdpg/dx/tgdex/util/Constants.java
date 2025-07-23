@@ -165,6 +165,7 @@ public class Constants {
 
     public static final String UPLOADED_BY = "uploadedBy";
     public static final String ORGANIZATION_NAME = "organizationName";
+    public static final String ORG_NAME = "organisation_name";
     public static final String ORGANIZATION_TYPE = "organizationType";
     public static final String ORGANIZATION_ID = "organizationId";
     public static final String FILE_FORMAT = "fileFormat";
