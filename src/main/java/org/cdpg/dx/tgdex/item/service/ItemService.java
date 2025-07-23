@@ -1,7 +1,6 @@
 package org.cdpg.dx.tgdex.item.service;
 
 import io.vertx.core.Future;
-<<<<<<< HEAD
 import org.cdpg.dx.tgdex.item.model.Item;
 import org.cdpg.dx.tgdex.item.util.GetItemRequest;
 import org.cdpg.dx.tgdex.search.util.ResponseModel;

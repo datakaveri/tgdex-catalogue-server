@@ -30,6 +30,7 @@ import org.cdpg.dx.tgdex.item.util.RespBuilder;
 import org.cdpg.dx.util.CheckIfTokenPresent;
 import org.cdpg.dx.util.VerifyItemTypeAndRole;
 
+import org.cdpg.dx.tgdex.item.util.GetItemRequest;
 public class ItemController implements ApiController {
     private static final Logger LOGGER = LogManager.getLogger(ItemController.class);
 
