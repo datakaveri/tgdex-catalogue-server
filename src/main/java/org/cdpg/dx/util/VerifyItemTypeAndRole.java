@@ -13,6 +13,7 @@ import java.util.*;
 
 import static org.cdpg.dx.util.ItemType.AI_MODEL;
 import static org.cdpg.dx.util.ItemType.APPS;
+import static org.cdpg.dx.util.ItemType.DATA_BANK;
 
 public class VerifyItemTypeAndRole implements Handler<RoutingContext> {
     HashMap<DxRole, List<ItemType>> roleItemTypeMap = new HashMap<>();
@@ -35,6 +36,8 @@ public class VerifyItemTypeAndRole implements Handler<RoutingContext> {
         String itemType = routingContext.body().asJsonObject().getJsonArray("type").getString(0);
         JsonArray userRoles = realmAccess.getJsonArray("roles");
         ItemType requestedType = ItemType.valueOf(itemType);
+        System.out.println("userRoles: " + userRoles);
+        System.out.println("requestedType: " + requestedType);
 
         boolean allowed = userRoles.stream()
                 .map(Object::toString)
@@ -63,7 +66,8 @@ public class VerifyItemTypeAndRole implements Handler<RoutingContext> {
         List<ItemType> providerItemTypes = new ArrayList<>();
         List<ItemType> cosAdminItemTypes = new ArrayList<>();
         providerItemTypes.add(AI_MODEL);
-        providerItemTypes.add(APPS);
+        providerItemTypes.add(DATA_BANK);
+        cosAdminItemTypes.add(APPS);
         this.roleItemTypeMap.put(DxRole.PROVIDER, providerItemTypes);
         this.roleItemTypeMap.put(DxRole.COS_ADMIN, cosAdminItemTypes);}
 }
