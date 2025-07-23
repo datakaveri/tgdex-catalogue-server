@@ -647,7 +647,7 @@ paths:
         [IUDXEntity](https://voc.iudx.org.in/IUDXEntity). Depending on this, some properties maybe mandatory. The json schema for the different types can be found [here](https://github.com/datakaveri/iudx-catalogue-server/tree/master/src/main/resources/iudx/catalogue/server/validator). In the future, we will serve schemas from our own servers.
       operationId: create item
       security:
-        - bearerAuth: []
+        - authorization: [ ]
 
       requestBody:
         required: true
@@ -735,7 +735,7 @@ paths:
            - itemStatus
       operationId: update item
       security:
-        - bearerAuth: [ ]
+        - authorization: [ ]
 
       requestBody:
         required: true
