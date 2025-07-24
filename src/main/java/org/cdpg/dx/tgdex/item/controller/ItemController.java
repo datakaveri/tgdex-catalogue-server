@@ -62,7 +62,6 @@ public class ItemController implements ApiController {
 
     builder.operation(DELETE_ITEM)
         .handler(checkIfTokenPresent)
-        .handler(verifyItemTypeAndRole)
         .handler(this::handleDeleteItem)
         .handler(auditingHandler::handleApiAudit);
 
@@ -176,8 +175,11 @@ public class ItemController implements ApiController {
             .onFailure(err -> handleOperationError(response, err));
       } else {
         itemService.updateItem(item)
-            .onSuccess(res -> sendSuccess(response, 200, "Success: Item updated successfully",
-                item.toJson()))
+            .onSuccess(res -> {
+              LOGGER.debug("Item updated successfully: {}", item);
+              sendSuccess(response, 200, "Success: Item updated successfully",
+                      item.toJson());
+            })
             .onFailure(err -> handleOperationError(response, err));
       }
     } catch (Exception e) {
@@ -204,7 +206,7 @@ public class ItemController implements ApiController {
     sendError(res, 400, TYPE_OPERATION_NOT_ALLOWED, TITLE_OPERATION_NOT_ALLOWED, err.getMessage());
   }
   private void handleDeleteItem(RoutingContext ctx) {
-    String id = ctx.pathParam("id");
+    String id = ctx.queryParams().get("id");
 
     if (id == null || id.isBlank()) {
       ctx.response().setStatusCode(400).end(
@@ -221,7 +223,8 @@ public class ItemController implements ApiController {
             new RespBuilder()
                 .withType(TYPE_SUCCESS)
                 .withTitle(TITLE_SUCCESS)
-                .withDetail("Item deleted successfully")
+                .withResult(new JsonArray().add(new JsonObject().put(ID,id)))
+                .withDetail("Success: Item deleted successfully")
                 .getResponse()))
         .onFailure(err -> {
           LOGGER.error("Delete item failed", err);
@@ -246,11 +249,21 @@ public class ItemController implements ApiController {
         if (routingContext.user() != null) {
             subId = routingContext.user().principal().getString("sub");
         }
-       // LOGGER.debug("Extracted subId: '{}'", routingContext.user().principal());
-      LOGGER.info("itemId: {}, subId: {}", itemId, subId);
+
         GetItemRequest request = new GetItemRequest(itemId, subId);
         itemService.getItem(request)
                 .onSuccess(responseModel -> {
+                  if(responseModel.getTotalHits() == 0) {
+                    LOGGER.error("Fail: Item not found");
+                    routingContext.response().setStatusCode(404).end(
+                            new RespBuilder()
+                                    .withType(TYPE_ITEM_NOT_FOUND)
+                                    .withTitle("error")
+                                    .withDetail("doc doesn't exist")
+                                    .withResult()
+                                    .getResponse());
+                  }
+                    else {
                     LOGGER.debug("Item retrieved successfully for ID '{}'", itemId);
                     ResponseBuilder.sendSuccess(
                             routingContext,
@@ -258,6 +271,7 @@ public class ItemController implements ApiController {
                             null,
                             responseModel.getTotalHits()
                     );
+                  }
                 })
                 .onFailure(err -> {
                     LOGGER.error("Error retrieving item with ID '{}': {}", itemId, err.getMessage());
