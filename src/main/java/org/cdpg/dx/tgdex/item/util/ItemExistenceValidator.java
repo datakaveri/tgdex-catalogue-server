@@ -218,7 +218,7 @@ public class ItemExistenceValidator {
     try {
       return res != null && !res.getString(MEDIA_URL, "").isBlank();
     } catch (Exception e) {
-      LOGGER.error("Error extracting mediaURL from ES", e);
+      LOGGER.error("Error extracting mediaURL from ES {}", e.getMessage());
       return false;
     }
   }
@@ -233,10 +233,6 @@ public class ItemExistenceValidator {
   }
 
   private String getReturnTypeForValidation(JsonObject result) {
-    return result.getJsonArray(RESULTS).stream()
-        .map(JsonObject.class::cast)
-        .map(r -> r.getString(TYPE))
-        .toList()
-        .toString();
+    return result.getJsonArray(TYPE).toString();
   }
 }

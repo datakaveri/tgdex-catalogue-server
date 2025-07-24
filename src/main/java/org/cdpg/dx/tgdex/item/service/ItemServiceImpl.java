@@ -55,6 +55,7 @@ public class ItemServiceImpl implements ItemService {
     elasticsearchService.getSingleDocument(docIndex, termQuery)
         .onSuccess(existingDoc -> {
           if (existingDoc != null && ElasticsearchResponse.getTotalHits() > 0) {
+            LOGGER.warn("Item with ID {} already exists", id);
             promise.fail("Item with ID already exists");
           } else {
             QueryModel queryModel = new QueryModel();
@@ -83,7 +84,9 @@ public class ItemServiceImpl implements ItemService {
           int totalHits = ElasticsearchResponse.getTotalHits();
           if (totalHits == 0) {
             LOGGER.warn("Item with ID {} does not exist", request.getItemId());
-            promise.fail("Document does not exist");
+            ResponseModel responseModel = new ResponseModel(List.of(response));
+            responseModel.setTotalHits(totalHits);
+            promise.complete(responseModel);
             return;
           }
 
@@ -108,6 +111,7 @@ public class ItemServiceImpl implements ItemService {
 
   @Override
   public Future<Void> deleteItem(String id) {
+    LOGGER.debug("Deleting item with ID: {}", id);
     Promise<Void> promise = Promise.promise();
 
     if (id == null || id.isBlank()) {
@@ -131,15 +135,25 @@ public class ItemServiceImpl implements ItemService {
 
     elasticsearchService.getSingleDocument(docIndex, boolQuery)
         .onSuccess(result -> {
+          LOGGER.debug("Item with ID {} found for deletion", id);
           if (ElasticsearchResponse.getTotalHits() > 1) {
+            LOGGER.debug("Item with ID {} has multiple associated entities", id);
             promise.fail("Item has associated entities and cannot be deleted");
           } else if (ElasticsearchResponse.getTotalHits() < 1) {
+            LOGGER.debug("Item with ID {} not found for deletion", id);
             promise.fail("Item not found for deletion");
           } else {
+            LOGGER.debug("Deleting item with ID: {}", id);
             String docId = result.getDocId();
             elasticsearchService.deleteDocument(docIndex, docId)
-                .onSuccess(v -> promise.complete())
-                .onFailure(promise::fail);
+                .onSuccess(v -> {
+                  LOGGER.debug("Item with ID {} deleted successfully", id);
+                  promise.complete();
+                })
+                .onFailure(failure-> {
+                  LOGGER.error("Failed to delete item with ID {}: {}", id, failure.getMessage());
+                  promise.fail("Failed to delete item: " + failure.getMessage());
+                });
           }
         })
         .onFailure(promise::fail);
@@ -149,6 +163,7 @@ public class ItemServiceImpl implements ItemService {
 
   @Override
   public Future<Void> updateItem(Item item) {
+    LOGGER.debug("Updating item with ID: {}", item.getId());
     Promise<Void> promise = Promise.promise();
     String id = item.getId();
     String type = item.getType().getFirst();
@@ -191,12 +206,12 @@ public class ItemServiceImpl implements ItemService {
           if (result == null || ElasticsearchResponse.getTotalHits() == 0) {
             promise.fail(DETAIL_ITEM_NOT_FOUND);
           } else {
-            LOGGER.debug("result: " + result.getSource());
+              LOGGER.debug("Item with name '{}' of type '{}' found", name, type);
             promise.complete(ItemFactory.from(result.getSource()));
           }
         })
         .onFailure(err -> {
-          LOGGER.debug("Error from elastic service: " + err.getCause());
+            LOGGER.error("Error from elastic service: {}", err.getMessage());
           promise.fail(err.getLocalizedMessage());
         });
     return promise.future();

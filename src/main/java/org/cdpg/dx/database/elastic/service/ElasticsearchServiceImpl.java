@@ -362,20 +362,23 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
             .size(1)
             .from(0);
     asyncClient.search(builder.build(), ObjectNode.class)
-            .whenComplete((resp, err) -> {
-              if (err != null) {
-                promise.fail(new RuntimeException("Search error", err));
-              } else if (resp.hits().total().value()==0) {
-                LOGGER.debug("No documents found ");
-                promise.complete();
-              } else {
-                Hit <ObjectNode> hit = resp.hits().hits().getFirst();
-                LOGGER.debug("Single document found with ID: {}", hit.id());
-                ElasticsearchResponse response = new ElasticsearchResponse(hit.id(), new JsonObject(hit.source().toString()));
-                ElasticsearchResponse.setTotalHits((int) resp.hits().total().value());
-                promise.complete(response);
-              }
-            });
+        .whenComplete((resp, err) -> {
+          if (err != null) {
+            promise.fail(new RuntimeException("Search error", err));
+          } else if (resp.hits().total().value()==0) {
+            ElasticsearchResponse.setTotalHits(0);
+            LOGGER.debug("No documents found ");
+            promise.complete(new ElasticsearchResponse());
+          } else {
+            Hit <ObjectNode> hit = resp.hits().hits().getFirst();
+            LOGGER.debug("Single document found with ID: {}", hit.id());
+            JsonObject source = JsonObject.mapFrom(hit.source());
+            source.remove(SUMMARY_KEY);
+            ElasticsearchResponse response = new ElasticsearchResponse(hit.id(), new JsonObject(source.toString()));
+            ElasticsearchResponse.setTotalHits((int) resp.hits().total().value());
+            promise.complete(response);
+          }
+        });
     return promise.future();
   }
 
@@ -436,6 +439,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
         LOGGER.error(msg, err);
         promise.fail(new RuntimeException(msg, err));
       } else {
+        LOGGER.debug("Document with ID: {} exists in index: {}", id, index);
         promise.complete();
       }
     });
@@ -444,11 +448,16 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
 
   private Future<Void> executeUpdate(String index, String id, QueryModel model) {
     Promise<Void> promise = Promise.promise();
-    UpdateRequest<String, JsonObject> req = UpdateRequest.of(u -> u
+    JsonObject doc = model.extractDocumentFromQueryModel();
+    String rawJson = doc.encode();
+    JsonData jsonData = JsonData.fromJson(rawJson);
+
+    UpdateRequest<String, JsonData> updateRequest = UpdateRequest.of(u -> u
             .index(index)
             .id(id)
-            .doc(model.extractDocumentFromQueryModel()));
-    asyncClient.update(req, JsonObject.class).whenComplete((res, err) -> {
+            .doc(jsonData));
+
+    asyncClient.update(updateRequest, JsonObject.class).whenComplete((res, err) -> {
       if (err != null) {
         LOGGER.error("update failed {}", err.getMessage());
         promise.fail(new RuntimeException("Update error", err));
