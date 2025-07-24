@@ -195,7 +195,7 @@ paths:
 
       operationId: search
       security:
-        - authorization: []
+        - optionalAuth: []
       parameters:
         - name: page
           in: query
@@ -417,7 +417,7 @@ paths:
       tags:
         - Discovery
       security:
-        - authorization: []
+        - optionalAuth: []
       requestBody:
         description: Request body containing unified search filters
         required: true
@@ -803,7 +803,7 @@ paths:
         If a Bearer token is provided in the Authorization header, the request will be authenticated and an audit log entry will be created for a **View** operation.
       operationId: get item
       security:
-        - authorization: []
+        - optionalAuth: []
       parameters:
         - name: id
           in: query
@@ -942,6 +942,12 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+
+    optionalAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     successResponseWithObjects:
       type: object

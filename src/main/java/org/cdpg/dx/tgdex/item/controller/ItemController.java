@@ -246,7 +246,8 @@ public class ItemController implements ApiController {
         if (routingContext.user() != null) {
             subId = routingContext.user().principal().getString("sub");
         }
-        LOGGER.debug("Extracted subId: '{}'", routingContext.user().principal());
+       // LOGGER.debug("Extracted subId: '{}'", routingContext.user().principal());
+      LOGGER.info("itemId: {}, subId: {}", itemId, subId);
         GetItemRequest request = new GetItemRequest(itemId, subId);
         itemService.getItem(request)
                 .onSuccess(responseModel -> {
