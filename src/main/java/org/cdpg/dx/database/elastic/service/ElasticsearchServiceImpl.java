@@ -19,11 +19,9 @@ import io.vertx.core.Promise;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import jakarta.json.stream.JsonGenerator;
-
 import java.io.StringWriter;
 import java.util.*;
 import java.util.stream.Collectors;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.common.exception.DxBadRequestException;
@@ -31,7 +29,6 @@ import org.cdpg.dx.common.exception.DxInternalServerErrorException;
 import org.cdpg.dx.database.elastic.ElasticClient;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.database.elastic.model.QueryModel;
-
 
 public class ElasticsearchServiceImpl implements ElasticsearchService {
   private static final Logger LOGGER = LogManager.getLogger(ElasticsearchServiceImpl.class);
@@ -257,45 +254,45 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
   @Override
   public Future<Void> deleteByQuery(String index, QueryModel queryModel) {
     return validateIndex(index)
-        .compose(v -> validateQueryModel(queryModel))
-        .compose(v -> executeDeleteByQuery(index, queryModel));
+            .compose(v -> validateQueryModel(queryModel))
+            .compose(v -> executeDeleteByQuery(index, queryModel));
   }
 
   @Override
   public Future<ElasticsearchResponse> getSingleDocument(String index, QueryModel queryModel) {
     return validateIndex(index)
-        .compose(v -> performSingleSearch(index, queryModel));
+            .compose(v -> performSingleSearch(index, queryModel));
   }
 
   @Override
   public Future<List<String>> createDocuments(String index, List<QueryModel> documentModels) {
     return validateIndex(index)
-        .compose(v -> validateDocumentModels(documentModels))
-        .compose(v -> executeBulkIndex(index, documentModels));
+            .compose(v -> validateDocumentModels(documentModels))
+            .compose(v -> executeBulkIndex(index, documentModels));
   }
 
   @Override
   public Future<Void> deleteDocument(String index, String id) {
     return validateIndex(index)
-        .compose(v -> validateId(id))
-        .compose(v -> executeDeleteDocument(index, id));
+            .compose(v -> validateId(id))
+            .compose(v -> executeDeleteDocument(index, id));
   }
 
   @Override
   public Future<Void> updateDocument(String index, String id, QueryModel queryModel) {
     LOGGER.debug("Update document with index: {}, id: {}, queryModel: {}", index, id, queryModel);
     return validateIndex(index)
-        .compose(v -> validateId(id))
-        .compose(v -> validateQueryModel(queryModel))
-        .compose(v -> executeExistenceCheck(index, id))
-        .compose(v -> executeUpdate(index, id, queryModel));
+            .compose(v -> validateId(id))
+            .compose(v -> validateQueryModel(queryModel))
+            .compose(v -> executeExistenceCheck(index, id))
+            .compose(v -> executeUpdate(index, id, queryModel));
   }
 
   @Override
   public Future<Void> updateDocumentsByQuery(QueryModel queryModel, String index) {
     return validateIndex(index)
-        .compose(v -> validateQueryModel(queryModel))
-        .compose(v -> executeUpdateByQuery(index, queryModel));
+            .compose(v -> validateQueryModel(queryModel))
+            .compose(v -> executeUpdateByQuery(index, queryModel));
   }
 
   // Validation helpers
@@ -341,9 +338,9 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
   private Future<Void> executeDeleteByQuery(String indices, QueryModel queryModel) {
     Promise<Void> promise = Promise.promise();
     DeleteByQueryRequest request = new DeleteByQueryRequest.Builder()
-        .index(indices)
-        .query(queryModel.toElasticsearchQuery())
-        .build();
+            .index(indices)
+            .query(queryModel.toElasticsearchQuery())
+            .build();
     LOGGER.debug("DeleteByQuery Request: {}", request);
     asyncClient.deleteByQuery(request).whenComplete((resp, err) -> {
       if (err != null) {
@@ -360,25 +357,25 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
   private Future<ElasticsearchResponse> performSingleSearch(String index, QueryModel model) {
     Promise<ElasticsearchResponse> promise = Promise.promise();
     SearchRequest.Builder builder = new SearchRequest.Builder()
-        .index(index)
-        .query(model.toElasticsearchQuery())
-        .size(1)
-        .from(0);
+            .index(index)
+            .query(model.toElasticsearchQuery())
+            .size(1)
+            .from(0);
     asyncClient.search(builder.build(), ObjectNode.class)
-        .whenComplete((resp, err) -> {
-          if (err != null) {
-            promise.fail(new RuntimeException("Search error", err));
-          } else if (resp.hits().total().value()==0) {
-            LOGGER.debug("No documents found ");
-            promise.complete();
-          } else {
-            Hit <ObjectNode> hit = resp.hits().hits().getFirst();
-            LOGGER.debug("Single document found with ID: {}", hit.id());
-            ElasticsearchResponse response = new ElasticsearchResponse(hit.id(), new JsonObject(hit.source().toString()));
-            ElasticsearchResponse.setTotalHits((int) resp.hits().total().value());
-            promise.complete(response);
-          }
-        });
+            .whenComplete((resp, err) -> {
+              if (err != null) {
+                promise.fail(new RuntimeException("Search error", err));
+              } else if (resp.hits().total().value()==0) {
+                LOGGER.debug("No documents found ");
+                promise.complete();
+              } else {
+                Hit <ObjectNode> hit = resp.hits().hits().getFirst();
+                LOGGER.debug("Single document found with ID: {}", hit.id());
+                ElasticsearchResponse response = new ElasticsearchResponse(hit.id(), new JsonObject(hit.source().toString()));
+                ElasticsearchResponse.setTotalHits((int) resp.hits().total().value());
+                promise.complete(response);
+              }
+            });
     return promise.future();
   }
 
@@ -392,8 +389,8 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
       JsonData jsonData = JsonData.fromJson(rawJson);
 
       bulkBuilder.operations(operation -> operation.index(docs -> docs.index(index)
-          .id(doc.getString("id"))
-          .document(jsonData)));
+              .id(doc.getString("id"))
+              .document(jsonData)));
     });
     BulkRequest request = bulkBuilder.build();
     asyncClient.bulk(request).whenComplete((bulkResponse, error) -> {
@@ -403,7 +400,7 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
       } else {
         LOGGER.debug("bulk Response " + bulkResponse);
         List<String> ids =
-            bulkResponse.items().stream().map(BulkResponseItem::id).collect(Collectors.toList());
+                bulkResponse.items().stream().map(BulkResponseItem::id).collect(Collectors.toList());
         LOGGER.debug("ids: " + ids);
         promise.complete(ids);
       }
@@ -448,9 +445,9 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
   private Future<Void> executeUpdate(String index, String id, QueryModel model) {
     Promise<Void> promise = Promise.promise();
     UpdateRequest<String, JsonObject> req = UpdateRequest.of(u -> u
-        .index(index)
-        .id(id)
-        .doc(model.extractDocumentFromQueryModel()));
+            .index(index)
+            .id(id)
+            .doc(model.extractDocumentFromQueryModel()));
     asyncClient.update(req, JsonObject.class).whenComplete((res, err) -> {
       if (err != null) {
         LOGGER.error("update failed {}", err.getMessage());
@@ -465,8 +462,8 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
   private Future<Void> executeUpdateByQuery(String index, QueryModel model) {
     Promise<Void> promise = Promise.promise();
     UpdateByQueryRequest.Builder builder = new UpdateByQueryRequest.Builder()
-        .index(index)
-        .query(model.toElasticsearchQuery());
+            .index(index)
+            .query(model.toElasticsearchQuery());
 
     Script script = model.toElasticsearchScript();
     if (script != null) {

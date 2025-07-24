@@ -9,5 +9,5 @@ public class ThrowableUtils {
     }
 
     public static boolean isSafeToExpose(Throwable throwable) {
-        return throwable instanceof IllegalArgumentException || throwable instanceof QueueAlreadyExistsException || throwable instanceof DxBadRequestException;}
+        return throwable instanceof IllegalArgumentException || throwable instanceof QueueAlreadyExistsException || throwable instanceof DxBadRequestException || throwable instanceof  DxUnauthorizedException;}
 }

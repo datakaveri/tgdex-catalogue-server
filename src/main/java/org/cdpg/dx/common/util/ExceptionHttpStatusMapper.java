@@ -129,10 +129,15 @@ public class ExceptionHttpStatusMapper {
         LOGGER.debug("Matched: DxInternalServerErrorException");
         yield HttpStatusCode.INTERNAL_SERVER_ERROR;
       }
+      case DxUnauthorizedException e -> {
+        LOGGER.debug("Matched: DxUnauthorizedException");
+        yield HttpStatusCode.UNAUTHORIZED;
+      }
       case BaseDxException e -> {
         LOGGER.debug("Matched: BaseDxException");
         yield HttpStatusCode.BAD_REQUEST;
       }
+
         default -> {
         LOGGER.debug("Matched: default (unhandled exception type: {})", throwable.getClass().getSimpleName());
         yield HttpStatusCode.INTERNAL_SERVER_ERROR;
