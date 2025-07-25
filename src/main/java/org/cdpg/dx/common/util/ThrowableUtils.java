@@ -1,5 +1,6 @@
 package org.cdpg.dx.common.util;
 
+import io.vertx.ext.web.validation.BodyProcessorException;
 import org.cdpg.dx.common.exception.*;
 
 public class ThrowableUtils {
@@ -9,5 +10,5 @@ public class ThrowableUtils {
     }
 
     public static boolean isSafeToExpose(Throwable throwable) {
-        return throwable instanceof IllegalArgumentException || throwable instanceof QueueAlreadyExistsException || throwable instanceof DxBadRequestException || throwable instanceof  DxUnauthorizedException;}
+        return throwable instanceof IllegalArgumentException || throwable instanceof QueueAlreadyExistsException || throwable instanceof DxBadRequestException || throwable instanceof  DxUnauthorizedException || throwable instanceof BodyProcessorException;}
 }

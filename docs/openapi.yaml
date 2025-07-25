@@ -417,7 +417,7 @@ paths:
       tags:
         - Discovery
       security:
-        - optionalAuth: []
+        - authorization: []
       requestBody:
         description: Request body containing unified search filters
         required: true
@@ -461,7 +461,8 @@ paths:
 
         > 📌 Aggregation is always based on `type.keyword`.  
         > The `results` object contains key-value pairs for each `type`.
-
+      security:
+        - optionalAuth: []
       operationId: count
       requestBody:
         required: true
@@ -520,6 +521,8 @@ paths:
         Retrieve available filter values for specified indexed fields (e.g., tags, department, fileFormat, etc.) based on optional search criteria. 
         This API is intended to assist user interfaces by listing current values from the catalogue, based on indexed fields in Elasticsearch.
       operationId: listAvailableFilters
+      security:
+        - optionalAuth: []
       requestBody:
         required: true
         content:
@@ -735,7 +738,7 @@ paths:
            - itemStatus
       operationId: update item
       security:
-        - authorization: [ ]
+        - authorization: []
 
       requestBody:
         required: true

@@ -58,7 +58,7 @@ public class SearchServiceImpl implements SearchService {
           .onFailure(err -> LOGGER.error("Search execution failed: {}", err.getMessage()));
     } catch (Exception e) {
       LOGGER.error("Error during postSearch: {}", e.getMessage(), e);
-      return Future.failedFuture(new DxBadRequestException("Failed to process search1 request"));
+      return Future.failedFuture(new DxBadRequestException("Failed to process search request"));
     }
   }
 

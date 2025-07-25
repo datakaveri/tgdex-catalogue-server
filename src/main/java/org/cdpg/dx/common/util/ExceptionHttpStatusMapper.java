@@ -124,7 +124,6 @@ public class ExceptionHttpStatusMapper {
         yield HttpStatusCode.BAD_REQUEST;
       }
 
-
       case DxInternalServerErrorException e->{
         LOGGER.debug("Matched: DxInternalServerErrorException");
         yield HttpStatusCode.INTERNAL_SERVER_ERROR;
