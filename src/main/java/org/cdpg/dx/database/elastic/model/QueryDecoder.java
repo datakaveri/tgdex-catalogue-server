@@ -41,8 +41,8 @@ public class QueryDecoder {
     }
 
     new AccessPolicyQueryDecorator(queryMap, request.getAccessPolicyRequest()).add();
-    QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ITEM_TYPE_DATA_BANK);
-    QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ITEM_TYPE_AI_MODEL);
+    QueryModel excludeDatabankFalse = buildExclusionForUnpublishedOrUnuploadedItems(ITEM_TYPE_DATA_BANK);
+    QueryModel excludeAiModelFalse = buildExclusionForUnpublishedOrUnuploadedItems(ITEM_TYPE_AI_MODEL);
     queryMap.get(FilterType.MUST_NOT).add(excludeDatabankFalse);
     queryMap.get(FilterType.MUST_NOT).add(excludeAiModelFalse);
 
@@ -88,8 +88,10 @@ public class QueryDecoder {
     new SearchCriteriaQueryDecorator(queryMap, request.getSearchCriteriaRequest()).add();
     new InstanceFilterQueryDecorator(queryMap, request.getInstanceFilterRequest()).add();
 
-    QueryModel excludeDatabankFalse = buildUploadStatusExclusion(ITEM_TYPE_DATA_BANK);
-    QueryModel excludeAiModelFalse = buildUploadStatusExclusion(ITEM_TYPE_AI_MODEL);
+    QueryModel excludeDatabankFalse =
+        buildExclusionForUnpublishedOrUnuploadedItems(ITEM_TYPE_DATA_BANK);
+    QueryModel excludeAiModelFalse =
+        buildExclusionForUnpublishedOrUnuploadedItems(ITEM_TYPE_AI_MODEL);
     queryMap.get(FilterType.MUST_NOT).add(excludeDatabankFalse);
     queryMap.get(FilterType.MUST_NOT).add(excludeAiModelFalse);
 
@@ -122,18 +124,23 @@ public class QueryDecoder {
     return finalQuery;
   }
 
-  private QueryModel buildUploadStatusExclusion(String itemType) {
+  private QueryModel buildExclusionForUnpublishedOrUnuploadedItems(String itemType) {
+    QueryModel typeTerm = new QueryModel(QueryType.TERM)
+        .setQueryParameters(Map.of(FIELD, TYPE_KEYWORD, VALUE, itemType));
+
+    QueryModel shouldClause = new QueryModel(QueryType.BOOL);
+    shouldClause.setShouldQueries(List.of(
+        new QueryModel(QueryType.TERM)
+            .setQueryParameters(Map.of(FIELD, DATA_UPLOAD_STATUS, VALUE, false)),
+        new QueryModel(QueryType.TERM)
+            .setQueryParameters(Map.of(FIELD, PUBLISH_STATUS + KEYWORD_KEY, VALUE, PENDING))
+    ));
+
     return new QueryModel(QueryType.BOOL)
-        .setMustQueries(
-            List.of(
-                new QueryModel(QueryType.TERM)
-                    .setQueryParameters(
-                        Map.of(
-                            FIELD, TYPE_KEYWORD,
-                            VALUE, itemType)),
-                new QueryModel(QueryType.TERM)
-                    .setQueryParameters(Map.of(FIELD, DATA_UPLOAD_STATUS, VALUE, false))));
+        .setMustQueries(List.of(typeTerm, shouldClause));
   }
+
+
 
   private QueryModel buildGetParentObjectInfoQuery(QueryDecoderRequestDTO request) {
     String id = request.getId();
