@@ -77,11 +77,10 @@ public class ElasticsearchServiceImpl implements ElasticsearchService {
     }
 
     SearchRequest request = requestBuilder.build();
-    LOGGER.debug("Request: " + request.toString());
 
     asyncClient.search(request, ObjectNode.class).whenComplete((response, error) -> {
       if (error != null) {
-        LOGGER.error("Search failed: {}", error.getMessage(), error);
+        LOGGER.error("Search failed: {}", error.getMessage());
         promise.fail(new DxInternalServerErrorException(error.getMessage(), error));
         return;
       }

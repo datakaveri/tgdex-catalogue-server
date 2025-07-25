@@ -17,6 +17,7 @@ public class Constants {
   // request/response params
   public static final String CONTENT_TYPE = "content-type";
   public static final String APPLICATION_JSON = "application/json";
+  public static final String HEADER_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
 
   // Request's operationIds
   public static final String CREATE_ITEM="create item";
