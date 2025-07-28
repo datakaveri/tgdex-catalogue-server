@@ -201,19 +201,28 @@ public class ItemServiceImpl implements ItemService {
   public Future<Item> itemWithTheNameExists(String type, String name) {
     Promise<Item> promise = Promise.promise();
     QueryModel queryModel = queryDecoder.buildGetItemWithNameExistsQuery(type, name);
+
     elasticsearchService.getSingleDocument(docIndex, queryModel)
         .onSuccess(result -> {
-          if (result == null || ElasticsearchResponse.getTotalHits() == 0) {
+          if (result == null || result.getSource() == null || result.getSource().isEmpty()) {
+            LOGGER.debug("Item with name '{}' of type '{}' not found", name, type);
             promise.fail(DETAIL_ITEM_NOT_FOUND);
           } else {
-              LOGGER.debug("Item with name '{}' of type '{}' found", name, type);
-            promise.complete(ItemFactory.from(result.getSource()));
+            LOGGER.debug("Item with name '{}' of type '{}' found", name, type);
+            try {
+              Item item = ItemFactory.from(result.getSource());
+              promise.complete(item);
+            } catch (Exception e) {
+              LOGGER.error("Failed to parse item from ES source: {}", e.getMessage());
+              promise.fail("Fail: Unable to parse existing item");
+            }
           }
         })
         .onFailure(err -> {
-            LOGGER.error("Error from elastic service: {}", err.getMessage());
-          promise.fail(err.getLocalizedMessage());
+          LOGGER.error("Error from elastic service for name '{}': {}", name, err.getMessage());
+          promise.fail("Fail: Error while checking item existence");
         });
+
     return promise.future();
   }
 
