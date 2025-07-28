@@ -86,7 +86,6 @@ public class ItemController implements ApiController {
     JsonObject doc = injectKeycloakInfoIfApplicable(ctx, body, itemType);
 
     String method = ctx.request().method().toString();
-    doc.put(HTTP_METHOD, method);
     doc.put(CONTEXT, vocContext);
 
     Promise<JsonObject> validationPromise = Promise.promise();

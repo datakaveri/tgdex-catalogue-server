@@ -11,7 +11,6 @@ import static org.cdpg.dx.tgdex.util.Constants.ITEM_TYPE_APPS;
 import static org.cdpg.dx.tgdex.util.Constants.ITEM_TYPE_DATA_BANK;
 import static org.cdpg.dx.tgdex.util.Constants.NAME;
 import static org.cdpg.dx.tgdex.util.Constants.REQUEST_POST;
-import static org.cdpg.dx.tgdex.util.Constants.RESULTS;
 import static org.cdpg.dx.tgdex.util.Constants.TYPE;
 import static org.cdpg.dx.tgdex.util.Constants.UUID_PATTERN;
 import static org.cdpg.dx.tgdex.validator.Constants.ACTIVE;
@@ -102,7 +101,15 @@ public class ItemExistenceValidator {
     itemService.itemWithTheNameExists(ITEM_TYPE_AI_MODEL, request.getString(NAME))
         .onFailure(err -> {
           if (err.getMessage().equals(DETAIL_ITEM_NOT_FOUND)) {
-            promise.complete(request);
+            // For POST, if not found, good to proceed
+            if (REQUEST_POST.equalsIgnoreCase(method)) {
+              request.put(DATA_UPLOAD_STATUS,
+                  request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank());
+              request.put(PUBLISH_STATUS, PENDING);
+              promise.complete(request);
+            } else {
+              promise.complete(request);
+            }
           } else {
             LOGGER.debug("Fail: DB Error: " + err.getLocalizedMessage());
             promise.fail(VALIDATION_FAILURE_MSG);
@@ -145,7 +152,15 @@ public class ItemExistenceValidator {
     itemService.itemWithTheNameExists(ITEM_TYPE_DATA_BANK, request.getString(NAME))
         .onFailure(err -> {
           if (err.getMessage().equals(DETAIL_ITEM_NOT_FOUND)) {
-            promise.complete(request);
+            // For POST, if not found, good to proceed
+            if (REQUEST_POST.equalsIgnoreCase(method)) {
+              request.put(DATA_UPLOAD_STATUS,
+                  request.containsKey(MEDIA_URL) && !request.getString(MEDIA_URL).isBlank());
+              request.put(PUBLISH_STATUS, PENDING);
+              promise.complete(request);
+            } else {
+              promise.complete(request);
+            }
           } else {
             LOGGER.debug("Fail: DB Error: " + err.getLocalizedMessage());
             promise.fail(VALIDATION_FAILURE_MSG);
